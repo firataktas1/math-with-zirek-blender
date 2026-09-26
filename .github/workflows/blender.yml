@@ -1,0 +1,228 @@
+# Math with Zirek · Blender (Cycles CPU) kil sahne denemesi
+# Elle başlatılır: gh workflow run blender.yml -f mod=onizleme ...
+#   onizleme: tek iş, seçilen kareler PNG olarak (bakış ayarı için)
+#   tam:      10 paralel iş (her biri 30 kare), sonra birleştirip MP4 (H.264 CRF 16, hafif film greni)
+# render.yml'ye (HyperFrames) dokunmaz.
+
+name: Blender
+
+on:
+  workflow_dispatch:
+    inputs:
+      mod:
+        description: "onizleme | deney | tam | yama"
+        required: true
+        default: "onizleme"
+      kareler:
+        description: "onizleme: virgüllü kare listesi"
+        required: true
+        default: "1,100,200,290"
+      w:
+        description: "genişlik"
+        required: true
+        default: "960"
+      h:
+        description: "yükseklik"
+        required: true
+        default: "540"
+      ornek:
+        description: "Cycles örnek sayısı (üst sınır, uyarlamalı)"
+        required: true
+        default: "64"
+      yama:
+        description: "yama: yeniden üretilecek aralık ve eski koşu (bas-son-runid), ör. 246-300-36262180162"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: blender-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BLENDER_VER: "4.5.14"
+  BLENDER_DIR: "blender-4.5.14-linux-x64"
+
+jobs:
+  onizleme:
+    if: ${{ inputs.mod == 'onizleme' || inputs.mod == 'deney' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: blender-deneme
+          filter: blob:none
+      - name: Blender önbellek
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-${{ env.BLENDER_VER }}
+      - name: Blender indir (download.blender.org)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL -o b.tar.xz https://download.blender.org/release/Blender4.5/${BLENDER_DIR}.tar.xz
+          tar -xf b.tar.xz && rm b.tar.xz
+      - name: Kütüphaneler
+        run: sudo apt-get install -y -q --no-install-recommends libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libxkbcommon0 libsm6 > /dev/null
+      - name: Render
+        run: |
+          nproc
+          /usr/bin/time -v ./${BLENDER_DIR}/blender -b -noaudio -P blender-deneme/sahne.py -- --mod ${{ inputs.mod == 'deney' && 'deney' || 'kare' }} --kareler "${{ inputs.kareler }}" --w ${{ inputs.w }} --h ${{ inputs.h }} --ornek ${{ inputs.ornek }} --cikti out 2>&1 | grep -v "^Fra:" | tail -n 120
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onizleme
+          path: out/*.png
+          retention-days: 3
+
+  parca:
+    if: ${{ inputs.mod == 'tam' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        parca: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: blender-deneme
+          filter: blob:none
+      - name: Blender önbellek
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-${{ env.BLENDER_VER }}
+      - name: Blender indir (download.blender.org)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL -o b.tar.xz https://download.blender.org/release/Blender4.5/${BLENDER_DIR}.tar.xz
+          tar -xf b.tar.xz && rm b.tar.xz
+      - name: Kütüphaneler
+        run: sudo apt-get install -y -q --no-install-recommends libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libxkbcommon0 libsm6 > /dev/null
+      - name: Render
+        run: |
+          BAS=$(( ${{ matrix.parca }} * 30 + 1 )); SON=$(( BAS + 29 ))
+          echo "kareler $BAS-$SON"
+          ./${BLENDER_DIR}/blender -b -noaudio -P blender-deneme/sahne.py -- --mod parca --bas $BAS --son $SON --w ${{ inputs.w }} --h ${{ inputs.h }} --ornek ${{ inputs.ornek }} --cikti out 2>&1 | grep -v "^Fra:" | tail -n 80
+          ls out | wc -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parca-${{ matrix.parca }}
+          path: out/*.png
+          retention-days: 1
+          compression-level: 0
+
+  birlestir:
+    needs: parca
+    if: ${{ inputs.mod == 'tam' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: parca-*
+          path: kareler
+          merge-multiple: true
+      - name: ffmpeg
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg > /dev/null
+      - name: MP4
+        run: |
+          ls kareler | wc -l
+          ffmpeg -hide_banner -loglevel error -framerate 30 -start_number 1 -i kareler/k_%04d.png \
+            -vf "noise=c0s=5:c0f=t+u:all_seed=42,vignette=angle=PI/7,format=yuv420p" \
+            -c:v libx264 -preset slow -crf 16 -profile:v high -movflags +faststart blender-tas.mp4
+          ls -la blender-tas.mp4
+          mkdir -p ornek && for f in 30 120 210 285; do cp kareler/k_$(printf %04d $f).png ornek/; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blender-tas
+          path: |
+            blender-tas.mp4
+            ornek/*.png
+          retention-days: 5
+
+  yama_parca:
+    if: ${{ inputs.mod == 'yama' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        parca: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: blender-deneme
+          filter: blob:none
+      - name: Blender önbellek
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-${{ env.BLENDER_VER }}
+      - name: Blender indir (download.blender.org)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL -o b.tar.xz https://download.blender.org/release/Blender4.5/${BLENDER_DIR}.tar.xz
+          tar -xf b.tar.xz && rm b.tar.xz
+      - name: Kütüphaneler
+        run: sudo apt-get install -y -q --no-install-recommends libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libxkbcommon0 libsm6 > /dev/null
+      - name: Render
+        run: |
+          IFS=- read B E RID <<< "${{ inputs.yama }}"
+          L=$(( E - B + 1 )); P=$(( (L + 3) / 4 ))
+          BAS=$(( B + ${{ matrix.parca }} * P )); SON=$(( BAS + P - 1 )); [ $SON -gt $E ] && SON=$E
+          echo "kareler $BAS-$SON"
+          ./${BLENDER_DIR}/blender -b -noaudio -P blender-deneme/sahne.py -- --mod parca --bas $BAS --son $SON --w ${{ inputs.w }} --h ${{ inputs.h }} --ornek ${{ inputs.ornek }} --cikti out 2>&1 | grep -v "^Fra:" | tail -n 60
+          ls out | wc -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yama-${{ matrix.parca }}
+          path: out/*.png
+          retention-days: 1
+          compression-level: 0
+
+  yama_birlestir:
+    needs: yama_parca
+    if: ${{ inputs.mod == 'yama' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Eski koşunun numarası
+        id: rid
+        run: echo "rid=$(echo '${{ inputs.yama }}' | cut -d- -f3)" >> $GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: parca-*
+          path: kareler
+          merge-multiple: true
+          run-id: ${{ steps.rid.outputs.rid }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: yama-*
+          path: yeni
+          merge-multiple: true
+      - name: ffmpeg
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg > /dev/null
+      - name: MP4
+        run: |
+          ls kareler | wc -l; ls yeni | wc -l
+          cp -f yeni/*.png kareler/
+          ffmpeg -hide_banner -loglevel error -framerate 30 -start_number 1 -i kareler/k_%04d.png -vf "noise=c0s=5:c0f=t+u:all_seed=42,vignette=angle=PI/7,scale=out_color_matrix=bt709:out_range=tv,format=yuv420p" -c:v libx264 -preset slow -crf 16 -profile:v high -colorspace bt709 -color_primaries bt709 -color_trc bt709 -movflags +faststart blender-tas.mp4
+          ls -la blender-tas.mp4
+          mkdir -p ornek && for f in 250 270 285 300; do cp kareler/k_$(printf %04d $f).png ornek/; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blender-tas
+          path: |
+            blender-tas.mp4
+            ornek/*.png
+          retention-days: 5
