@@ -269,10 +269,11 @@ M_PEBBLE = pbr('cakil', 'rock_surface', tile=0.14, coord='BOX', sat=1.3, val=1.2
 M_LAST = M_PEBBLE.copy(); M_LAST.name = 'son_cakil'
 M_SLAB = pbr('yassi_tas', 'rock_surface', tile=0.6, coord='BOX', sat=0.2, val=0.85, tint=(0.95, 0.97, 1.0), rough_add=0.2, nor=1.2)
 M_CLOTH = pbr('cuval', 'hessian_230', tile=0.09, sat=0.45, val=0.55, tint=(0.92, 0.9, 0.86), rough_add=0.15, nor=1.8)
-M_WOOD = pbr('tahta', 'rough_wood', tile=0.25, coord='BOX', sat=1.1, val=0.55, tint=(0.85, 0.7, 0.55), rough_add=0.1, nor=1.4)
+M_WOOD = pbr('tahta', 'rough_wood', tile=0.6, coord='BOX', sat=1.1, val=0.55, tint=(0.85, 0.7, 0.55), rough_add=0.1, nor=1.4)
 M_CORD = pbr('ip', 'hessian_230', tile=0.03, sat=0.5, val=0.6, rough_add=0.2, nor=1.5)
 M_PUPIL = simple('goz', (0.012, 0.009, 0.007), rough=0.12, spec=0.6)
-M_HOOF = simple('tirnak', (0.035, 0.03, 0.028), rough=0.45)
+M_HOOF = simple('tirnak', (0.035, 0.03, 0.028), rough=0.6)
+M_LEG = simple('bacak', (0.02, 0.017, 0.015), rough=0.85, spec=0.15, sheen=0.5)
 
 
 def mat_face():
@@ -702,7 +703,7 @@ def build_grass():
         dist_cam = (p - CAM_POS0.xy).length
         wA = 1.0
         wB = 1.0
-        if abs(dpen - PEN_R) < 0.42:          # duvarın altı
+        if abs(dpen - PEN_R) < 0.3:           # duvarın altı
             wA = wB = 0.0
         elif abs(dpen - PEN_R) < 0.9:         # duvar dibi: tutamlar sık
             wA = 2.2
@@ -883,13 +884,19 @@ def build_pouch(front_post):
     sl = inv @ side
     zb = 0.182 - DROP
     back = inv @ Vector((-to_cam.x, -to_cam.y, 0)).normalized()
-    curve('ip_aski', [(back * 0.052 + Vector((0, 0, zb)))[:], (back * 0.05 + Vector((0, 0, zb + 0.05)))[:],
-                      (back * 0.02 + Vector((0, 0, -0.01)))[:], (0, 0, 0.0)], bevel=0.0045)
+    back.z = 0; back.normalize()
     fr = -back
-    curve('ip_uc', [(fr * 0.056 + sl * 0.01 + Vector((0, 0, zb)))[:], (fr * 0.066 + sl * 0.02 + Vector((0, 0, zb - 0.03)))[:],
-                    (fr * 0.07 + sl * 0.015 + Vector((0, 0, zb - 0.06)))[:]], bevel=0.0035)
-    curve('ip_bogaz', [(0.056 * math.cos(2 * math.pi * s / 10) * 1.05, 0.056 * math.sin(2 * math.pi * s / 10) * 0.95,
-                        zb + 0.004 * math.sin(3 * s)) for s in range(10)], cyclic=True, bevel=0.005)
+    # kese çivinin önünde asılı: arka kenarı çivinin altında, ip arka kenardan çıkar (ip taşın içinden geçmesin)
+    OFF = fr * 0.08
+    pouch.data.transform(Matrix.Translation(OFF))
+    curve('ip_aski', [(back * 0.004 + Vector((0, 0, zb + 0.035)))[:], (back * 0.006 + Vector((0, 0, zb + 0.07)))[:],
+                      (Vector((0, 0, -0.012)))[:], (0, 0, 0.0)], bevel=0.0045)
+    curve('ip_uc', [(OFF + fr * 0.056 + sl * 0.01 + Vector((0, 0, zb)))[:], (OFF + fr * 0.066 + sl * 0.02 + Vector((0, 0, zb - 0.03)))[:],
+                    (OFF + fr * 0.07 + sl * 0.015 + Vector((0, 0, zb - 0.06)))[:]], bevel=0.0035)
+    curve('ip_bogaz', [(OFF + Vector((0.056 * math.cos(2 * math.pi * s / 10) * 1.05, 0.056 * math.sin(2 * math.pi * s / 10) * 0.95,
+                        zb + 0.004 * math.sin(3 * s))))[:] for s in range(10)], cyclic=True, bevel=0.005)
+    global POUCH_OFF
+    POUCH_OFF = OFF
     return pouch, base_q, hang, 0.228 - DROP
 
 
@@ -1055,7 +1062,7 @@ def build_sheep(i):
         blob(bm, (0, 0, -0.27), (0.03, 0.029, 0.17), subdiv=3, amp=0.03, seed=i * 10 + k + 3)
         blob(bm, (0.0, 0, -0.22), (0.033, 0.031, 0.03), subdiv=2, seed=i * 10 + k + 4)       # diz
         leg = remeshed('koyun_%d_bacak_%d' % (i, k), bm, 0.007, 3)
-        setmat(leg, M_FACE)
+        setmat(leg, M_LEG)
         bm = bmesh.new()
         blob(bm, (0.01, 0, -0.44), (0.031, 0.028, 0.022), subdiv=2, seed=i * 10 + k + 5)
         hoof = bm_to_obj('koyun_%d_toynak_%d' % (i, k), bm)
@@ -1267,13 +1274,13 @@ def pouch_matrix(f):
     return Matrix.Translation(HANG) @ pouch_quat(f).to_matrix().to_4x4() @ Matrix.Scale(POUCH_S, 4)
 
 
-heap_local = [Vector((0, 0, LIP_Z - 0.008))]
+heap_local = [POUCH_OFF + Vector((0, 0, LIP_Z - 0.014))]
 for k in range(5):
     th = 2 * math.pi * k / 5 + 0.3
-    heap_local.append(Vector((0.047 * math.cos(th), 0.043 * math.sin(th), LIP_Z + 0.004)))
+    heap_local.append(POUCH_OFF + Vector((0.047 * math.cos(th), 0.043 * math.sin(th), LIP_Z - 0.006)))
 for k in range(3):
     th = 2 * math.pi * k / 3 + 0.9
-    heap_local.append(Vector((0.022 * math.cos(th), 0.022 * math.sin(th), LIP_Z + 0.026)))
+    heap_local.append(POUCH_OFF + Vector((0.022 * math.cos(th), 0.022 * math.sin(th), LIP_Z + 0.016)))
 take_order = [8, 7, 6, 5, 4, 3, 2, 1]
 pebbles = [pebble_mesh('cakil_%d' % k, 3000 + k, M_LAST if k == 0 else M_PEBBLE) for k in range(9)]
 LAST = pebbles[0]
@@ -1356,7 +1363,7 @@ TGT1 = TGT0 + Vector((-0.08, -0.05, 0.0))
 CAM1 = CAM_POS0 + (TGT0 - CAM_POS0).normalized() * 0.35
 v_end = (CAM1 - P_END); v_end.z = 0
 v_end = Matrix.Rotation(math.radians(6), 3, 'Z') @ v_end.normalized()
-CAM_END = P_END + (v_end * 0.8 + Vector((0, 0, 0.6))).normalized() * 0.6
+CAM_END = P_END + (v_end * 0.8 + Vector((0, 0, 0.78))).normalized() * 0.6
 FOCUS0 = (GATE_PT.to_3d() + Vector((0, 0, hfun(GATE_PT.x, GATE_PT.y) + 0.5))).lerp(HANG - Vector((0, 0, 0.3)), 0.6)
 
 PUSH0, PUSH1 = 212, 296

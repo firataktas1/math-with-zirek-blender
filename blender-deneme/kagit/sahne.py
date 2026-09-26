@@ -198,9 +198,9 @@ P_KRAFT = paper('kese', (0.50, 0.21, 0.15), edge_light=0.3)
 P_KRAFT2 = paper('kese_arka', (0.33, 0.13, 0.10), edge_light=0.25)
 P_STRING = paper('ip', (0.80, 0.70, 0.52))
 P_WOOD = paper('civi', (0.30, 0.18, 0.10), edge_light=0.25)
-P_PEBBLE = paper('cakil', (0.90, 0.56, 0.20), edge_light=0.18, sss=0.05)
-P_PEBBLE_HI = paper('cakil_acik', (0.98, 0.74, 0.38), edge_light=0.1)
-P_PEBBLE_LO = paper('cakil_koyu', (0.66, 0.36, 0.13), edge_light=0.1)
+P_PEBBLE = paper('cakil', (0.80, 0.50, 0.24), edge_light=0.18)
+P_PEBBLE_HI = paper('cakil_acik', (0.88, 0.64, 0.38), edge_light=0.1)
+P_PEBBLE_LO = paper('cakil_koyu', (0.55, 0.32, 0.15), edge_light=0.1)
 P_SLAB = paper('yassi_tas', (0.42, 0.43, 0.43))
 P_TREE = paper('agac', (0.36, 0.47, 0.20))
 P_TRUNK = paper('govde', (0.45, 0.32, 0.20))
@@ -213,15 +213,17 @@ def deckle(pts, amp, seed, closed=True):
     n = len(pts)
     off = seed * 13.7
     tot = 0.0
+    per = sum((Vector(pts[(k + 1) % n]) - Vector(pts[k])).length for k in range(n))
+    step = max(0.012, per / 700.0)          # büyük parçalar (tepe, gök) gereksiz sık olmasın
     for k in range(n if closed else n - 1):
         a, b = Vector(pts[k]), Vector(pts[(k + 1) % n])
-        m = max(1, int((b - a).length / 0.012))
+        m = max(1, int((b - a).length / step))
         for j in range(m):
             p = a.lerp(b, j / m)
             t = (b - a).normalized()
             nn = Vector((-t.y, t.x))
             tot += (b - a).length / m
-            d = amp * (noise.noise(Vector((tot * 9.0, off, 0.3))) + 0.35 * noise.noise(Vector((tot * 40.0, off, 1.7))))
+            d = amp * (noise.noise(Vector((tot * 9.0 / max(1.0, step / 0.012), off, 0.3))) + 0.35 * noise.noise(Vector((tot * 40.0 / max(1.0, step / 0.012), off, 1.7))))
             out.append(p + nn * d)
     return out
 
@@ -826,17 +828,36 @@ for f in range(-2, N_FRAMES + 3):
 
 
 # ---------------------------------------------------------------- çakıllar: üç katman kalın karton (koyu alt, aşı gövde, açık üst)
+def pebble_outline(rx, ry, seed):
+    """Düzensiz, yuvarlatılmış çakıl silueti (jeton gibi tam elips olmasın)."""
+    r = rng(seed)
+    n = 7
+    ph = r.uniform(0, 6.28)
+    ctrl = [(math.cos(ph + 2 * math.pi * k / n) * rx * r.uniform(0.8, 1.05),
+             math.sin(ph + 2 * math.pi * k / n) * ry * r.uniform(0.75, 1.05)) for k in range(n)]
+    out = []
+    for k in range(n):                       # köşe kesme (Chaikin) ile yumuşat
+        p0, p1 = Vector(ctrl[k]), Vector(ctrl[(k + 1) % n])
+        out.append(tuple(p0.lerp(p1, 0.25))); out.append(tuple(p0.lerp(p1, 0.75)))
+    out2 = []
+    for k in range(len(out)):
+        p0, p1 = Vector(out[k]), Vector(out[(k + 1) % len(out)])
+        out2.append(tuple(p0.lerp(p1, 0.25))); out2.append(tuple(p0.lerp(p1, 0.75)))
+    return out2
+
+
 def pebble(name, seed):
     r = rng(seed)
     root = link(bpy.data.objects.new(name, None))
     root.rotation_mode = 'QUATERNION'
-    rx, ry = r.uniform(0.038, 0.045), r.uniform(0.028, 0.033)
-    lo = piece(name + '_alt', ellipse_pts(rx, ry, 32, jitter=0.1, seed=seed), 0.008, P_PEBBLE_LO, amp=0.0015, seed=seed)
-    lo.parent = root; lo.location = (0.003, -0.003, -0.012)
-    mid = piece(name + '_govde', ellipse_pts(rx * 0.97, ry * 0.97, 32, jitter=0.1, seed=seed), 0.01, P_PEBBLE, amp=0.0015, seed=seed + 1)
+    rx, ry = r.uniform(0.040, 0.047), r.uniform(0.027, 0.033)
+    base = pebble_outline(rx, ry, seed)
+    lo = piece(name + '_alt', base, 0.008, P_PEBBLE_LO, amp=0.0015, seed=seed)
+    lo.parent = root; lo.location = (0.002, -0.004, -0.012)
+    mid = piece(name + '_govde', [(x * 0.96, y * 0.96) for (x, y) in base], 0.01, P_PEBBLE, amp=0.0015, seed=seed + 1)
     mid.parent = root; mid.location = (0, 0, -0.003)
-    hi = piece(name + '_ust', ellipse_pts(rx * 0.55, ry * 0.45, 24, jitter=0.12, seed=seed + 2), 0.005, P_PEBBLE_HI, amp=0.001, seed=seed + 2)
-    hi.parent = root; hi.location = (-rx * 0.2, ry * 0.25, 0.008)
+    hi = piece(name + '_ust', pebble_outline(rx * 0.42, ry * 0.3, seed + 2), 0.004, P_PEBBLE_HI, amp=0.001, seed=seed + 2)
+    hi.parent = root; hi.location = (-rx * 0.25, ry * 0.3, 0.008)
     return root
 
 
