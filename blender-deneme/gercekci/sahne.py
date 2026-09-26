@@ -118,7 +118,7 @@ PEN_R = 4.0                   # duvar ekseni yarıçapı
 GATE_ANG = math.radians(228)
 GAP_HALF = 0.20               # açıklık yarı açısı (~1,3 m kapı + direkler)
 WALL_H = 0.95
-POST_R = 0.33
+POST_R = 0.39
 POST_H = 1.22
 
 
@@ -1152,7 +1152,7 @@ def build_slab():
     src = ROCKS[2]
     ob = link(bpy.data.objects.new('yassi_tas', src.data))
     d = src.dimensions
-    ob.scale = (1.0 / d.x, 0.42 / d.y, 0.07 / d.z)
+    ob.scale = (1.0 / d.x, 0.42 / d.y, 0.045 / d.z)
     c = ROW_START + ROW_DIR * 0.33 - TO_CAM0 * 0.02
     ob.location = (c.x, c.y, hfun(c.x, c.y) - 0.005)
     ob.rotation_euler = (0.0, 0.0, math.atan2(ROW_DIR.y, ROW_DIR.x))
@@ -1347,7 +1347,7 @@ TGT0 = MID.lerp(_row3, 0.3) + CAM_RIGHT.to_3d() * 0.25 + Vector((0, 0, 0.1))
 TGT1 = TGT0 + Vector((-0.08, -0.05, 0.0))
 CAM1 = CAM_POS0 + (TGT0 - CAM_POS0).normalized() * 0.35
 v_end = (CAM1 - P_END); v_end.z = 0
-v_end = Matrix.Rotation(math.radians(-24), 3, 'Z') @ v_end.normalized()
+v_end = Matrix.Rotation(math.radians(6), 3, 'Z') @ v_end.normalized()
 CAM_END = P_END + (v_end * 0.8 + Vector((0, 0, 0.6))).normalized() * 0.6
 FOCUS0 = (GATE_PT.to_3d() + Vector((0, 0, hfun(GATE_PT.x, GATE_PT.y) + 0.5))).lerp(HANG - Vector((0, 0, 0.3)), 0.6)
 
