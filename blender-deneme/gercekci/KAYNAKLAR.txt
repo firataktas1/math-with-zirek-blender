@@ -1,0 +1,19 @@
+Gerçekçi sürümde kullanılan dış varlıklar. Hepsi Poly Haven, lisans CC0 (kamu malı; atıf gerekmez, yine de yazıldı).
+İndirme: public API https://api.polyhaven.com (hesap yok, anahtar yok, ücret yok). Betik: indir.py
+Lisans metni: https://polyhaven.com/license
+
+HDRI | Hilly Terrain 01 (hilly_terrain_01) | yazar: Sergej Majboroda | https://polyhaven.com/a/hilly_terrain_01 | lisans: CC0
+HDRI | Grasslands Sunset (grasslands_sunset) | yazar: Dimitrios Savva, Jarod Guest | https://polyhaven.com/a/grasslands_sunset | lisans: CC0
+Doku | Leafy Grass (leafy_grass) | yazar: Charlotte Baglioni | https://polyhaven.com/a/leafy_grass | lisans: CC0
+Doku | Stacked Stone Wall (stacked_stone_wall) | yazar: Dimitrios Savva | https://polyhaven.com/a/stacked_stone_wall | lisans: CC0
+Doku | Rock Surface (rock_surface) | yazar: Amal Kumar | https://polyhaven.com/a/rock_surface | lisans: CC0
+Doku | Hessian 230 (hessian_230) | yazar: colormass, Rico Cilliers | https://polyhaven.com/a/hessian_230 | lisans: CC0
+Doku | Rough Wood (rough_wood) | yazar: Rob Tuytel | https://polyhaven.com/a/rough_wood | lisans: CC0
+Model | Grass Bermuda 01 (grass_bermuda_01) | yazar: Rico Cilliers | https://polyhaven.com/a/grass_bermuda_01 | lisans: CC0
+Model | Grass Medium 02 (grass_medium_02) | yazar: Rico Cilliers | https://polyhaven.com/a/grass_medium_02 | lisans: CC0
+Model | Rock Moss Set 01 (rock_moss_set_01) | yazar: Kless Gyzen | https://polyhaven.com/a/rock_moss_set_01 | lisans: CC0
+Model | Dandelion 01 (dandelion_01) | yazar: Rob Tuytel, Rico Cilliers | https://polyhaven.com/a/dandelion_01 | lisans: CC0
+
+Koyun, taş duvarın biçimi, kese biçimi, ip, çakılların biçimi: betikte yordamsal (dış varlık değil).
+Koyun modeli: Poly Haven'da koyun yok; poly.pizza'daki CC0 koyunların hepsi düşük poligonlu oyuncak tarzı
+(gerçekçi sahneye uymuyor), bu yüzden kullanılmadı. CC0 olmayan hiçbir varlık kullanılmadı.

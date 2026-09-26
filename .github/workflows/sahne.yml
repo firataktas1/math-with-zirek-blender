@@ -1,0 +1,180 @@
+# Math with Zirek · Blender 5.2 sahneleri (gercekci, kagit) · Cycles CPU
+# Elle başlatılır:
+#   gh workflow run sahne.yml -f sahne=gercekci -f mod=onizleme -f kareler=60,150,290 -f w=960 -f h=540 -f ornek=64
+#   gh workflow run sahne.yml -f sahne=kagit -f mod=tam                         (1920x1080, 300 kare, 20 paralel iş)
+#   gh workflow run sahne.yml -f sahne=gercekci -f mod=yama -f yama=246-300-<eski_runid>
+# Dış varlıklar yalnız Poly Haven CC0: koşu sırasında indir.py ile indirilir (depoda tutulmaz).
+
+name: Sahne
+
+on:
+  workflow_dispatch:
+    inputs:
+      sahne:
+        description: "gercekci | kagit"
+        required: true
+        default: "kagit"
+      mod:
+        description: "onizleme | tam | yama"
+        required: true
+        default: "onizleme"
+      kareler:
+        description: "onizleme: virgüllü kare listesi"
+        required: false
+        default: "60,150,290"
+      w:
+        description: "genişlik"
+        required: false
+        default: "1920"
+      h:
+        description: "yükseklik"
+        required: false
+        default: "1080"
+      ornek:
+        description: "Cycles örnek sayısı (uyarlamalı üst sınır)"
+        required: false
+        default: "128"
+      ek:
+        description: "betiğe ek argümanlar (ör. --doku 2k --hdri 4k)"
+        required: false
+        default: ""
+      yama:
+        description: "yama: bas-son-eskiRunId (ör. 246-300-123456)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: sahne-${{ inputs.sahne }}-${{ inputs.mod }}
+  cancel-in-progress: false
+
+env:
+  BLENDER_VER: "5.2.0"
+  BLENDER_DIR: "blender-5.2.0-linux-x64"
+
+jobs:
+  hazirla:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      parcalar: ${{ steps.p.outputs.parcalar }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Blender önbellek
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-${{ env.BLENDER_VER }}
+      - name: Blender indir (download.blender.org)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL -o b.tar.xz https://download.blender.org/release/Blender5.2/${BLENDER_DIR}.tar.xz
+          tar -xf b.tar.xz && rm b.tar.xz
+      - name: CC0 varlık önbelleği
+        if: ${{ inputs.sahne == 'gercekci' }}
+        id: vcache
+        uses: actions/cache@v4
+        with:
+          path: blender-deneme/gercekci/assets
+          key: ph-${{ hashFiles('blender-deneme/gercekci/indir.py') }}-son
+      - name: CC0 varlıkları indir (Poly Haven API)
+        if: ${{ inputs.sahne == 'gercekci' && steps.vcache.outputs.cache-hit != 'true' }}
+        run: python3 blender-deneme/gercekci/indir.py --son
+      - id: p
+        run: |
+          if [ "${{ inputs.mod }}" = "tam" ]; then echo 'parcalar=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]' >> $GITHUB_OUTPUT;
+          elif [ "${{ inputs.mod }}" = "yama" ]; then echo 'parcalar=[0,1,2,3,4,5,6,7]' >> $GITHUB_OUTPUT;
+          else echo 'parcalar=[0]' >> $GITHUB_OUTPUT; fi
+
+  render:
+    needs: hazirla
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        parca: ${{ fromJSON(needs.hazirla.outputs.parcalar) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-${{ env.BLENDER_VER }}
+          fail-on-cache-miss: true
+      - uses: actions/cache/restore@v4
+        if: ${{ inputs.sahne == 'gercekci' }}
+        with:
+          path: blender-deneme/gercekci/assets
+          key: ph-${{ hashFiles('blender-deneme/gercekci/indir.py') }}-son
+          fail-on-cache-miss: true
+      - name: Kütüphaneler
+        run: sudo apt-get install -y -q --no-install-recommends libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libxkbcommon0 libsm6 > /dev/null
+      - name: Render
+        run: |
+          nproc; free -g
+          S=blender-deneme/${{ inputs.sahne }}/sahne.py
+          if [ "${{ inputs.mod }}" = "onizleme" ]; then
+            ARGS="--mod kare --kareler ${{ inputs.kareler }}"
+          elif [ "${{ inputs.mod }}" = "tam" ]; then
+            BAS=$(( ${{ matrix.parca }} * 15 + 1 )); SON=$(( BAS + 14 ))
+            ARGS="--mod parca --bas $BAS --son $SON"
+          else
+            IFS=- read B E RID <<< "${{ inputs.yama }}"
+            L=$(( E - B + 1 )); P=$(( (L + 7) / 8 ))
+            BAS=$(( B + ${{ matrix.parca }} * P )); SON=$(( BAS + P - 1 )); [ $SON -gt $E ] && SON=$E
+            if [ $BAS -gt $E ]; then echo "boş parça"; mkdir -p out; exit 0; fi
+            ARGS="--mod parca --bas $BAS --son $SON"
+          fi
+          echo "$ARGS"
+          ./${BLENDER_DIR}/blender -b -noaudio -P $S -- $ARGS --w ${{ inputs.w }} --h ${{ inputs.h }} --ornek ${{ inputs.ornek }} --cihaz cpu ${{ inputs.ek }} --cikti out 2>&1 | grep -v "^Fra:" | grep -v "| Remaining" | tail -n 120
+          ls out | wc -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.mod == 'onizleme' && 'onizleme' || format('{0}-{1}', inputs.mod, matrix.parca) }}
+          path: out/*.png
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: ignore
+
+  birlestir:
+    needs: render
+    if: ${{ inputs.mod != 'onizleme' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ inputs.mod }}-*
+          path: yeni
+          merge-multiple: true
+      - name: ffmpeg
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg > /dev/null
+      - name: MP4
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p kareler
+          if [ "${{ inputs.mod }}" = "yama" ]; then
+            RID=$(echo '${{ inputs.yama }}' | cut -d- -f3)
+            gh run download $RID -R ${{ github.repository }} -p 'tam-*' -D eski
+            find eski -name '*.png' -exec cp {} kareler/ \;
+          fi
+          cp -f yeni/*.png kareler/
+          ls kareler | wc -l
+          ffmpeg -hide_banner -loglevel error -framerate 30 -start_number 1 -i kareler/k_%04d.png \
+            -vf "noise=c0s=4:c0f=t+u:all_seed=42,vignette=angle=PI/7,scale=out_color_matrix=bt709:out_range=tv,format=yuv420p" \
+            -c:v libx264 -preset slow -crf 16 -profile:v high -colorspace bt709 -color_primaries bt709 -color_trc bt709 \
+            -movflags +faststart ${{ inputs.sahne }}.mp4
+          ls -la ${{ inputs.sahne }}.mp4
+          mkdir -p ornek && for f in 60 150 250 296; do cp kareler/k_$(printf %04d $f).png ornek/; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.sahne }}-video
+          path: |
+            ${{ inputs.sahne }}.mp4
+            ornek/*.png
+          retention-days: 7
