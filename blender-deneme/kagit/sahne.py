@@ -61,7 +61,7 @@ def link(ob):
 PEN_C = Vector((0.0, 6.0))
 PEN_R = 4.0
 GATE_ANG = math.radians(228)
-GAP_HALF = 0.20
+GAP_HALF = 0.27            # kâğıt kukla yana dönük geçtiği için kapı gerçekçi sürümden geniş
 WALL_H = 0.95
 POST_R = 0.33
 POST_H = 1.22
@@ -97,7 +97,7 @@ M_FACING = Matrix((RIGHT3, UP3, FACE3)).transposed().to_4x4()   # yerel X=sağ, 
 
 
 # ---------------------------------------------------------------- kâğıt malzemeleri
-def paper(name, color, edge_light=0.12, fiber=0.35, mottle=0.06, sss=0.12, rough=0.82, stretch=(1.0, 3.2, 1.0)):
+def paper(name, color, edge_light=0.12, fiber=0.7, mottle=0.10, sss=0.0, rough=0.82, stretch=(1.0, 3.2, 1.0)):
     """Renkli karton: lif kabartması, hafif lekelenme, ışık geçirgenliği. Kenar malzemesi ayrı (kesik yüz açık renk)."""
     mats = []
     for kind in ('yuz', 'kenar'):
@@ -140,7 +140,16 @@ def paper(name, color, edge_light=0.12, fiber=0.35, mottle=0.06, sss=0.12, rough
         L.new(fl.outputs['Fac'], fr.inputs['Fac'])
         mx = N.new('ShaderNodeMix'); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'; mx.inputs['Factor'].default_value = 1.0
         L.new(hs.outputs['Color'], mx.inputs['A']); L.new(fr.outputs['Color'], mx.inputs['B'])
-        L.new(mx.outputs['Result'], b.inputs['Base Color'])
+        # kâğıt benekleri: seyrek, küçük açık/koyu lifler (geniş planda da doku okunur)
+        sp = N.new('ShaderNodeTexNoise'); sp.inputs['Scale'].default_value = 70.0; sp.inputs['Detail'].default_value = 3.0
+        L.new(mp.outputs['Vector'], sp.inputs['Vector'])
+        spr = N.new('ShaderNodeValToRGB')
+        spr.color_ramp.elements[0].position = 0.66; spr.color_ramp.elements[0].color = (1, 1, 1, 1)
+        spr.color_ramp.elements[1].position = 0.72; spr.color_ramp.elements[1].color = (0.84, 0.82, 0.78, 1)
+        L.new(sp.outputs['Fac'], spr.inputs['Fac'])
+        mx2 = N.new('ShaderNodeMix'); mx2.data_type = 'RGBA'; mx2.blend_type = 'MULTIPLY'; mx2.inputs['Factor'].default_value = 1.0
+        L.new(mx.outputs['Result'], mx2.inputs['A']); L.new(spr.outputs['Color'], mx2.inputs['B'])
+        L.new(mx2.outputs['Result'], b.inputs['Base Color'])
         h1 = N.new('ShaderNodeMath'); h1.operation = 'MULTIPLY_ADD'; h1.inputs[1].default_value = 0.5
         L.new(fb.outputs['Fac'], h1.inputs[0]); L.new(grain.outputs['Fac'], h1.inputs[2])
         bp = N.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = fiber; bp.inputs['Distance'].default_value = 0.002
@@ -181,8 +190,8 @@ P_GRASS = [paper('ot1', (0.30, 0.45, 0.16)), paper('ot2', (0.48, 0.60, 0.22)), p
 P_WALL = paper('duvar', (0.28, 0.29, 0.30), sss=0.02)
 P_STONE = [paper('tas1', (0.50, 0.50, 0.48), sss=0.02), paper('tas2', (0.36, 0.37, 0.39), sss=0.02),
            paper('tas3', (0.44, 0.45, 0.44), sss=0.02), paper('tas4', (0.47, 0.47, 0.45), sss=0.02)]
-P_WOOL = paper('yun', (0.96, 0.91, 0.80), sss=0.18)
-P_WOOL2 = paper('yun_arka', (0.84, 0.78, 0.66), sss=0.15)
+P_WOOL = paper('yun', (0.96, 0.91, 0.80), sss=0.08)
+P_WOOL2 = paper('yun_arka', (0.84, 0.78, 0.66))
 P_BLACK = paper('kara', (0.07, 0.06, 0.06), edge_light=0.05, sss=0.0)
 P_EYE = paper('goz_ak', (0.97, 0.94, 0.86))
 P_KRAFT = paper('kese', (0.50, 0.21, 0.15), edge_light=0.3)
@@ -451,15 +460,15 @@ def cut_stone(w, hh, r):
     return pts
 
 
-def stone_patches(name_prefix, center, radius, a0, a1, height_fn, side, seed, courses=6, wmin=0.18, wmax=0.34):
+def stone_patches(name_prefix, center, radius, a0, a1, height_fn, side, seed, courses=6, wmin=0.18, wmax=0.34, total_h=WALL_H):
     """Duvar yüzüne yapıştırılmış taş biçimli karton parçalar (3 ton, tek nesnede birleşik)."""
     r = rng(seed)
     bms = [bmesh.new() for _ in P_STONE]
     r.random()
     arc_len = abs(a1 - a0) * radius
     for c in range(courses):
-        z0 = 0.03 + c * (WALL_H / courses)
-        hh = WALL_H / courses * r.uniform(0.78, 0.92)
+        z0 = 0.03 + c * (total_h / courses)
+        hh = total_h / courses * r.uniform(0.78, 0.92)
         if c == courses - 1:
             hh *= 1.45          # üst sıra duvarın üstünden taşar: düzensiz taş tepe
         s = r.uniform(0, 0.15)
@@ -516,7 +525,7 @@ def build_pen():
         a = GATE_ANG + sgn * GAP_HALF
         p = ring_pos(a)
         ring_strip('direk_' + side, 0.0, 2 * math.pi, POST_R, p, 0.0, lambda aa: POST_H, 0.04, P_WALL, step=0.03)
-        stone_patches('direk_tas_' + side, p, POST_R + 0.02, 0.0, 2 * math.pi, lambda aa: POST_H, 1, 20 + sgn, courses=10, wmin=0.1, wmax=0.17)
+        stone_patches('direk_tas_' + side, p, POST_R + 0.02, 0.0, 2 * math.pi, lambda aa: POST_H, 1, 20 + sgn, courses=12, wmin=0.1, wmax=0.17, total_h=POST_H)
         cap = piece('direk_kapak_' + side, cut_stone(2 * POST_R + 0.16, 2 * POST_R + 0.1, rng(30 + sgn)), 0.06,
                     P_STONE[1], amp=0.006, seed=30 + sgn)
         cap.location = (p.x, p.y, hfun(p.x, p.y) + POST_H)
@@ -650,7 +659,10 @@ class Path:
 
 
 INSIDE = GATE_PT - gu * 1.3
-OUT1 = GATE_PT + gu * 2.1 + Vector((-0.5, 0.35))
+_FC = (CAM_POS0.xy - GATE_PT).normalized()          # kapıdan kameraya
+_RT = Vector((-_FC.y, _FC.x))                           # ekranda sağ
+# sürü sol önden (kameranın solundan) çapraz gelip kapıya girer: ilk koyun ilk karede kadrajın solunda
+OUT1 = GATE_PT - _RT * 0.9 + _FC * 1.5
 SPOTS = []
 _rs = rng(77)
 while len(SPOTS) < N_SHEEP:
@@ -662,10 +674,10 @@ while len(SPOTS) < N_SHEEP:
     if all((q - o).length > 1.35 for o in SPOTS):
         SPOTS.append(q)
 SPOTS.sort(key=lambda q: -(q - INSIDE).length)
-START = [Vector((-19.0, -0.4)), Vector((-9.0, 0.35))]
+START = [CAM_POS0.xy - _RT * 14.0 + _FC * 1.5, CAM_POS0.xy - _RT * 2.6 - _FC * 1.6]
 paths = []
 for i in range(N_SHEEP):
-    jit = Vector((0, 0.12 * ((i * 7) % 3 - 1)))
+    jit = _FC * (0.14 * ((i * 7) % 3 - 1))
     paths.append(Path([START[0] + jit, START[1] + jit * 0.7, OUT1, GATE_PT, INSIDE, SPOTS[i]]))
 
 # ---------------------------------------------------------------- sahneyi kur
@@ -936,7 +948,7 @@ print('t anim %.1f' % (time.time() - T_START), flush=True)
 world = bpy.data.worlds.new('dunya')
 scene.world = world
 world.node_tree.nodes['Background'].inputs['Color'].default_value = (1.0, 0.80, 0.58, 1)
-world.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.38
+world.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.3
 
 
 def light(name, kind, energy, color, loc=None, direction=None, size=None):
@@ -961,7 +973,7 @@ def light(name, kind, energy, color, loc=None, direction=None, size=None):
 SUN_AZ = math.radians(193.0)
 SUN_EL = math.radians(19.0)
 SUN_VEC = Vector((math.cos(SUN_AZ) * math.cos(SUN_EL), math.sin(SUN_AZ) * math.cos(SUN_EL), math.sin(SUN_EL)))
-light('gunes', 'SUN', 4.2, (1.0, 0.68, 0.40), direction=-SUN_VEC, size=math.radians(4.0))
+light('gunes', 'SUN', 4.6, (1.0, 0.68, 0.40), direction=-SUN_VEC, size=math.radians(4.0))
 
 # ---------------------------------------------------------------- kamera (gerçekçi sürümle aynı vuruşlar)
 cam_data = bpy.data.cameras.new('kamera')
@@ -1065,7 +1077,7 @@ def pick_device():
 C.device = pick_device()
 C.samples = A.ornek
 C.use_adaptive_sampling = True
-C.adaptive_threshold = 0.015
+C.adaptive_threshold = 0.02
 C.use_denoising = True
 for k, v in (('denoiser', 'OPENIMAGEDENOISE'), ('denoising_input_passes', 'RGB_ALBEDO_NORMAL'),
              ('denoising_prefilter', 'ACCURATE'), ('denoising_quality', 'HIGH')):
@@ -1091,8 +1103,8 @@ R.motion_blur_shutter = 0.35
 R.use_persistent_data = True
 vs = scene.view_settings
 vs.view_transform = 'AgX'
-vs.look = 'AgX - Medium High Contrast'
-vs.exposure = -0.15
+vs.look = 'AgX - High Contrast'
+vs.exposure = -0.1
 
 ng = bpy.data.node_groups.new('kompozit', 'CompositorNodeTree')
 ng.interface.new_socket('Image', in_out='OUTPUT', socket_type='NodeSocketColor')
@@ -1126,6 +1138,8 @@ for _f in (1, 110, 210):
                     ('dizi_son', LAND[-1].to_3d() + Vector((0, 0, SLAB_TOP)))):
         _c = world_to_camera_view(scene, cam, _p)
         print('KADRAJ f%d %-8s x=%.2f y(ust)=%.2f' % (_f, _nm, _c.x, 1 - _c.y))
+    _c = world_to_camera_view(scene, cam, sheep[0][0].matrix_world.to_translation() + Vector((0, 0, 0.6)))
+    print('KADRAJ f%d koyun0   x=%.2f y(ust)=%.2f' % (_f, _c.x, 1 - _c.y))
 print('sahne kuruldu: %.1f sn' % (time.time() - T_START), flush=True)
 os.makedirs(A.cikti, exist_ok=True)
 if A.blend:

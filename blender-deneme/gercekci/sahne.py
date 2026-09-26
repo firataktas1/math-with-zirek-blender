@@ -240,7 +240,7 @@ def emissive(name, color, strength):
 
 
 # duvar: serin gri kuru taş (çakıldan ayrışsın diye doygunluk düşük)
-M_WALL = pbr('duvar', 'stacked_stone_wall', tile=1.6, sat=0.38, val=0.95, tint=(0.93, 0.95, 1.0), nor=1.0)
+M_WALL = pbr('duvar', 'stacked_stone_wall', tile=1.6, sat=0.38, val=0.95, tint=(0.93, 0.95, 1.0), nor=1.5)
 # çakıl: sıcak aşı/okra, mat (inci gibi parlamasın)
 def _pebble_extra(m, N, L, bsdf, tc):
     # taş başına renk farkı + ince benekler (kum taşı): düz, cilasız, mat
@@ -267,6 +267,7 @@ def _pebble_extra(m, N, L, bsdf, tc):
 M_PEBBLE = pbr('cakil', 'rock_surface', tile=0.14, coord='BOX', sat=1.3, val=1.25, tint=(1.0, 0.70, 0.40),
                rough_add=0.45, rough_mul=0.6, nor=1.3, extra=_pebble_extra)
 M_LAST = M_PEBBLE.copy(); M_LAST.name = 'son_cakil'
+M_SLAB = pbr('yassi_tas', 'rock_surface', tile=0.6, coord='BOX', sat=0.2, val=0.85, tint=(0.95, 0.97, 1.0), rough_add=0.2, nor=1.2)
 M_CLOTH = pbr('cuval', 'hessian_230', tile=0.09, sat=0.45, val=0.55, tint=(0.92, 0.9, 0.86), rough_add=0.15, nor=1.8)
 M_WOOD = pbr('tahta', 'rough_wood', tile=0.25, coord='BOX', sat=1.1, val=0.55, tint=(0.85, 0.7, 0.55), rough_add=0.1, nor=1.4)
 M_CORD = pbr('ip', 'hessian_230', tile=0.03, sat=0.5, val=0.6, rough_add=0.2, nor=1.5)
@@ -579,7 +580,7 @@ def build_pen():
     a_start = GATE_ANG + GAP_HALF
     a_end = GATE_ANG - GAP_HALF + 2 * math.pi
     wall = sweep_ring('duvar', a_start, a_end, WALL_PROF, PEN_R, PEN_C, step=0.025)
-    displace_by_image(wall, 'stacked_stone_wall', 0.07, 1.6)
+    displace_by_image(wall, 'stacked_stone_wall', 0.045, 1.6)
     setmat(wall, M_WALL)
     posts = []
     for side, sgn in (('on', 1), ('arka', -1)):
@@ -588,7 +589,7 @@ def build_pen():
         prof = [(POST_R + 0.02, -0.12), (POST_R, 0.0), (POST_R - 0.03, POST_H - 0.05), (POST_R - 0.08, POST_H),
                 (0.0, POST_H + 0.02)]
         post = sweep_ring('direk_' + side, 0.0, 2 * math.pi, prof, 0.0001, p, step=0.025, seed=3 + sgn)
-        displace_by_image(post, 'stacked_stone_wall', 0.06, 1.6)
+        displace_by_image(post, 'stacked_stone_wall', 0.04, 1.6)
         setmat(post, M_WALL)
         posts.append((side, a, p))
     return posts
@@ -1112,7 +1113,10 @@ class Path:
 
 
 INSIDE = GATE_PT - gu * 1.3
-OUT1 = GATE_PT + gu * 2.1 + Vector((-0.5, 0.35))
+_FC = (CAM_POS0.xy - GATE_PT).normalized()          # kapıdan kameraya
+_RT = Vector((-_FC.y, _FC.x))                           # ekranda sağ
+# sürü sol önden (kameranın solundan) çapraz gelip kapıya girer: ilk koyun ilk karede kadrajın solunda
+OUT1 = GATE_PT - _RT * 0.9 + _FC * 1.5
 SPOTS = []
 _rs = rng(77)
 while len(SPOTS) < N_SHEEP:
@@ -1125,10 +1129,10 @@ while len(SPOTS) < N_SHEEP:
         SPOTS.append(q)
 # yakındaki koyun önce dursun diye: kapıya uzak noktalar önce
 SPOTS.sort(key=lambda q: -(q - INSIDE).length)
-START = [Vector((-19.0, -0.4)), Vector((-9.0, 0.35))]
+START = [CAM_POS0.xy - _RT * 14.0 + _FC * 1.5, CAM_POS0.xy - _RT * 2.6 - _FC * 1.6]
 paths = []
 for i in range(N_SHEEP):
-    jit = Vector((0, 0.12 * ((i * 7) % 3 - 1)))
+    jit = _FC * (0.14 * ((i * 7) % 3 - 1))
     paths.append(Path([START[0] + jit, START[1] + jit * 0.7, OUT1, GATE_PT, INSIDE, SPOTS[i]]))
 
 
@@ -1152,10 +1156,14 @@ def build_slab():
     src = ROCKS[2]
     ob = link(bpy.data.objects.new('yassi_tas', src.data))
     d = src.dimensions
-    ob.scale = (1.0 / d.x, 0.42 / d.y, 0.045 / d.z)
+    ob.scale = (1.0 / d.x, 0.42 / d.y, 0.075 / d.z)
     c = ROW_START + ROW_DIR * 0.33 - TO_CAM0 * 0.02
     ob.location = (c.x, c.y, hfun(c.x, c.y) - 0.005)
     ob.rotation_euler = (0.0, 0.0, math.atan2(ROW_DIR.y, ROW_DIR.x))
+    # yosunsuz, açık gri taş yüzeyi: aşı çakıllar üstünde okunsun
+    for sl in ob.material_slots:
+        sl.link = 'OBJECT'
+        sl.material = M_SLAB
     bpy.context.view_layer.update()
     return ob
 
@@ -1409,6 +1417,14 @@ for f, v in ((1, 0.0), (262, 0.0), (272, 260.0), (281, 120.0), (290, 210.0), (30
     _sp.default_value = v
     _sp.keyframe_insert('default_value', frame=f)
 
+# yakın planda keseye yumuşak, sıcak dolgu (sinema pratiği: yüz ışığı); geniş planda kapalı
+_fill = light('yakin_dolgu', 'AREA', 0.0, (1.0, 0.8, 0.6), loc=CAM_END + Vector((0, 0, 0.35)) + (CAM_END - P_END).normalized() * 0.3,
+              direction=(P_END - (CAM_END + Vector((0, 0, 0.35)))), size=0.8)
+_fill.visible_camera = False
+for f, en in ((1, 0.0), (205, 0.0), (270, 6.0), (300, 6.0)):
+    _fill.data.energy = en
+    _fill.data.keyframe_insert('energy', frame=f)
+
 # ---------------------------------------------------------------- render ayarları
 R = scene.render
 R.engine = 'CYCLES'
@@ -1505,6 +1521,8 @@ for _f in (1, 110, 210):
                     ('dizi_son', LAND[-1].to_3d() + Vector((0, 0, hfun(LAND[-1].x, LAND[-1].y))))):
         _c = world_to_camera_view(scene, cam, _p)
         print('KADRAJ f%d %-8s x=%.2f y(ust)=%.2f' % (_f, _nm, _c.x, 1 - _c.y))
+    _c = world_to_camera_view(scene, cam, sheep[0][0].matrix_world.to_translation() + Vector((0, 0, 0.6)))
+    print('KADRAJ f%d koyun0   x=%.2f y(ust)=%.2f' % (_f, _c.x, 1 - _c.y))
 print('sahne kuruldu: %.1f sn' % (time.time() - T_START), flush=True)
 os.makedirs(A.cikti, exist_ok=True)
 if A.blend:
