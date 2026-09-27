@@ -142,7 +142,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.mod == 'onizleme' && 'onizleme' || format('{0}-{1}', inputs.mod, matrix.parca) }}
-          path: out/*.png
+          path: |
+            out/*.png
+            out/*.exr
+            out/*.json
           retention-days: 3
           compression-level: 0
           if-no-files-found: ignore
