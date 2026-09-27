@@ -42,6 +42,10 @@ on:
         description: "yama: bas-son-eskiRunId (ör. 246-300-123456)"
         required: false
         default: ""
+      isler:
+        description: "tam/yama: paralel iş sayısı (boş: tam 20, yama 8)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -86,9 +90,11 @@ jobs:
         run: python3 blender-deneme/gercekci/indir.py --son
       - id: p
         run: |
-          if [ "${{ inputs.mod }}" = "tam" ]; then echo 'parcalar=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]' >> $GITHUB_OUTPUT;
-          elif [ "${{ inputs.mod }}" = "yama" ]; then echo 'parcalar=[0,1,2,3,4,5,6,7]' >> $GITHUB_OUTPUT;
-          else echo 'parcalar=[0]' >> $GITHUB_OUTPUT; fi
+          N="${{ inputs.isler }}"
+          if [ "${{ inputs.mod }}" = "tam" ]; then N=${N:-20};
+          elif [ "${{ inputs.mod }}" = "yama" ]; then N=${N:-8};
+          else N=1; fi
+          echo "parcalar=[$(seq -s, 0 $(( N - 1 )))]" >> $GITHUB_OUTPUT
 
   render:
     needs: hazirla
@@ -120,11 +126,12 @@ jobs:
           if [ "${{ inputs.mod }}" = "onizleme" ]; then
             ARGS="--mod kare --kareler ${{ inputs.kareler }}"
           elif [ "${{ inputs.mod }}" = "tam" ]; then
-            BAS=$(( ${{ matrix.parca }} * 15 + 1 )); SON=$(( BAS + 14 ))
+            N="${{ inputs.isler }}"; N=${N:-20}; P=$(( (300 + N - 1) / N ))
+            BAS=$(( ${{ matrix.parca }} * P + 1 )); SON=$(( BAS + P - 1 )); [ $SON -gt 300 ] && SON=300
             ARGS="--mod parca --bas $BAS --son $SON"
           else
             IFS=- read B E RID <<< "${{ inputs.yama }}"
-            L=$(( E - B + 1 )); P=$(( (L + 7) / 8 ))
+            N="${{ inputs.isler }}"; N=${N:-8}; L=$(( E - B + 1 )); P=$(( (L + N - 1) / N ))
             BAS=$(( B + ${{ matrix.parca }} * P )); SON=$(( BAS + P - 1 )); [ $SON -gt $E ] && SON=$E
             if [ $BAS -gt $E ]; then echo "boş parça"; mkdir -p out; exit 0; fi
             ARGS="--mod parca --bas $BAS --son $SON"
