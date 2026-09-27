@@ -219,7 +219,7 @@
   // slots relative to the pouch mouth centre; index 8 stays to the end
   const SLOTS = [[0, -31], [-14, -20], [14, -19], [-26, -8], [26, -7], [0, -10], [-30, 3], [30, 4], [0, 1]].map(([x, y]) => [x * PS * 1.08, y * PS * 1.08]);
   const PEB = { rx: 17, ry: 12 };
-  const LIFT = 0.22, FLY = 0.56, SQ = 0.16;
+  const LIFT = 0.22, FLY = 0.62, SQ = 0.16;
   const T_LEAVE = TG.map((t) => t + 0.06);
   function sway(t) {
     let a = 0;
@@ -237,7 +237,7 @@
     if (t < t0 + LIFT) { const u = E.qOut((t - t0) / LIFT); return { where: 'air', x: lerp(p0[0], up[0], u), y: lerp(p0[1], up[1], u), sc: lerp(0.92, 1.0, u), rot: u * 0.8, squash: 0 }; }
     if (t < t0 + LIFT + FLY) {
       const u = (t - t0 - LIFT) / FLY;
-      const c = [(up[0] + R.x) / 2 - 10, Math.min(up[1], R.y) - 190];
+      const c = [lerp(up[0], R.x, 0.62), up[1] - 330];   // high arc: travels above the flock, drops steeply onto the row
       const q = bez(up, c, [R.x, R.y], u);
       return { where: 'air', x: q[0], y: q[1], sc: lerp(1.0, ds(R.y) * 0.98, u), rot: 0.8 + u * 2.4, squash: 0, u };
     }
@@ -277,7 +277,7 @@
 
   // ---------------------------------------------------------------- camera and glint
   const FOCUS = { x: MOUTH.x, y: MOUTH.y + 2 };
-  const PUSH0 = 6.9, S_END = 2.45, A_END = { x: 860, y: 505 };
+  const PUSH0 = 6.9, S_END = 2.6, A_END = { x: 800, y: 530 };
   function camera(t) {
     const s0 = 1.08 + 0.025 * seg(t, 0, PUSH0);
     const u = E.sine(seg(t, PUSH0, DUR + 0.25));
