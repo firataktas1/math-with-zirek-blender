@@ -66,7 +66,24 @@
       gx.fillStyle = grad; gx.fillRect(0, 0, 4, 256);
       const skyTex = new THREE.CanvasTexture(gc); skyTex.colorSpace = THREE.SRGBColorSpace;
       scene.background = skyTex;
-      scene.fog = new THREE.Fog(0xF0BE92, 22, 75);
+      // gök kubbesi: ufukta sıcak şeftali, yukarıda akşam mavisi (yüksekliğe göre renk)
+      {
+        const dome = new THREE.SphereGeometry(150, 32, 16);
+        const dp = dome.attributes.position, cols = [];
+        const cH = new THREE.Color("#FBCB94"), cM = new THREE.Color("#EFA07E"), cT = new THREE.Color("#7482B0");
+        for (let i = 0; i < dp.count; i++) {
+          const el = Math.max(0, dp.getY(i) / 150);
+          const c = el < 0.12 ? cH.clone().lerp(cM, el / 0.12) : cM.clone().lerp(cT, Math.min(1, (el - 0.12) / 0.5));
+          // güneş tarafı (sol arka) daha sıcak
+          const sunW = Math.max(0, (-dp.getX(i) - dp.getZ(i) * 0.6) / 150) * (1 - Math.min(1, el * 3));
+          c.lerp(new THREE.Color("#FFD9A0"), sunW * 0.6);
+          cols.push(c.r, c.g, c.b);
+        }
+        dome.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+        const sky = new THREE.Mesh(dome, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+        sky.renderOrder = -1; scene.add(sky);
+      }
+      scene.fog = new THREE.Fog(0xF3C497, 24, 110);
 
       const camera = new THREE.PerspectiveCamera(34, 1920 / 1080, 0.1, 200);
 
@@ -88,8 +105,8 @@
       const mat = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, flatShading: true, roughness: 0.92, metalness: 0 }, o));
 
       // ---------- zemin: yumuşak tepe ----------
-      function hillY(x, z) { return 0.35 * Math.sin(x * 0.13 + 0.5) * Math.cos(z * 0.11) + (z < -6 ? (-6 - z) * 0.09 : 0) - (x > 6 ? (x - 6) * 0.04 : 0); }
-      const gGeo = new THREE.PlaneGeometry(90, 70, 90, 70);
+      function hillY(x, z) { return 0.35 * Math.sin(x * 0.13 + 0.5) * Math.cos(z * 0.11) + (z < -6 ? Math.min((-6 - z) * 0.09, 2.2) : 0) - (x > 6 ? (x - 6) * 0.04 : 0); }
+      const gGeo = new THREE.PlaneGeometry(200, 180, 110, 90);
       gGeo.rotateX(-Math.PI / 2);
       const gp = gGeo.attributes.position, gcol = [];
       const cA = new THREE.Color("#7FA24E"), cB = new THREE.Color("#94B058"), cC = new THREE.Color("#6D9244");
@@ -106,10 +123,10 @@
       scene.add(ground);
       // uzak tepeler
       const farMat = mat("#7F9468"), farMat2 = mat("#95977A");
-      [[-30, -48, 16, 2.4, farMat], [-6, -56, 20, 3.2, farMat2], [22, -50, 18, 2.2, farMat], [40, -60, 22, 3.4, farMat2]].forEach(([x, z, r, h, m]) => {
+      [[-34, -58, 18, 5.0, farMat], [-6, -70, 24, 6.5, farMat2], [24, -62, 20, 4.6, farMat], [46, -74, 26, 7.0, farMat2]].forEach(([x, z, r, h, m]) => {
         const g = new THREE.SphereGeometry(r, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2);
         g.scale(1, h / r, 0.6);
-        const me = new THREE.Mesh(g, m); me.position.set(x, -0.5, z); scene.add(me);
+        const me = new THREE.Mesh(g, m); me.position.set(x, 1.6, z); scene.add(me);
       });
       // ağaçlar (arka sol)
       function tree(x, z, s) {
