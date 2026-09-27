@@ -273,7 +273,7 @@ def setmat(ob, m):
 # Okunaklılık: çakıl sıcak aşı-turuncu, yassı taş serin açık gri-mavi, kese kök boya kırmızısı, duvar nötr gri.
 if SU:
     ST = None
-    M_GRASS = paint('cim', (0.60, 0.70, 0.34), var=0.0, patch=0.9, spread=0.16)
+    M_GRASS = paint('cim', (0.68, 0.76, 0.42), var=0.0, patch=0.7, spread=0.26)
     M_TUFT = paint('ot', (0.40, 0.56, 0.24), var=0.12, patch=2.0, spread=0.12)
     M_STONE = paint('tas_duvar', (0.70, 0.66, 0.62), var=0.28, patch=5.0, spread=0.16)
     M_WOOL = paint('yun', (0.97, 0.93, 0.84), var=0.05, patch=6.0, spread=0.06)
@@ -282,9 +282,9 @@ if SU:
     M_PUPIL = paint('bebek', (0.10, 0.08, 0.08), var=0.0, spread=0.0)
     M_WOOD = paint('tahta', (0.52, 0.36, 0.22), var=0.15, patch=12.0, spread=0.12)
     M_CLOTH = paint('bez', (0.72, 0.28, 0.20), var=0.0, patch=9.0, spread=0.14)
-    M_CORD = paint('ip', (0.90, 0.82, 0.62), var=0.0, spread=0.05)
+    M_CORD = paint('ip', (0.62, 0.48, 0.32), var=0.0, spread=0.05)
     M_PEBBLE = paint('cakil', (0.93, 0.62, 0.30), var=0.12, patch=30.0, spread=0.12)
-    M_SLAB = paint('yassi_tas', (0.70, 0.74, 0.80), var=0.0, patch=4.0, spread=0.12)
+    M_SLAB = paint('yassi_tas', (0.74, 0.75, 0.78), var=0.0, patch=5.0, spread=0.16)
     M_HILL1 = paint('tepe1', (0.56, 0.66, 0.36), var=0.0, patch=0.35, spread=0.18)
     M_HILL2 = paint('tepe2', (0.86, 0.70, 0.42), var=0.0, patch=0.35, spread=0.16)
     M_HILL3 = paint('tepe3', (0.72, 0.76, 0.62), var=0.0, patch=0.3, spread=0.14)
@@ -292,7 +292,7 @@ if SU:
     M_TRUNK = paint('govde', (0.55, 0.40, 0.28), var=0.1, patch=6.0, spread=0.12)
     M_FLOWER = paint('cicek', (0.99, 0.92, 0.66), var=0.2, spread=0.05)
 else:
-    M_GRASS = paint('cim', (0.46, 0.60, 0.26), var=0.0, patch=0.8, spread=0.20, strokes=(9.0, 5.0))
+    M_GRASS = paint('cim', (0.42, 0.55, 0.23), var=0.0, patch=0.8, spread=0.22, strokes=(15.0, 3.0))
     M_TUFT = paint('ot', (0.34, 0.50, 0.20), var=0.14, patch=2.0, spread=0.18, strokes=(40.0, 4.0))
     M_STONE = paint('tas_duvar', (0.62, 0.58, 0.55), var=0.30, patch=5.0, spread=0.18, strokes=(34.0, 3.0), bump=0.25)
     M_WOOL = paint('yun', (0.96, 0.91, 0.80), var=0.05, patch=6.0, spread=0.12, strokes=(38.0, 3.5), bump=0.15)
@@ -301,9 +301,9 @@ else:
     M_PUPIL = paint('bebek', (0.08, 0.06, 0.06), var=0.0, spread=0.0)
     M_WOOD = paint('tahta', (0.55, 0.36, 0.20), var=0.15, patch=12.0, spread=0.18, strokes=(60.0, 6.0))
     M_CLOTH = paint('bez', (0.70, 0.24, 0.17), var=0.0, patch=9.0, spread=0.18, strokes=(55.0, 4.0), bump=0.1)
-    M_CORD = paint('ip', (0.90, 0.80, 0.58), var=0.0, spread=0.08)
+    M_CORD = paint('ip', (0.60, 0.44, 0.28), var=0.0, spread=0.08)
     M_PEBBLE = paint('cakil', (0.94, 0.60, 0.26), var=0.12, patch=30.0, spread=0.14, strokes=(90.0, 2.5))
-    M_SLAB = paint('yassi_tas', (0.62, 0.67, 0.74), var=0.0, patch=4.0, spread=0.16, strokes=(22.0, 4.0))
+    M_SLAB = paint('yassi_tas', (0.64, 0.66, 0.70), var=0.0, patch=5.0, spread=0.18, strokes=(26.0, 3.0), bump=0.1)
     M_HILL1 = paint('tepe1', (0.44, 0.58, 0.30), var=0.0, patch=0.35, spread=0.2, strokes=(2.5, 5.0))
     M_HILL2 = paint('tepe2', (0.84, 0.64, 0.34), var=0.0, patch=0.35, spread=0.2, strokes=(2.5, 5.0))
     M_HILL3 = paint('tepe3', (0.66, 0.70, 0.58), var=0.0, patch=0.3, spread=0.16, strokes=(1.8, 5.0))
@@ -443,7 +443,9 @@ POUCH_S = 1.35            # kil sürümünden büyük: geniş planda telefonda o
 def build_pouch(front_post):
     _, a, p = front_post
     to_cam = (CAM_POS0.xy - p).normalized()
-    pegdir = Vector((to_cam.x, to_cam.y, 0.18)).normalized()
+    # çivi kameraya ve biraz sağa bakar: kese kapı açıklığını örtmesin (girişi gören kare okunur kalsın)
+    _pd = Matrix.Rotation(math.radians(34), 2) @ to_cam
+    pegdir = Vector((_pd.x, _pd.y, 0.18)).normalized()
     z_top = hfun(p.x, p.y) + 0.06 + 0.05 * 1.75 * 6
     peg_base = Vector((p.x, p.y, z_top - 0.05))
     peg_len = 0.3
@@ -688,18 +690,18 @@ _, FA, FP = front_post
 # çakıl dizisi: kesenin önünde (kameraya doğru), serin açık renk yassı bir taşın üstünde, ekranda sağa doğru
 TO_CAM0 = (CAM_POS0.xy - FP).normalized()
 RIGHT = Vector((-TO_CAM0.y, TO_CAM0.x))
-ROW_GAP = 0.125
-ROW_START = HANG.xy + TO_CAM0 * 0.36 - RIGHT * 0.2
+ROW_GAP = 0.118
+ROW_START = HANG.xy + TO_CAM0 * 0.34 - RIGHT * 0.36
 ROW_DIR = RIGHT
 ROW_CENTER = ROW_START + ROW_DIR * (ROW_GAP * 3.5)
 _zc = hfun(ROW_CENTER.x, ROW_CENTER.y)
 SLAB_TOP = _zc + 0.04
 bm = bmesh.new()
-blob(bm, (0, 0, 0), (ROW_GAP * 4.6, 0.19, 0.05), subdiv=4, amp=0.10, nscale=1.6, seed=55,
+blob(bm, (0, 0, 0), (ROW_GAP * 4.35, 0.2, 0.06), subdiv=4, amp=0.2, nscale=2.1, seed=55,
      rot=Euler((0, 0, math.atan2(ROW_DIR.y, ROW_DIR.x))))
 for v in bm.verts:
     if v.co.z > 0.012:
-        v.co.z = 0.012 + 0.004 * noise.noise(Vector((v.co.x * 6, v.co.y * 6, 0.4)))
+        v.co.z = 0.012 + 0.005 * noise.noise(Vector((v.co.x * 5, v.co.y * 5, 0.4)))
 SLAB = bm_to_obj('yassi_tas', bm)
 SLAB.location = (ROW_CENTER.x, ROW_CENTER.y, SLAB_TOP - 0.012)
 setmat(SLAB, M_SLAB)
@@ -707,7 +709,7 @@ setmat(SLAB, M_SLAB)
 
 def near_slab(p):
     d = p - ROW_CENTER
-    u = d.dot(ROW_DIR) / (ROW_GAP * 4.6 + 0.2)
+    u = d.dot(ROW_DIR) / (ROW_GAP * 4.35 + 0.25)
     v = d.dot(TO_CAM0) / 0.42
     return u * u + v * v < 1.0
 
@@ -919,7 +921,7 @@ ramp.color_ramp.elements[1].position = 0.35
 ramp.color_ramp.elements[1].color = (0.80, 0.84, 0.92, 1) if not SU else (0.92, 0.88, 0.80, 1)
 WL.new(sep.outputs['Z'], ramp.inputs[0])
 WL.new(ramp.outputs['Color'], bg.inputs['Color'])
-bg.inputs['Strength'].default_value = 0.6
+bg.inputs['Strength'].default_value = 0.6 if SU else 0.38
 world.mist_settings.start = 3.0
 world.mist_settings.depth = 22.0
 world.mist_settings.falloff = 'LINEAR'
@@ -951,7 +953,7 @@ light('gunes', 'SUN', 3.2, (1.0, 0.82, 0.62), direction=-TO_SUN, size=math.radia
 if not SU:
     # resimli3d: arkadan serin kenar ışığı (siluetleri ayırır), sıcak ana ışığa karşı
     RIM = Vector((0.55, 0.95, 0.45)).normalized()
-    light('kenar', 'SUN', 2.2, (0.62, 0.78, 1.0), direction=-RIM, size=math.radians(2.0))
+    light('kenar', 'SUN', 3.0, (0.62, 0.78, 1.0), direction=-RIM, size=math.radians(2.0))
 
 # ---------------------------------------------------------------- kamera (kil sürümüyle aynı vuruşlar)
 cam_data = bpy.data.cameras.new('kamera')
@@ -981,7 +983,7 @@ v_end.z = 0
 v_end = Matrix.Rotation(math.radians(-32), 3, 'Z') @ v_end.normalized()
 CAM_END = P_END + (v_end * 0.75 + Vector((0, 0, 0.95))).normalized() * 1.15
 FOCUS0 = (GATE.to_3d() + Vector((0, 0, 0.3))).lerp(Vector((HANG.x, HANG.y, HANG.z - 0.25)), 0.8)
-F0, F1 = (3.2, 4.0) if SU else (1.6, 2.4)
+F0, F1 = (3.2, 4.0) if SU else (1.0, 2.0)
 PUSH0, PUSH1 = 212, 296
 for f in range(-2, N_FRAMES + 3):
     t0 = max(0.0, min(1.0, (f - 1) / (PUSH0 - 1)))
@@ -1022,7 +1024,7 @@ for f, v in ((1, 0.0), (262, 0.0), (272, 320.0), (281, 150.0), (290, 260.0), (30
 # son taşa sıcak bir dokunuş: çakılın çevresinde hafif ışık (yalnız parıltı anında)
 glint = light('parilti', 'POINT', 0.0, (1.0, 0.8, 0.5), loc=P_END + (cam_dir_end * 0.6 + Vector((0, 0, 0.8))).normalized() * 0.35, size=0.02)
 glint.visible_camera = False
-for f, en in ((1, 0.0), (258, 0.0), (278, 0.35), (300, 0.3)):
+for f, en in ((1, 0.0), (258, 0.0), (278, 0.1), (300, 0.08)):
     glint.data.energy = en
     glint.data.keyframe_insert('energy', frame=f)
 
@@ -1030,7 +1032,7 @@ for f, en in ((1, 0.0), (258, 0.0), (278, 0.35), (300, 0.3)):
 from bpy_extras.object_utils import world_to_camera_view
 scene.frame_set(1)
 bpy.context.view_layer.update()
-if not SU:
+if False:
     M_MOTE = emissive('toz', (1.0, 0.8, 0.5), 2.2)
     rm_ = rng(8000)
     motes, tries = 0, 0
@@ -1243,7 +1245,7 @@ img = mix(sky, hz, 'MIX', fac=P_AL)
 # 5) boya: Kuwahara (fırça/leke), ardından tarza göre
 kw = NN.new('CompositorNodeKuwahara'); put(kw.inputs['Image'], img)
 menu(kw, 'Type', 'Anisotropic')
-kw.inputs['Size'].default_value = (5.0 if SU else 4.0) * PX
+kw.inputs['Size'].default_value = (6.0 if SU else 4.0) * PX
 kw.inputs['Uniformity'].default_value = 4
 kw.inputs['Sharpness'].default_value = 0.35 if SU else 0.7
 kw.inputs['Eccentricity'].default_value = 1.0
@@ -1267,13 +1269,13 @@ if SU:
     pig = mix((1, 1, 1), c01, 'SUBTRACT')
     bl = blur(c01, 7.0)
     edge = bw(mix(c01, bl, 'DIFFERENCE'))
-    g1, _ = tnoise(UV, 420.0, 4.0, 0.65, 0.0, w=5.0)           # kâğıt greni
-    g2, _ = tnoise(UV, 60.0, 5.0, 0.6, 0.2, w=7.0)             # granülasyon (boya çökmesi)
+    g1, _ = tnoise(UV, 240.0, 3.0, 0.6, 0.0, w=5.0)            # kâğıt greni
+    g2, _ = tnoise(UV, 30.0, 4.0, 0.6, 0.2, w=7.0)             # granülasyon (boya çökmesi)
     wm, _ = tnoise(UV, 2.4, 3.0, 0.55, 0.3, w=9.0)             # ıslak leke
     dens = math_('MULTIPLY_ADD', edge, 2.6, 1.0)
-    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g1, 0.5), 0.55, dens)
-    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g2, 0.5), 0.45, dens)
-    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', wm, 0.5), 0.5, dens)
+    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g1, 0.5), 0.22, dens)
+    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g2, 0.5), 0.3, dens)
+    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', wm, 0.5), 0.75, dens)
     pig2 = mix(pig, dens, 'MULTIPLY')
     col = mix((1, 1, 1), pig2, 'SUBTRACT', clamp=True)
     PAPER = lin((0.975, 0.955, 0.905))
@@ -1289,7 +1291,7 @@ if SU:
     put(scl.inputs[0], cen.outputs[0]); scl.inputs[1].default_value = (1.0, 0.72, 1.0)
     ln = NN.new('ShaderNodeVectorMath'); ln.operation = 'LENGTH'; put(ln.inputs[0], scl.outputs[0])
     vv = math_('MULTIPLY_ADD', vn, 0.10, osock(ln, 'Value'))
-    vig = math_('MULTIPLY', math_('SUBTRACT', vv, 0.52), 4.0, clamp=True)
+    vig = math_('MULTIPLY', math_('SUBTRACT', vv, 0.47), 3.6, clamp=True)
     col = mix(col, PAPER, 'MIX', fac=math_('MULTIPLY', vig, 0.85))
     OUTC = col
 else:
