@@ -730,6 +730,8 @@ ball_tree('agac8', 4.4, 4.6, 0.5, 1316)
 cone_tree('agac9', -1.1, 3.6, 0.55, 1317)
 ball_tree('agac10', 2.4, 3.5, 0.5, 1318)
 cone_tree('agac11', 0.7, 4.4, 0.5, 1319)
+ball_tree('agac12', -1.35, 2.05, 0.55, 1320)
+cone_tree('agac13', -0.7, 2.95, 0.5, 1321)
 
 
 def bushes_and_beads():
@@ -770,10 +772,10 @@ bushes_and_beads()
 # ---------------------------------------------------------------- kese: oyma, boyalı tahta; ip
 POUCH_S = 1.45
 PEG_Z = POST_TOP - 0.16
-_pd = (TO_CAM * 0.75 + RIGHT * 0.6).normalized()
+_pd = (TO_CAM * 0.85 + RIGHT * 0.45).normalized()
 _pegdir = Vector((_pd.x, _pd.y, 0.16)).normalized()
 PEG_BASE = Vector((FP.x, FP.y, PEG_Z))
-PEG_LEN = 0.34
+PEG_LEN = 0.42
 bm = bmesh.new()
 lathe(bm, [(0.0, 0.0), (0.018, 0.0), (0.018, PEG_LEN - 0.012), (0.014, PEG_LEN - 0.003), (0.0, PEG_LEN)], seg=24,
       M=Matrix.Translation(PEG_BASE) @ Vector((0, 0, 1)).rotation_difference(_pegdir).to_matrix().to_4x4())

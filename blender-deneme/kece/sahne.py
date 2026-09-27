@@ -473,7 +473,7 @@ def fuzz_group(name, density, length, radius, mat, tilt=0.8, smin=0.4, smax=1.3,
     par = N.new('GeometryNodeSplineParameter')
     sc = N.new('ShaderNodeVectorMath'); sc.operation = 'SCALE'
     L.new(sub.outputs[0], sc.inputs[0])
-    fac = N.new('ShaderNodeMath'); fac.operation = 'MULTIPLY'; fac.inputs[1].default_value = length * 0.9
+    fac = N.new('ShaderNodeMath'); fac.operation = 'MULTIPLY'; fac.inputs[1].default_value = length * 2.2
     L.new(par.outputs['Factor'], fac.inputs[0])
     L.new(fac.outputs[0], sc.inputs['Scale'])
     L.new(sc.outputs[0], sp.inputs['Offset'])
@@ -505,12 +505,12 @@ def add_fuzz(ob, group):
     md.node_group = g2
 
 
-FZ_WOOL = fuzz_group('lif_yun', 26000.0, 0.018, 0.0007, M_WOOL_F, tilt=1.0)
-FZ_FACE = fuzz_group('lif_yuz', 12000.0, 0.008, 0.0005, M_FACE_F, tilt=1.0)
-FZ_KNIT = fuzz_group('lif_kese', 12000.0, 0.011, 0.0005, M_KNIT_F, tilt=1.1)
-FZ_PEB = fuzz_group('lif_cakil', 20000.0, 0.009, 0.0005, M_PEBBLE_F, tilt=1.1)
-FZ_STONE = fuzz_group('lif_tas', 9000.0, 0.011, 0.0006, M_STONE_F, tilt=1.1)
-FZ_GRASS = fuzz_group('lif_ot', 6000.0, 0.05, 0.0016, M_GRASS_F, tilt=0.45, smin=0.35, smax=1.2, dens_attr='ot')
+FZ_WOOL = fuzz_group('lif_yun', 30000.0, 0.016, 0.0006, M_WOOL_F, tilt=1.1)
+FZ_FACE = fuzz_group('lif_yuz', 20000.0, 0.005, 0.0003, M_FACE_F, tilt=1.3)
+FZ_KNIT = fuzz_group('lif_kese', 30000.0, 0.006, 0.00025, M_KNIT_F, tilt=1.3)
+FZ_PEB = fuzz_group('lif_cakil', 30000.0, 0.006, 0.0003, M_PEBBLE_F, tilt=1.3)
+FZ_STONE = fuzz_group('lif_tas', 16000.0, 0.006, 0.0003, M_STONE_F, tilt=1.3)
+FZ_GRASS = fuzz_group('lif_ot', 6500.0, 0.036, 0.002, M_GRASS_F, tilt=0.6, smin=0.35, smax=1.2, dens_attr='ot')
 
 
 # ---------------------------------------------------------------- yerleşim (kil sürümüyle aynı düzen)
