@@ -1416,11 +1416,11 @@ for f in range(-2, N_FRAMES + 3):
 cam_dir_end = (CAM_END - P_END).normalized()
 glint = light('parilti', 'POINT', 0.0, (1.0, 0.8, 0.5), loc=P_END + cam_dir_end * 0.35 + Vector((0, 0, 0.2)), size=0.02)
 glint.visible_camera = False
-for f, en in ((1, 0.0), (258, 0.0), (278, 0.5), (300, 0.4)):
+for f, en in ((1, 0.0), (258, 0.0), (278, 0.3), (300, 0.25)):
     glint.data.energy = en
     glint.data.keyframe_insert('energy', frame=f)
 b2 = bmesh.new()
-bmesh.ops.create_icosphere(b2, subdivisions=2, radius=0.0035)
+bmesh.ops.create_icosphere(b2, subdivisions=2, radius=0.0045)
 me = bpy.data.meshes.new('parilti_nokta'); b2.to_mesh(me); b2.free()
 spark = link(bpy.data.objects.new('parilti_nokta', me))
 M_SPARK = emissive('parilti_mat', (1.0, 0.86, 0.6), 0.0)
@@ -1482,8 +1482,8 @@ scene.compositing_node_group = ng
 rl = ng.nodes.new('CompositorNodeRLayers')
 out = ng.nodes.new('NodeGroupOutput')
 gl = ng.nodes.new('CompositorNodeGlare')
-for nm, val in (('Type', 'Streaks'), ('Quality', 'High'), ('Threshold', 30.0), ('Strength', 0.28), ('Streaks', 4),
-                ('Streaks Angle', 0.0), ('Fade', 0.72), ('Size', 0.22), ('Saturation', 0.9), ('Tint', (1.0, 0.8, 0.55, 1.0))):
+for nm, val in (('Type', 'Streaks'), ('Quality', 'High'), ('Threshold', 30.0), ('Strength', 0.34), ('Streaks', 4),
+                ('Streaks Angle', 0.0), ('Fade', 0.74), ('Size', 0.3), ('Saturation', 0.9), ('Tint', (1.0, 0.8, 0.55, 1.0))):
     if nm in gl.inputs:
         try:
             gl.inputs[nm].default_value = val

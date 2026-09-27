@@ -220,7 +220,7 @@ AXIS_SCALE = {'X': (0.07, 1.0, 1.0), 'Y': (1.0, 0.07, 1.0), 'Z': (1.0, 1.0, 0.07
 
 def paint(name, color=None, palette=None, rough=0.4, axis='X', gscale=1.0, chip=1.0, wear=0.0, var=0.06,
           wood_col=(0.74, 0.54, 0.33), grain_show=0.1, bevel_r=0.01, planks=0.0, emission=None, sat=1.0, coat=0.12,
-          spec=0.45, bev_samples=6):
+          spec=0.45, bev_samples=4):
     """Boyalı tahta: tahta damarı (halka dokusu, bir eksende uzamış), üstünde ipeksi boya; damar boyanın
     altından hem renkte hem kabartmada okunur; kenarlarda (Bevel düğümü ile bulunan) boya kopukları."""
     m = bpy.data.materials.new(name)
@@ -1216,7 +1216,7 @@ for f, en in ((1, 0.0), (258, 0.0), (278, 0.5), (300, 0.4)):
     glint.data.energy = en
     glint.data.keyframe_insert('energy', frame=f)
 b2 = bmesh.new()
-bmesh.ops.create_icosphere(b2, subdivisions=2, radius=0.0035)
+bmesh.ops.create_icosphere(b2, subdivisions=2, radius=0.0045)
 me = bpy.data.meshes.new('parilti_nokta'); b2.to_mesh(me); b2.free()
 spark = link(bpy.data.objects.new('parilti_nokta', me))
 M_SPARK = emissive('parilti_mat', (1.0, 0.86, 0.6), 0.0)
@@ -1240,7 +1240,7 @@ C = scene.cycles
 C.device = 'CPU'
 C.samples = A.ornek
 C.use_adaptive_sampling = True
-C.adaptive_threshold = 0.02
+C.adaptive_threshold = 0.03
 C.use_denoising = True
 for k, v in (('denoiser', 'OPENIMAGEDENOISE'), ('denoising_input_passes', 'RGB_ALBEDO_NORMAL'),
              ('denoising_prefilter', 'ACCURATE'), ('denoising_quality', 'HIGH')):
@@ -1278,8 +1278,8 @@ scene.compositing_node_group = ng
 rl = ng.nodes.new('CompositorNodeRLayers')
 out = ng.nodes.new('NodeGroupOutput')
 gl = ng.nodes.new('CompositorNodeGlare')
-for nm, val in (('Type', 'Streaks'), ('Quality', 'High'), ('Threshold', 30.0), ('Strength', 0.28), ('Streaks', 4),
-                ('Streaks Angle', 0.0), ('Fade', 0.72), ('Size', 0.22), ('Saturation', 0.9), ('Tint', (1.0, 0.8, 0.55, 1.0))):
+for nm, val in (('Type', 'Streaks'), ('Quality', 'High'), ('Threshold', 30.0), ('Strength', 0.34), ('Streaks', 4),
+                ('Streaks Angle', 0.0), ('Fade', 0.74), ('Size', 0.3), ('Saturation', 0.9), ('Tint', (1.0, 0.8, 0.55, 1.0))):
     if nm in gl.inputs:
         try:
             gl.inputs[nm].default_value = val
