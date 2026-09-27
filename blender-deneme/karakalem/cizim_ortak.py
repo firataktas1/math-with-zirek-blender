@@ -12,27 +12,33 @@ def exr_oku(yol):
     inp = oiio.ImageInput.open(yol)
     if inp is None:
         raise RuntimeError('EXR açılamadı: ' + yol + ' ' + oiio.geterror())
-    spec = inp.spec()
-    names = list(spec.channelnames)
-    data = inp.read_image(0, 0, 0, spec.nchannels, 'float')
-    inp.close()
-    data = np.asarray(data, dtype=F32).reshape(spec.height, spec.width, spec.nchannels)
-    out = {}
-    groups = {}
-    for k, n in enumerate(names):
-        parts = n.split('.')
-        if len(parts) >= 2:
-            pas, comp = parts[-2], parts[-1]
-        else:
-            pas, comp = n, n
-        groups.setdefault(pas, []).append((comp, k))
+    kisa = {'Diffuse Direct': 'DiffDir', 'Diffuse Color': 'DiffCol', 'Object Index': 'IndexOB',
+            'Material Index': 'IndexMA', 'Ambient Occlusion': 'AO'}
     order = {'R': 0, 'G': 1, 'B': 2, 'A': 3, 'X': 0, 'Y': 1, 'Z': 2, 'V': 0}
-    for pas, lst in groups.items():
-        lst.sort(key=lambda t: order.get(t[0], 9))
-        if len(lst) == 1:
-            out[pas] = data[:, :, lst[0][1]].copy()
-        else:
-            out[pas] = np.stack([data[:, :, k] for (_, k) in lst], axis=-1)
+    out = {}
+    sub = 0
+    while inp.seek_subimage(sub, 0):              # Blender 5: her geçiş ayrı parça (multipart)
+        spec = inp.spec()
+        names = list(spec.channelnames)
+        data = inp.read_image(sub, 0, 0, spec.nchannels, 'float')
+        data = np.asarray(data, dtype=F32).reshape(spec.height, spec.width, spec.nchannels)
+        groups = {}
+        for k, n in enumerate(names):
+            parts = n.split('.')
+            if len(parts) >= 2:
+                pas, comp = parts[-2], parts[-1]
+            else:
+                pas, comp = n, n
+            pas = kisa.get(pas, pas)
+            groups.setdefault(pas, []).append((comp, k))
+        for pas, lst in groups.items():
+            lst.sort(key=lambda t: order.get(t[0], 9))
+            if len(lst) == 1:
+                out[pas] = data[:, :, lst[0][1]].copy()
+            else:
+                out[pas] = np.stack([data[:, :, k] for (_, k) in lst], axis=-1)
+        sub += 1
+    inp.close()
     return out
 
 
@@ -185,5 +191,16 @@ def kenarlar(z, n, iob, bg, d_esik=0.012, n_esik=0.22):
     return sil, kv, idd
 
 
-def yansit(uv_pix, W, H):
-    return uv_pix
+ZEMIN_ISIK = 0.34      # güneşin düz zemine verdiği ışık (sin 20°): çizimde "aydınlık" sayılır
+
+
+def isik(P, s):
+    """0..1 aydınlık: güneş (gölgeli, zemin=1'e ölçekli) + gökyüzü (normal.z, AO)."""
+    dd, dc, n = P['DiffDir'], P['DiffCol'], P['Normal']
+    ao = P.get('AO', None)
+    alb = np.maximum(dc[..., 2], 1e-4)
+    lam = np.where(dc[..., 2] > 1e-3, dd[..., 2] / alb, 1.0)
+    lam = blur3(np.clip(lam / ZEMIN_ISIK, 0.0, 1.0))
+    aov = blur(ao[..., 0], max(1, int(1.5 * s))) if ao is not None else np.ones_like(lam)
+    gok = (0.5 + 0.5 * np.clip(n[..., 2], -1, 1)) * (0.3 + 0.7 * aov)
+    return np.clip(0.82 * lam + 0.22 * gok - 0.04, 0.0, 1.0), aov

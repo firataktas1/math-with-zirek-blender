@@ -97,12 +97,7 @@ def isle(P, meta, f):
     ton = co.blur3(T_TON[cat]); vur = T_VUR[cat]; cizw = co.blur3(T_CIZ[cat]); golk = co.blur3(T_GOL[cat])
 
     # ışık: güneş (gölgeli) + gökyüzü (normal.z ve AO ile)
-    alb = np.maximum(dc[..., 2], 1e-4)
-    lam = np.where(dc[..., 2] > 1e-3, dd[..., 2] / alb, 1.0)
-    lam = co.blur3(np.clip(lam, 0.0, 1.2))
-    aov = co.blur(ao[..., 0], max(1, int(1.5 * s))) if ao is not None else np.ones_like(lam)
-    gok = (0.55 + 0.45 * np.clip(n[..., 2], -1, 1)) * (0.35 + 0.65 * aov)
-    isik = np.clip(0.72 * lam + 0.30 * gok, 0.0, 1.0)
+    isik, aov = co.isik(P, s)
     isik = np.where(bg, 1.0, isik)
 
     # uzaklık: uzak çizgiler ve tonlar açılır (hava perspektifi); yakın planda odak dışı açılır

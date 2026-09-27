@@ -31,6 +31,7 @@ ap.add_argument('--girdi', default='')
 ap.add_argument('--exr', type=int, default=-1)       # 1: EXR'leri tut (kare kipinde varsayılan), 0: sil
 ap.add_argument('--blend', action='store_true')
 ap.add_argument('--kurma', action='store_true')      # yalnız sahneyi kur, KADRAJ yaz (render yok)
+ap.add_argument('--kam', default='')                 # deneme: kamera x,y,z,hx,hy,hz,lens
 A = ap.parse_args(argv)
 T_START = time.time()
 STILLER = [s.strip() for s in A.stiller.split(',') if s.strip()]
@@ -53,7 +54,8 @@ def cizdir(exr_yol, meta, f, cikti):
         t0 = time.time()
         m = stil_modulu(ad)
         rgb = m.isle(P, meta, f)
-        co.png_yaz(os.path.join(cikti, '%s%04d.png' % (ONEK.get(ad, ad[:1] + '_'), f)), rgb)
+        onek = 'k_' if len(STILLER) == 1 else ONEK.get(ad, ad[:1] + '_')   # tek stil: iş akışının k_ adı
+        co.png_yaz(os.path.join(cikti, '%s%04d.png' % (onek, f)), rgb)
         print('CIZIM %s %d: %.1f sn' % (ad, f, time.time() - t0), flush=True)
 
 
@@ -230,7 +232,7 @@ def build_tufts(avoid):
     tries = 0
     while count < 150 and tries < 20000:
         tries += 1
-        if r.random() < 0.7:
+        if r.random() < 0.93:
             a = r.uniform(0, 2 * math.pi)
             if ang_dist(a, GATE_ANG) < GAP_HALF + 0.1:
                 continue
@@ -305,7 +307,12 @@ def build_pen():
 
 
 # ---------------------------------------------------------------- kese, çivi
-CAM_POS0 = Vector((1.05, -3.35, 1.95))
+CAM_POS0 = Vector((0.6, -2.9, 1.2))
+TGT0 = Vector((0.1, 1.2, 0.0))
+LENS0 = 38.0
+if A.kam:
+    _k = [float(x) for x in A.kam.split(',')]
+    CAM_POS0, TGT0, LENS0 = Vector(_k[0:3]), Vector(_k[3:6]), _k[6]
 POUCH_S = 1.5
 
 
@@ -558,8 +565,8 @@ TO_CAM = (CAM_POS0.xy - FP).normalized()
 ROW_DIR = Vector((-TO_CAM.y, TO_CAM.x)).normalized()        # ekranda sağa
 if ROW_DIR.dot(Vector((1, 0))) < 0:
     ROW_DIR = -ROW_DIR
-ROW_GAP = 0.13
-ROW_END = FP + TO_CAM * 0.95 + ROW_DIR * 0.12                # son (8.) çakıl kesenin hemen altında
+ROW_GAP = 0.125
+ROW_END = FP + TO_CAM * 0.95 + ROW_DIR * 0.22                # son (8.) çakıl kesenin hemen altında
 ROW_START = ROW_END - ROW_DIR * (ROW_GAP * (N_SHEEP - 1))
 ROW_C = (ROW_START + ROW_END) / 2
 bm = bmesh.new()
@@ -769,7 +776,7 @@ sun.rotation_euler = SUN_DIR.to_track_quat('-Z', 'Y').to_euler()
 
 # ---------------------------------------------------------------- kamera
 cam_data = bpy.data.cameras.new('kamera')
-cam_data.lens = 40
+cam_data.lens = LENS0
 cam_data.sensor_width = 36
 cam = link(bpy.data.objects.new('kamera', cam_data))
 scene.camera = cam
@@ -786,7 +793,6 @@ def last_world(f):
 
 
 P_END = last_world(N_FRAMES)
-TGT0 = Vector((0.12, 0.95, 0.3))
 TGT1 = TGT0 + Vector((-0.1, -0.06, 0.0))
 CAM1 = CAM_POS0 + (TGT0 - CAM_POS0).normalized() * 0.3
 v_end = CAM1 - P_END
@@ -807,7 +813,7 @@ for f in range(-2, N_FRAMES + 3):
     cam.keyframe_insert('location', frame=f)
     target.location = tpos
     target.keyframe_insert('location', frame=f)
-    cam_data.lens = 40 + (LENS_END - 40) * e
+    cam_data.lens = LENS0 + (LENS_END - LENS0) * e
     cam_data.keyframe_insert('lens', frame=f)
 
 # ---------------------------------------------------------------- render ayarları (yalnız veri geçişleri)
@@ -886,9 +892,14 @@ for _f in (1, 68, 180, 290):
                     ('dizi_bas', LAND[0].to_3d() + Vector((0, 0, SLAB_TOP))),
                     ('dizi_son', LAND[-1].to_3d() + Vector((0, 0, SLAB_TOP))),
                     ('agil_sag', ring_pos(math.radians(0)).to_3d()), ('agil_arka', ring_pos(math.radians(90)).to_3d()),
+                    ('agil_on', ring_pos(math.radians(270)).to_3d()), ('agil_sagon', ring_pos(math.radians(315)).to_3d()),
+                    ('agil_sol', ring_pos(math.radians(160)).to_3d()),
                     ('son_cakil', LAST.matrix_world.to_translation())):
         _c = world_to_camera_view(scene, cam, _p)
         print('KADRAJ f%d %-9s x=%.2f y(ust)=%.2f' % (_f, _nm, _c.x, 1 - _c.y))
+    _d = (cam.matrix_world.to_translation() - LAND[3].to_3d()).length
+    print('KADRAJ f%d cakil_px(1080p) %.0f  kese_px %.0f' % (_f, 0.1 / _d * cam_data.lens / 36 * 1920,
+          0.36 / (cam.matrix_world.to_translation() - HANG).length * cam_data.lens / 36 * 1920))
     for _i in range(N_SHEEP):
         _c = world_to_camera_view(scene, cam, sheep[_i][0].matrix_world.to_translation() + Vector((0, 0, 0.3)))
         if -0.1 < _c.x < 1.1 and -0.1 < _c.y < 1.1:
