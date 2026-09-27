@@ -1,0 +1,41 @@
+        <defs>
+          <linearGradient id="gok" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1B1542" />
+            <stop offset="0.28" stop-color="#3A2470" />
+            <stop offset="0.52" stop-color="#8E3D86" />
+            <stop offset="0.72" stop-color="#E4687A" />
+            <stop offset="0.86" stop-color="#FFA36A" />
+            <stop offset="1" stop-color="#FFD08A" />
+          </linearGradient>
+          <radialGradient id="gunesHale">
+            <stop offset="0" stop-color="#FFF0B8" stop-opacity="1" />
+            <stop offset="0.18" stop-color="#FFD27E" stop-opacity="0.75" />
+            <stop offset="0.5" stop-color="#FF8A66" stop-opacity="0.25" />
+            <stop offset="1" stop-color="#FF7A66" stop-opacity="0" />
+          </radialGradient>
+          <radialGradient id="parlakHale">
+            <stop offset="0" stop-color="#FFF6D8" stop-opacity="1" />
+            <stop offset="0.3" stop-color="#FFD37A" stop-opacity="0.55" />
+            <stop offset="1" stop-color="#FFB050" stop-opacity="0" />
+          </radialGradient>
+          <radialGradient id="ates">
+            <stop offset="0" stop-color="#FFF4C0" stop-opacity="1" />
+            <stop offset="0.25" stop-color="#FFD66E" stop-opacity="0.7" />
+            <stop offset="1" stop-color="#FFB04A" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="dag1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7A4596" /><stop offset="1" stop-color="#9A5A98" /></linearGradient>
+          <linearGradient id="dag2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4E4B98" /><stop offset="1" stop-color="#3D5C96" /></linearGradient>
+          <linearGradient id="tepe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2F7D8C" /><stop offset="1" stop-color="#28657E" /></linearGradient>
+          <linearGradient id="zemin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3FA888" /><stop offset="0.5" stop-color="#2F8C77" /><stop offset="1" stop-color="#1F6464" /></linearGradient>
+          <linearGradient id="agilZemin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A7E70" /><stop offset="1" stop-color="#379A80" /></linearGradient>
+          <linearGradient id="tas" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8F9AD0" /><stop offset="1" stop-color="#5E679E" /></linearGradient>
+          <linearGradient id="tas2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F89C2" /><stop offset="1" stop-color="#535B92" /></linearGradient>
+          <linearGradient id="tasUst" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C3CBF0" /><stop offset="1" stop-color="#9AA4D8" /></linearGradient>
+          <radialGradient id="yun" cx="0.38" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFFFFF" /><stop offset="0.55" stop-color="#EEEAFB" /><stop offset="1" stop-color="#B9B1E0" /></radialGradient>
+          <radialGradient id="kese" cx="0.32" cy="0.3" r="0.85"><stop offset="0" stop-color="#FF8A55" /><stop offset="0.55" stop-color="#E9483F" /><stop offset="1" stop-color="#A42648" /></radialGradient>
+          <linearGradient id="keseAgiz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9A62" /><stop offset="1" stop-color="#E0503F" /></linearGradient>
+          <radialGradient id="cakil" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFE08A" /><stop offset="0.5" stop-color="#FFAE45" /><stop offset="1" stop-color="#DB6F2A" /></radialGradient>
+          <linearGradient id="yassi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A6AEDD" /><stop offset="1" stop-color="#7F88C0" /></linearGradient>
+          <radialGradient id="golge"><stop offset="0" stop-color="#140F3A" stop-opacity="0.5" /><stop offset="1" stop-color="#140F3A" stop-opacity="0" /></radialGradient>
+          <linearGradient id="agac" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3FB39A" /><stop offset="1" stop-color="#1E6670" /></linearGradient>
+        </defs>

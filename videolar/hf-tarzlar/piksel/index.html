@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/sahne.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #2B1D2E; }
+      #root { width: 100%; height: 100%; position: relative; overflow: hidden; background: #2B1D2E; }
+      #cv { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+      <canvas id="cv" width="1920" height="1080" data-layout-allow-overflow=""></canvas>
+    </div>
+    <script>
+      // Pixel art: the scene is drawn every frame into a 320x180 canvas with a 22-colour palette,
+      // blown up 6x with nearest-neighbour (crisp square pixels), then the camera push-in zooms that
+      // 1920x1080 image smoothly (pixels stay square, no shimmer).
+      (function () {
+        const Z = window.ZS;
+        const AW = 320, AH = 180, OX = 312, OY = 156, U = 5;      // art canvas covers world (312,156)-(1912,1056); 5 world units per art pixel
+        const ax = (x) => (x - OX) / U, ay = (y) => (y - OY) / U;
+        const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+        const out = document.getElementById("cv"), octx = out.getContext("2d");
+        const art = mk(AW, AH), a = art.getContext("2d"); a.imageSmoothingEnabled = false;
+        const mid = mk(1920, 1080), m = mid.getContext("2d"); m.imageSmoothingEnabled = false;
+
+        // ---------- palette (limited)
+        const PAL = {
+          ink: "#2B1D2E", sky0: "#F3B58A", sky1: "#F59E7C", sky2: "#E98474", sky3: "#FBD79A", sky4: "#FFEBB5", sun: "#FFF4C8",
+          cloud: "#FFE3C4", cloudD: "#F2B69A", far: "#9A6A8C", far2: "#7E5B85", mid: "#6F8E58", midD: "#5E7B4C",
+          gr: "#8DAE5C", grD: "#7B9C50", grL: "#A2C06A", path: "#D9BA88", pathD: "#C9A676", pen: "#7A9A4E",
+          st: "#A6A2AA", stD: "#86828F", stL: "#CBC6C2", mort: "#5E5868",
+          wool: "#F6EEDF", woolD: "#D8C8B4", face: "#4A3A50", eye: "#FFFFFF",
+          pouch: "#C94A3B", pouchD: "#8E2F35", pouchL: "#E8784F", hole: "#3A1826", gold: "#F2C14E",
+          peb: "#E59A48", pebD: "#B1652F", pebL: "#F8D08A",
+          slab: "#B9B0A5", slabD: "#948B82", slabL: "#D8D0C4", wood: "#8A5E40", tree: "#4F7F4B", treeL: "#6FA05A", trunk: "#6B4A3A",
+          glow: "#FFE9A8", glow2: "#FFF8E0",
+        };
+        // ---------- tiny raster helper (palette keys per pixel)
+        class Pix {
+          constructor(w, h) { this.w = w; this.h = h; this.d = new Array(w * h).fill(null); }
+          set(x, y, c) { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.d[y * this.w + x] = c; }
+          get(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h ? this.d[y * this.w + x] : null; }
+          ell(cx, cy, rx, ry, c, f) { for (let y = Math.floor(cy - ry - 1); y <= cy + ry + 1; y++) for (let x = Math.floor(cx - rx - 1); x <= cx + rx + 1; x++) { const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry; if (dx * dx + dy * dy <= 1) this.set(x, y, f ? f(x, y, dx, dy) : c); } }
+          rect(x0, y0, w, h, c) { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) this.set(x, y, c); }
+          poly(pts, c, f) {
+            let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; pts.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
+            for (let y = Math.floor(y0); y <= y1; y++) for (let x = Math.floor(x0); x <= x1; x++) {
+              const px = x + 0.5, py = y + 0.5; let ins = false;
+              for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) ins = !ins; }
+              if (ins) this.set(x, y, f ? f(x, y) : c);
+            }
+          }
+          outline(c) { const add = []; for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) if (this.get(x, y) == null && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const v = this.get(x + dx, y + dy); return v != null && v !== c; })) add.push([x, y]); add.forEach(([x, y]) => this.set(x, y, c)); return this; }
+          canvas() { const c = mk(this.w, this.h), g = c.getContext("2d"); for (let i = 0; i < this.d.length; i++) if (this.d[i]) { g.fillStyle = PAL[this.d[i]] || this.d[i]; g.fillRect(i % this.w, Math.floor(i / this.w), 1, 1); } return c; }
+        }
+        const B4 = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+        const dith = (x, y, t) => (B4[((y % 4) + 4) % 4][((x % 4) + 4) % 4] + 0.5) / 16 < t;   // ordered dither
+        const hash = Z.hash;
+
+        // ---------- static background (sky .. back wall)
+        const bg = new Pix(AW, AH);
+        const skyBands = [[0, "sky0", "sky1"], [26, "sky1", "sky2"], [44, "sky2", "sky3"], [58, "sky3", "sky4"]];
+        for (let y = 0; y < AH; y++) for (let x = 0; x < AW; x++) {
+          let c = "sky4";
+          for (let k = 0; k < skyBands.length; k++) { const [y0, c0, c1] = skyBands[k], y1 = k + 1 < skyBands.length ? skyBands[k + 1][0] : 70; if (y >= y0 && y < y1) { c = dith(x, y, (y - y0) / (y1 - y0)) ? c1 : c0; } }
+          bg.set(x, y, c);
+        }
+        // sun with dithered halo
+        const SX = ax(410), SY = ay(372);
+        bg.ell(SX, SY, 26, 26, null, (x, y, dx, dy) => { const r = Math.hypot(dx, dy); return dith(x, y, 1 - r) ? "sky4" : bg.get(x, y); });
+        bg.ell(SX, SY, 12, 12, "sun");
+        // hills
+        const ridge = (fn, c, cD, dither) => { for (let x = 0; x < AW; x++) { const top = Math.round(fn(x)); for (let y = top; y < AH; y++) bg.set(x, y, (dither && dith(x, y, 0.25) && y > top + 1) ? cD : (y === top ? cD : c)); } };
+        const wx = (x) => x * U + OX;
+        ridge((x) => ay(380 - 50 * Math.sin((wx(x) - 200) / 260) - 22 * Math.sin(wx(x) / 90)), "far", "far2", false);
+        ridge((x) => ay(420 - 18 * Math.sin((wx(x) + 300) / 330)), "far2", "far2", false);
+        // tree on the far hill
+        { const tx = Math.round(ax(640)), ty = Math.round(ay(396)); bg.rect(tx - 1, ty - 11, 2, 11, "trunk"); const tp = new Pix(AW, AH); tp.ell(tx, ty - 17, 9, 8, "tree", (x, y, dx, dy) => (dx + dy < -0.5 ? "treeL" : "tree")); tp.outline("ink"); tp.d.forEach((v, i) => { if (v) bg.d[i] = v; }); }
+        ridge((x) => ay(452 - 12 * Math.sin((wx(x) - 100) / 400)), "mid", "midD", true);
+        ridge((x) => ay(480 - 8 * Math.sin((wx(x) - 600) / 500)), "gr", "grD", false);
+        for (let y = 0; y < AH; y++) for (let x = 0; x < AW; x++) { const v = bg.get(x, y); if (v === "gr" && hash(x * 7.1 + y * 13.3) < 0.07) bg.set(x, y, "grD"); if (v === "gr" && hash(x * 3.7 + y * 5.9 + 9) < 0.04) bg.set(x, y, "grL"); }
+        // path to the gate
+        { const pp = [[-300, 720], [200, 700], [500, 690], [720, 680], [860, 662], [Z.GATE.x, Z.GATE.y - 8], [Z.GATE.x + 20, Z.GATE.y + 8], [900, 690], [720, 714], [500, 736], [200, 760], [-300, 800]].map(([x, y]) => [ax(x), ay(y)]); bg.poly(pp, "path", (x, y) => (dith(x, y, 0.12) ? "pathD" : "path")); }
+        // pen floor
+        const P = Z.PEN;
+        bg.ell(ax(P.cx), ay(P.cy), P.rx / U, P.ry / U, "pen");
+        // grass tufts (not in the lower-right third)
+        [[120, 640], [300, 860], [520, 940], [640, 612], [760, 860], [1840, 560], [1380, 700], [1720, 690], [420, 1000]].forEach(([x, y]) => { const X = Math.round(ax(x)), Y = Math.round(ay(y)); bg.set(X - 1, Y, "grD"); bg.set(X - 1, Y - 1, "grD"); bg.set(X, Y - 2, "midD"); bg.set(X, Y - 1, "midD"); bg.set(X, Y, "midD"); bg.set(X + 1, Y - 1, "grD"); bg.set(X + 1, Y, "grD"); });
+        // dry-stone walls, stones follow the arc column by column
+        function wall(px, x0, x1, arc, seed) {
+          const H = Math.round(P.h / U);  // 9
+          const breaks = [0, 1, 2].map((c) => { const s = new Set(); let x = Math.floor(x0) + Math.floor(hash(seed + c) * 4); while (x < x1) { s.add(x); x += 4 + Math.floor(hash(seed * 3 + x * 1.7 + c) * 4); } return s; });
+          for (let x = Math.floor(x0); x <= Math.ceil(x1); x++) {
+            const base = Math.round(arc(x)), prevBase = Math.round(arc(x - 1));
+            for (let r = 0; r <= H; r++) {
+              const y = base - r;
+              let c;
+              if (r >= H - 1) c = r === H ? "ink" : "stL";
+              else { const course = Math.min(2, Math.floor(r / 3)); if (r % 3 === 0 || breaks[course].has(x)) c = "mort"; else { const id = Math.floor(hash(x * 0.37 + course * 11 + seed) * 3); c = ["st", "stD", "st"][id]; if (r % 3 === 2 && c === "st") c = "stL"; } }
+              px.set(x, y, c);
+            }
+            px.set(x, base + 1, "ink");
+          }
+        }
+        wall(bg, ax(P.cx - P.rx + 3), ax(P.cx + P.rx - 3), (x) => ay(Z.backY(wx(x))), 1);
+        // front parts as separate overlays (sheep walk between them)
+        function post(px, x, yb, h, seed) {
+          const X = Math.round(ax(x)), YB = Math.round(ay(yb)), Hh = Math.round(h / U);
+          for (let y = YB - Hh; y <= YB; y++) for (let xx = X - 4; xx <= X + 4; xx++) {
+            const r = YB - y; let c = (r % 4 === 0) ? "mort" : (xx === X - 4 ? "stL" : (xx === X + 4 ? "stD" : "st"));
+            if (r % 4 !== 0 && xx === X - 1 + (Math.floor(r / 4) % 2) * 2) c = "mort";
+            if (r >= Hh - 1) c = "stL";
+            px.set(xx, y, c);
+          }
+          px.outline("ink");
+        }
+        const FL = new Pix(AW, AH); wall(FL, ax(P.cx - P.rx + 3), ax(Z.POSTL.x - 16), (x) => ay(Z.frontY(wx(x))), 2); { const pp = new Pix(AW, AH); post(pp, Z.POSTL.x, Z.POSTL.y, Z.POST_H, 3); pp.d.forEach((v, i) => { if (v) FL.d[i] = v; }); }
+        const FR = new Pix(AW, AH); wall(FR, ax(Z.POSTR.x + 16), ax(P.cx + P.rx - 3), (x) => ay(Z.frontY(wx(x))), 4);
+        const PR = new Pix(AW, AH); post(PR, Z.POSTR.x, Z.POSTR.y, Z.POST_H, 5);
+        { const S = Z.STICK, n = 30; for (let k = 0; k <= n; k++) { const u = k / n, x = ax(S.x0 + (S.x1 - S.x0) * u), y = ay(S.y0 + (S.y1 - S.y0) * u); PR.set(x, y, "wood"); PR.set(x, y - 1, "ink"); PR.set(x, y + 1, "ink"); } PR.set(ax(S.x1) + 1, ay(S.y1), "ink"); }
+        // slab
+        const SLB = new Pix(AW, AH); { const S = Z.SLAB; SLB.ell(ax(S.x), ay(S.y) + 2, S.rx / U, S.ry / U, "slabD"); SLB.ell(ax(S.x), ay(S.y), S.rx / U, S.ry / U, null, (x, y, dx, dy) => (dy < -0.55 && dx < 0.3 ? "slabL" : (dith(x, y, 0.08) ? "slabD" : "slab"))); SLB.outline("ink"); }
+        // long shadows cast by the slab and walls onto the grass (drawn into bg as darker grass)
+        { const S = Z.SLAB; bg.ell(ax(S.x + 40), ay(S.y + 22), S.rx / U + 3, S.ry / U, null, (x, y) => (bg.get(x, y) === "gr" || bg.get(x, y) === "grL" ? "grD" : bg.get(x, y))); }
+        const BGc = bg.canvas(), FLc = FL.canvas(), FRc = FR.canvas(), PRc = PR.canvas(), SLc = SLB.canvas();
+
+        // ---------- sprites
+        // sheep: procedural raster at a given scale, 4 walk frames, facing right; flipped copies for left
+        function sheepSprite(sc, frame, graze) {
+          const W = 36, H = 28, px = new Pix(W, H), ox = 14, oy = 25;      // feet line at oy
+          const bob = frame === 1 || frame === 3 ? -1 : 0;
+          const sw = frame === 0 ? 1 : frame === 2 ? -1 : 0;
+          const legs = [[-6, sw], [5, -sw], [-4, -sw], [7, sw]];
+          legs.forEach(([lx, s2], k) => { const x = ox + Math.round(lx * sc) + s2; const top = oy - Math.round(6 * sc); for (let y = top; y <= oy - 1; y++) { px.set(x, y, k < 2 ? "ink" : "face"); px.set(x + 1, y, k < 2 ? "ink" : "face"); } });
+          const bx = ox, by = oy - Math.round(10 * sc) + bob;
+          const shade = (xx, yy) => (yy >= by + Math.round(3 * sc) ? "woolD" : "wool");
+          px.ell(bx, by, 8.6 * sc, 5.2 * sc, null, shade);
+          // bumpy fleece along the top and the back
+          for (let k = 0; k <= 6; k++) { const ang = Math.PI * (1.05 + 0.9 * k / 6); px.ell(bx + Math.cos(ang) * 8.6 * sc, by + Math.sin(ang) * 5.4 * sc, 2.4 * sc, 2.2 * sc, null, shade); }
+          px.ell(bx - 9.5 * sc, by + 0.5 * sc, 2.2 * sc, 2.2 * sc, null, shade);
+          // highlight: a short light run on the upper left
+          const hx = bx + Math.round(10 * sc), hy = by - Math.round(2.5 * sc) + (graze ? Math.round(4 * sc) : 0);
+          px.ell(hx + 0.5, hy + 0.5, 3.2 * sc, 3.6 * sc, "face");
+          px.set(hx + Math.round(3 * sc), hy + Math.round(1.5 * sc), "face");
+          px.set(hx - Math.round(3 * sc), hy - Math.round(0.5 * sc), "face"); px.set(hx - Math.round(4 * sc), hy, "face");
+          px.set(hx + 1, hy - 1, "eye");
+          px.set(hx - 1, hy - Math.round(3.5 * sc), "wool"); px.set(hx, hy - Math.round(3.5 * sc), "wool"); px.set(hx, hy - Math.round(4.2 * sc), "wool");
+          px.outline("ink");
+          return px;
+        }
+        function flip(px) { const q = new Pix(px.w, px.h); for (let y = 0; y < px.h; y++) for (let x = 0; x < px.w; x++) q.d[y * px.w + (px.w - 1 - x)] = px.d[y * px.w + x]; return q; }
+        const SIZES = [0.8, 0.95, 1.1];
+        const SHEEP = SIZES.map((sc) => [0, 1, 2, 3, 4].map((f) => [0, 1].map((gz) => { const p = sheepSprite(sc, f, gz); return { r: p.canvas(), l: flip(p).canvas() }; })));
+        // pebble
+        function pebSprite(v) { const p = new Pix(10, 8); p.ell(5, 4, 4, 3, null, (x, y, dx, dy) => (dx < -0.2 && dy < -0.2 ? "pebL" : (dy > 0.45 ? "pebD" : "peb"))); if (v) p.set(2, 5, "pebD"); p.outline("ink"); return p.canvas(); }
+        const PEB = [pebSprite(0), pebSprite(1)];
+        // pouch: back (opening) and front (body, frill, string); local origin = mouth centre in art px
+        const PW = 52, PH = 44, PX0 = 26, PY0 = 7;
+        const pb = new Pix(PW, PH); pb.ell(PX0, PY0, 14.5, 4.2, "pouchD"); pb.ell(PX0, PY0 + 0.6, 11.5, 2.7, "hole"); pb.outline("ink");
+        const pf = new Pix(PW, PH);
+        { const mx = PX0, my = PY0;
+          pf.poly([[mx - 7, my + 7], [mx - 16, my + 12], [mx - 21, my + 19], [mx - 21, my + 26], [mx - 15, my + 31], [mx - 6, my + 33], [mx + 6, my + 33], [mx + 15, my + 31], [mx + 21, my + 26], [mx + 21, my + 19], [mx + 16, my + 12], [mx + 7, my + 7]], null, (x, y) => (x > mx + 9 && y > my + 13 ? "pouchD" : (x < mx - 14 && y > my + 14 && y < my + 27 ? "pouchL" : "pouch")));
+          // frill: front half of the rim flaring down to the gathered neck
+          pf.poly([[mx - 14.5, my + 0.2], [mx - 11, my + 3.4], [mx - 5, my + 4.4], [mx + 5, my + 4.4], [mx + 11, my + 3.4], [mx + 14.5, my + 0.2], [mx + 8, my + 7.5], [mx - 8, my + 7.5]], null, (x, y) => (y <= my + 1 ? "pouchL" : "pouch"));
+          for (let x = mx - 8; x <= mx + 8; x++) { pf.set(x, my + 7, "gold"); pf.set(x, my + 8, "gold"); }
+          [[mx - 1, my + 9], [mx - 2, my + 10], [mx - 2, my + 11], [mx + 1, my + 9], [mx + 2, my + 10], [mx + 3, my + 11]].forEach(([x, y]) => pf.set(x, y, "gold"));
+          [[mx - 11, my + 2], [mx - 5, my + 3], [mx + 3, my + 3], [mx + 9, my + 2]].forEach(([x, y]) => pf.set(x, y, "pouchD"));
+          [[mx - 17, my + 18], [mx - 18, my + 20], [mx - 18, my + 22]].forEach(([x, y]) => pf.set(x, y, "pouchL"));
+          [[mx + 5, my + 15], [mx + 6, my + 18], [mx + 6, my + 21], [mx - 5, my + 16], [mx - 6, my + 19], [mx - 1, my + 14], [mx - 1, my + 17]].forEach(([x, y]) => pf.set(x, y, "pouchD"));
+          pf.outline("ink"); }
+        const PBc = pb.canvas(), PFc = pf.canvas();
+        // glint sprites (two sizes)
+        function starSprite(big) { const p = new Pix(15, 15), c = 7, L = big ? 6 : 4; for (let k = 1; k <= L; k++) { const col = k <= 2 ? "glow2" : "glow"; p.set(c + k, c, col); p.set(c - k, c, col); p.set(c, c + k, col); p.set(c, c - k, col); } p.set(c, c, "glow2"); if (big) { p.set(c + 1, c + 1, "glow"); p.set(c - 1, c - 1, "glow"); p.set(c + 1, c - 1, "glow"); p.set(c - 1, c + 1, "glow"); } return p.canvas(); }
+        const STAR = [starSprite(false), starSprite(true)];
+        const halo = (() => { const p = new Pix(21, 21); p.ell(10.5, 10.5, 6, 6, null, (x, y, dx, dy) => (dith(x, y, (1 - Math.hypot(dx, dy)) * 0.5) ? "glow" : null)); return p.canvas(); })();
+        // clouds
+        function cloudSprite(w, seed) { const p = new Pix(w + 4, 12); for (let k = 0; k < 5; k++) p.ell(2 + w * (0.15 + 0.17 * k), 7 - hash(seed + k) * 2, w * 0.16, 3 + hash(seed + k + 9) * 2, null, (x, y) => (y >= 8 ? "cloudD" : "cloud")); return p.canvas(); }
+        const CLOUDS = [[ax(760) - 20, 2, cloudSprite(46, 1)], [ax(1450) - 15, 0, cloudSprite(36, 2)], [ax(1780) - 10, 14, cloudSprite(26, 3)]];
+
+        // ---------- per frame
+        const R = Math.round;
+        function sheepDraw(i, st) {
+          const size = st.s < 0.86 ? 0 : st.s < 1.03 ? 1 : 2;
+          const frame = st.v > 0.2 ? Math.floor(st.dist / 11) % 4 : 4;
+          const graze = st.head > 0.55 ? 1 : 0;
+          const sp = SHEEP[size][frame][graze];
+          const face = st.faceS >= 0;
+          const X = R(ax(st.x)), Y = R(ay(st.y));
+          // shadow: two darker grass pixels rows to the right
+          a.fillStyle = PAL.grD; a.fillRect(X - 5, Y, 16, 1); a.fillRect(X - 2, Y + 1, 12, 1);
+          a.drawImage(face ? sp.r : sp.l, face ? X - 14 : X - (36 - 14), Y - 25);
+        }
+        function render(t) {
+          a.clearRect(0, 0, AW, AH);
+          a.drawImage(BGc, 0, 0);
+          CLOUDS.forEach(([x, y, c], k) => a.drawImage(c, R(x + t * (0.8 + k * 0.4)), y));
+          const sh = [...Array(8)].map((_, i) => [i, Z.sheep(i, t)]).sort((p, q) => p[1].y - q[1].y);
+          const behind = (st) => st.y < Z.frontY(st.x) - 2 && st.x > Z.POSTL.x - 40;
+          sh.filter(([, st]) => behind(st)).forEach(([i, st]) => sheepDraw(i, st));
+          a.drawImage(FLc, 0, 0);
+          sh.filter(([, st]) => !behind(st)).forEach(([i, st]) => sheepDraw(i, st));
+          a.drawImage(FRc, 0, 0);
+          a.drawImage(PRc, 0, 0);
+          // pouch: swing as whole-pixel sideways steps, cords as pixel lines
+          const sw = Z.swing(t), sl = Z.slack(t);
+          const dx = R(Math.sin(sw * Math.PI / 180) * 64 / U * 1.6), dy = R(sl * 1.2);
+          const MX = R(ax(Z.MOUTH.x)) + dx, MY = R(ay(Z.MOUTH.y)) + dy, GX = R(ax(Z.PEG.x)), GY = R(ay(Z.PEG.y));
+          a.fillStyle = PAL.wood;
+          for (const side of [-1, 1]) { const ex = MX + side * 8, ey = MY - 2; const n = Math.max(Math.abs(ex - GX), Math.abs(ey - GY)); for (let k = 0; k <= n; k++) a.fillRect(R(GX + (ex - GX) * k / n), R(GY + (ey - GY) * k / n), 1, 1); }
+          a.fillStyle = PAL.ink; a.fillRect(GX - 1, GY - 1, 2, 2);
+          a.drawImage(PBc, MX - PX0, MY - PY0);
+          const inP = []; for (let q = 0; q < 9; q++) { const p = Z.pebble(q, t); if (p.inPouch) inP.push(p); }
+          inP.sort((p, q) => Z.SLOTS[p.slot][1] - Z.SLOTS[q.slot][1]).forEach((p) => a.drawImage(PEB[p.slot % 2], MX + R(Z.SLOTS[p.slot][0] / U / 1.25) - 5, MY + R(Z.SLOTS[p.slot][1] / U) - 7));
+          a.drawImage(PFc, MX - PX0, MY - PY0);
+          a.drawImage(SLc, 0, 0);
+          for (let q = 0; q < 8; q++) {
+            const p = Z.pebble(q, t); if (p.inPouch) continue;
+            const X = R(ax(p.x)), Y = R(ay(p.y));
+            if (p.landed) { a.fillStyle = PAL.slabD; a.fillRect(X - 2, Y + 3, 8, 1); }
+            a.drawImage(PEB[q % 2], X - 5, Y - 4 - (p.sq > 1.05 ? 0 : 0));
+            if (p.landed && p.age < 0.4) { const s = R(p.age * 12) + 3; a.fillStyle = PAL.slabL; a.fillRect(X - s - 2, Y + 1 - R(p.age * 5), 1, 1); a.fillRect(X + s + 1, Y + 1 - R(p.age * 5), 1, 1); }
+          }
+          const gi = Z.glint(t);
+          if (gi > 0.05) {
+            const gx = MX + R(Z.SLOTS[0][0] / U) - 2, gy = MY + R(Z.SLOTS[0][1] / U) - 4;
+            if (gi > 0.3) { a.globalAlpha = 0.55; a.drawImage(halo, gx - 10, gy - 10); a.globalAlpha = 1; }
+            a.drawImage(STAR[gi > 0.75 ? 1 : 0], gx - 7, gy - 7);
+          }
+          // 6x nearest-neighbour, then a smooth camera zoom of that crisp image
+          m.drawImage(art, 0, 0, 1920, 1080);
+          // same framing as the other styles, but no slow drift before the push (keeps pixels exactly 6x)
+          const u = Z.cam(t).u, L = Z.lerp;
+          const cs = L(1.2, 2.45, u), Fx = L(1112, Z.FOCUS.x, u), Fy = L(606, Z.FOCUS.y, u), Ax = L(960, 900, u), Ay = L(540, 430, u);
+          const z = cs / 1.2, tx = (OX - Fx) * cs + Ax, ty = (OY - Fy) * cs + Ay;
+          octx.setTransform(1, 0, 0, 1, 0, 0); octx.fillStyle = PAL.ink; octx.fillRect(0, 0, 1920, 1080);
+          octx.imageSmoothingEnabled = z > 1.001; octx.imageSmoothingQuality = "high";
+          octx.drawImage(mid, tx, ty, 1920 * z, 1080 * z);
+        }
+        const tl = gsap.timeline({ paused: true });
+        const D = { t: 0 };
+        tl.fromTo(D, { t: 0 }, { t: Z.DUR, duration: Z.DUR, ease: "none", onUpdate() { render(D.t); } }, 0);
+        render(0);
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

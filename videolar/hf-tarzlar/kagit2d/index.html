@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/sahne.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #EFD9BD; }
+      #root { width: 100%; height: 100%; position: relative; overflow: hidden; background: #EFD9BD; }
+      #cv { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+      <canvas id="cv" width="1920" height="1080"></canvas>
+    </div>
+    <script>
+      // Layered 2D paper cut-out. Everything is cut paper: fibre texture, slightly irregular scissor edges,
+      // torn white edges on the landscape, soft drop shadows between layers, parallax depth on the push-in.
+      // Detailed static pieces and all character parts are baked once (at load) into offscreen canvases.
+      (function () {
+        const Z = window.ZS;
+        const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+        const SS = 2.6;                           // bake resolution (px per world unit) — sharp at the 2.45x push-in
+        const mk = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
+
+        // ---------- paper fibre texture (seeded, built once)
+        function paperTex(seed, n) {
+          const r = Z.rng(seed), c = mk(n, n), x = c.getContext("2d");
+          const id = x.createImageData(n, n), d = id.data;
+          // tileable value noise (wrapped grid, two octaves) + fine tooth
+          const oct = [8, 24].map((G) => ({ G, v: [...Array(G * G)].map(() => r() - 0.5) }));
+          const vn = (o, x, y) => { const gx = (x / n) * o.G, gy = (y / n) * o.G, x0 = Math.floor(gx), y0 = Math.floor(gy); let fx = gx - x0, fy = gy - y0; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+            const at = (i, j) => o.v[((j % o.G) + o.G) % o.G * o.G + ((i % o.G) + o.G) % o.G];
+            return (at(x0, y0) * (1 - fx) + at(x0 + 1, y0) * fx) * (1 - fy) + (at(x0, y0 + 1) * (1 - fx) + at(x0 + 1, y0 + 1) * fx) * fy; };
+          for (let y = 0; y < n; y++) for (let xx = 0; xx < n; xx++) {
+            let v = vn(oct[0], xx, y) * 0.9 + vn(oct[1], xx, y) * 0.6;
+            v = v + (r() - 0.5) * 0.7;
+            const i = (y * n + xx) * 4;
+            if (v > 0) { d[i] = 255; d[i + 1] = 251; d[i + 2] = 240; d[i + 3] = Math.min(255, v * 70); }
+            else { d[i] = 96; d[i + 1] = 72; d[i + 2] = 52; d[i + 3] = Math.min(255, -v * 55); }
+          }
+          x.putImageData(id, 0, 0);
+          x.lineCap = "round";
+          for (let k = 0; k < 260; k++) {
+            const px = r() * n, py = r() * n, a = r() * Math.PI, L = 3 + r() * 10, light = r() < 0.85;
+            x.strokeStyle = light ? `rgba(255,252,242,${(0.16 + r() * 0.2).toFixed(2)})` : `rgba(80,60,45,${(0.08 + r() * 0.1).toFixed(2)})`;
+            x.lineWidth = 0.5 + r() * 0.5;
+            for (const ox of [-n, 0, n]) for (const oy of [-n, 0, n]) { x.beginPath(); x.moveTo(px + ox, py + oy); x.quadraticCurveTo(px + ox + Math.cos(a) * L * 0.5 + (r() - 0.5) * 3, py + oy + Math.sin(a) * L * 0.5, px + ox + Math.cos(a) * L, py + oy + Math.sin(a) * L); x.stroke(); }
+          }
+          return c;
+        }
+        const TEX = paperTex(31, 384);
+        const patCache = new Map();
+        function pat(c, scale) { const p = c.createPattern(TEX, "repeat"); p.setTransform(new DOMMatrix().scale(scale)); return p; }
+
+        // ---------- rough shapes (points in world or local units)
+        function ellipsePts(cx, cy, rx, ry, n) { const p = []; for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; p.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); } return p; }
+        function scallopPts(cx, cy, rx, ry, n, bump, seed) {
+          const r = Z.rng(seed), out = [];
+          const pts = []; for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2 + 0.2, j = 1 + (r() - 0.5) * 0.08; pts.push([cx + Math.cos(a) * rx * j, cy + Math.sin(a) * ry * j, a]); }
+          for (let k = 0; k < n; k++) {
+            const p = pts[k], q = pts[(k + 1) % n]; const am = (p[2] + q[2] + (k === n - 1 ? Math.PI * 2 : 0)) / 2;
+            const c = [cx + Math.cos(am) * rx * bump, cy + Math.sin(am) * ry * bump];
+            for (let s = 0; s < 8; s++) { const u = s / 8; out.push([(1 - u) * (1 - u) * p[0] + 2 * u * (1 - u) * c[0] + u * u * q[0], (1 - u) * (1 - u) * p[1] + 2 * u * (1 - u) * c[1] + u * u * q[1]]); }
+          }
+          return out;
+        }
+        function roundRectPts(x, y, w, h, rr) {
+          const p = []; const arc = (cx, cy, a0) => { for (let k = 0; k <= 5; k++) { const a = a0 + (k / 5) * Math.PI / 2; p.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); } };
+          arc(x + w - rr, y + h - rr, 0); arc(x + rr, y + h - rr, Math.PI / 2); arc(x + rr, y + rr, Math.PI); arc(x + w - rr, y + rr, Math.PI * 1.5); return p;
+        }
+        // resample the closed outline and push it along its normal with low-frequency wobble + scissor jitter
+        function rough(pts, amp, seed, step) {
+          step = step || 3; const r = Z.rng(seed);
+          const dense = []; let L = 0;
+          for (let k = 0; k < pts.length; k++) {
+            const a = pts[k], b = pts[(k + 1) % pts.length]; const d = Math.hypot(b[0] - a[0], b[1] - a[1]); const m = Math.max(1, Math.ceil(d / step));
+            for (let s = 0; s < m; s++) dense.push([a[0] + (b[0] - a[0]) * s / m, a[1] + (b[1] - a[1]) * s / m, L + d * s / m]);
+            L += d;
+          }
+          const f1 = 0.02 + r() * 0.02, f2 = 0.09 + r() * 0.05, p1 = r() * 6.28, p2 = r() * 6.28;
+          const path = new Path2D(); const n = dense.length;
+          for (let k = 0; k < n; k++) {
+            const a = dense[(k - 1 + n) % n], b = dense[(k + 1) % n], p = dense[k];
+            let nx = b[1] - a[1], ny = -(b[0] - a[0]); const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+            const o = amp * (0.55 * Math.sin(p[2] * f1 + p1) + 0.3 * Math.sin(p[2] * f2 + p2) + 0.3 * (r() - 0.5));
+            const X = p[0] + nx * o, Y = p[1] + ny * o;
+            if (k === 0) path.moveTo(X, Y); else path.lineTo(X, Y);
+          }
+          path.closePath();
+          return path;
+        }
+        // one paper piece: optional torn white underlayer, drop shadow, colour, fibre texture
+        const SHADOW = "rgba(58, 34, 26, ";
+        function piece(c, path, fill, o) {
+          o = o || {}; const k = o.dev || 1;   // device px per unit, so shadows stay the same physical size
+          c.save();
+          c.shadowColor = SHADOW + Math.min(0.7, (o.sa == null ? 0.34 : o.sa) * 1.3) + ")";
+          c.shadowBlur = (o.sb == null ? 10 : o.sb) * k; c.shadowOffsetX = (o.sx == null ? 4 : o.sx) * 1.2 * k; c.shadowOffsetY = (o.sy == null ? 5 : o.sy) * 1.2 * k;
+          if (o.torn) { c.fillStyle = "#F6EFE1"; c.fill(o.torn); c.shadowColor = "rgba(0,0,0,0)"; }
+          c.fillStyle = fill; c.fill(path);
+          c.shadowColor = "rgba(0,0,0,0)";
+          c.fillStyle = pat(c, o.ts || 0.5); c.globalAlpha = o.ta == null ? 0.8 : o.ta; c.fill(path);
+          if (o.torn) { c.fillStyle = pat(c, o.ts || 0.6); c.globalAlpha = 0.6; c.fill(o.torn); }
+          c.restore();
+        }
+        // bake a sprite: bbox in local units, draw(c) in those units
+        function bake(x, y, w, h, draw, mirror) {
+          const c = mk(w * SS, h * SS), g = c.getContext("2d");
+          if (mirror) g.setTransform(-SS, 0, 0, SS, (x + w) * SS, -y * SS); else g.setTransform(SS, 0, 0, SS, -x * SS, -y * SS);
+          draw(g, SS);
+          return { c, x: mirror ? -(x + w) : x, y, w, h };
+        }
+        const put = (c, sp) => c.drawImage(sp.c, sp.x, sp.y, sp.w, sp.h);
+
+        // ---------- palette
+        const COL = {
+          sky: ["#F6C9A4", "#F2B99A", "#EFAA92", "#F7DDB5"], sun: "#FBE8B0", sunRing: "#F8D896",
+          far: "#B69AB2", far2: "#A8A1BE", mid: "#9DAE82", ground: "#A9B878", ground2: "#9FB06F", path: "#D8C69C",
+          pen: "#93A566", stone: ["#B9B6B3", "#AAA7A8", "#C5C0B8", "#9E9CA2", "#B2AEAB"], cap: ["#D8D2C8", "#CFC9BF", "#E2DCD0"],
+          wool: "#F2ECDF", wool2: "#FCF9F2", face: "#4B4150", leg: "#3E3542", leg2: "#524856",
+          pouch: "#C4553B", pouchD: "#A2412E", pouchL: "#D96E4E", frill: "#D06447", string: "#E4B04E",
+          peb: ["#D8964C", "#DDA15A", "#D08B48", "#E0A860", "#D59451", "#DB9C56", "#D18E4D", "#DEA35E", "#D8964F"],
+          slab: "#CFC6B6", slabSide: "#B3A999", wood: "#8C6446", tree: "#8FA46A", tree2: "#A3B67A", trunk: "#735442",
+        };
+
+        // ---------- sprites
+        const HIPS = [[-30, -36], [30, -36], [-22, -36], [38, -36]];
+        function sheepParts(i, mirror) {
+          const body = bake(-78, -110, 160, 90, (g, k) => {
+            piece(g, rough(scallopPts(-58, -62, 13, 11, 6, 1.3, 400 + i), 0.8, 500 + i), COL.wool, { dev: k, sa: 0.3 });
+            piece(g, rough(scallopPts(0, -58, 58, 33, 12, 1.2, 100 + i), 1.1, 600 + i), COL.wool, { dev: k });
+            piece(g, rough(scallopPts(-6, -64, 44, 22, 10, 1.18, 200 + i), 0.9, 700 + i), COL.wool2, { dev: k, sa: 0.22, sb: 5, sx: 2, sy: 3 });
+          }, mirror);
+          const head = bake(24, -104, 84, 70, (g, k) => {
+            piece(g, rough(ellipsePts(48, -68, 15, 7, 24).map(([x, y]) => { const a = 0.49, dx = x - 48, dy = y + 68; return [48 + dx * Math.cos(a) - dy * Math.sin(a), -68 + dx * Math.sin(a) + dy * Math.cos(a)]; }), 0.6, 800 + i), COL.leg2, { dev: k, sa: 0.3, sb: 5 });
+            const hp = []; for (let s = 0; s <= 40; s++) { const u = s / 40, a = u * Math.PI * 2; hp.push([68 + Math.cos(a) * 25 - Math.sin(a) * 2, -66 + Math.sin(a) * 16 + Math.cos(a) * 6]); }
+            piece(g, rough(hp, 0.7, 900 + i), COL.face, { dev: k });
+            piece(g, rough(ellipsePts(74, -70, 5.4, 5.4, 16), 0.3, 950 + i), "#FBF7EE", { dev: k, sa: 0.25, sb: 3, sx: 1, sy: 1.5 });
+            g.fillStyle = "#1E1822"; g.beginPath(); g.arc(75.5, -69.5, 2.7, 0, Math.PI * 2); g.fill();
+            piece(g, rough(scallopPts(54, -84, 14, 10, 6, 1.3, 300 + i), 0.6, 980 + i), COL.wool2, { dev: k, sa: 0.3, sb: 5 });
+          }, mirror);
+          const legF = bake(-8, -4, 16, 44, (g, k) => piece(g, rough(roundRectPts(-5, 0, 10, 38, 5), 0.5, 1000 + i), COL.leg, { dev: k, sa: 0.3, sb: 4, sx: 2, sy: 2 }), mirror);
+          const legN = bake(-8, -4, 16, 44, (g, k) => piece(g, rough(roundRectPts(-5, 0, 10, 38, 5), 0.5, 1100 + i), COL.leg2, { dev: k, sa: 0.3, sb: 4, sx: 2, sy: 2 }), mirror);
+          return { body, head, legF, legN };
+        }
+        const SHEEP = [...Array(8)].map((_, i) => ({ n: sheepParts(i, false), m: sheepParts(i, true) }));
+        const PEBS = [...Array(9)].map((_, k) => bake(-26, -22, 56, 48, (g, kk) => {
+          piece(g, rough(ellipsePts(0, 0, Z.PEB.rx, Z.PEB.ry, 30), 0.7, 1200 + k), COL.peb[k], { dev: kk, sa: 0.38, sb: 5, sx: 2.5, sy: 3.5 });
+          piece(g, rough(ellipsePts(-6, -5, 8, 4.5, 16), 0.4, 1300 + k), "#F3CB8E", { dev: kk, sa: 0.15, sb: 2, sx: 1, sy: 1 });
+        }));
+        // pouch (local coords relative to the mouth centre M)
+        const M = Z.MOUTH;
+        const pouchBack = bake(-80, -26, 160, 52, (g, k) => {
+          piece(g, rough(ellipsePts(0, 0, 70, 20, 60), 0.8, 1400), COL.pouchD, { dev: k, sa: 0.25 });
+          g.fillStyle = "#4A1C15"; g.fill(rough(ellipsePts(0, 3, 56, 13, 50), 0.6, 1401));
+        });
+        const bodyPts = []; {
+          const cub = (p0, p1, p2, p3) => { for (let s = 0; s < 16; s++) { const u = s / 16, v = 1 - u; bodyPts.push([v * v * v * p0[0] + 3 * v * v * u * p1[0] + 3 * v * u * u * p2[0] + u * u * u * p3[0], v * v * v * p0[1] + 3 * v * v * u * p1[1] + 3 * v * u * u * p2[1] + u * u * u * p3[1]]); } };
+          cub([-44, 28], [-104, 52], [-112, 138], [-52, 154]); cub([-52, 154], [-22, 161], [22, 161], [52, 154]); cub([52, 154], [112, 138], [104, 52], [44, 28]);
+        }
+        const frillPts = []; for (let s = 0; s <= 24; s++) { const a = Math.PI - (s / 24) * Math.PI; frillPts.push([Math.cos(a) * 70, Math.sin(a) * 19]); }
+        frillPts.push([50, 22], [44, 31], [-44, 31], [-50, 22]);
+        const pouchFront = bake(-124, -10, 250, 184, (g, k) => {
+          piece(g, rough(bodyPts, 1.2, 1500), COL.pouch, { dev: k, sb: 12, sx: 6, sy: 7 });
+          const shade = []; for (let s = 0; s <= 20; s++) { const u = s / 20; shade.push([30 + 64 * Math.sin(u * Math.PI) * 0.95, 44 + 108 * u]); }
+          shade.push([46, 150]); for (let s = 20; s >= 0; s--) { const u = s / 20; shade.push([30 + 36 * Math.sin(u * Math.PI), 44 + 104 * u]); }
+          piece(g, rough(shade, 0.8, 1501), COL.pouchD, { dev: k, sa: 0.15, sb: 4, sx: 2, sy: 2 });
+          piece(g, rough(ellipsePts(-64, 96, 7, 30, 30).map(([x, y]) => [x + (y - 96) * 0.25, y]), 0.6, 1502), COL.pouchL, { dev: k, sa: 0.1, sb: 3, sx: 1, sy: 1, ta: 0.6 });
+          piece(g, rough(frillPts, 0.9, 1503), COL.frill, { dev: k, sb: 7, sx: 3, sy: 4 });
+          const band = []; for (let s = 0; s <= 20; s++) { const u = s / 20; band.push([-52 + 104 * u, 27 + Math.sin(u * Math.PI) * 9]); } for (let s = 20; s >= 0; s--) { const u = s / 20; band.push([-52 + 104 * u, 35 + Math.sin(u * Math.PI) * 9]); }
+          piece(g, rough(band, 0.5, 1504), COL.string, { dev: k, sa: 0.3, sb: 4, sx: 2, sy: 3 });
+          piece(g, rough(roundRectPts(-12, 38, 7, 34, 3.5), 0.4, 1505), COL.string, { dev: k, sa: 0.3, sb: 3, sx: 2, sy: 2 });
+          piece(g, rough(roundRectPts(0, 38, 7, 28, 3.5).map(([x, y]) => [x + (y - 38) * 0.5, y]), 0.4, 1506), COL.string, { dev: k, sa: 0.3, sb: 3, sx: 2, sy: 2 });
+          piece(g, rough(ellipsePts(-4, 37, 7, 6, 16), 0.3, 1507), "#EEC062", { dev: k, sa: 0.3, sb: 3, sx: 1.5, sy: 2 });
+        });
+
+        // ---------- static stage pieces (baked in world units)
+        const P = Z.PEN;
+        function stonesAlong(g, k, x0, x1, arc, seed) {
+          const r = Z.rng(seed), H = P.h;
+          const band = []; for (let x = x0; x <= x1; x += 4) band.push([x, arc(x) - H + 4]); for (let x = x1; x >= x0; x -= 4) band.push([x, arc(x) + 2]);
+          piece(g, rough(band, 0.8, seed + 7), "#8C8790", { dev: k, sb: 10, sx: 4, sy: 6 });
+          const pts = []; let L = 0;
+          for (let x = x0; x <= x1 + 0.01; x += 1) { const y = arc(x); if (pts.length) L += Math.hypot(1, y - pts[pts.length - 1][1]); pts.push([x, y, L]); }
+          const at = (l) => { let lo = 0, hi = pts.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (pts[m][2] < l) lo = m; else hi = m; } const p = pts[lo], q = pts[hi]; return [p[0], p[1], Math.atan2(q[1] - p[1], q[0] - p[0] || 1e-3)]; };
+          const course = (yOff, hh, cols, cap) => {
+            let l = cap ? 2 : r() * 14;
+            while (l < L - 6) {
+              const w = (cap ? 30 : 24) + r() * 16; const lm = Math.min(l + w / 2, L - 8);
+              const [x, y, ang] = at(lm); const rot = Math.max(-0.66, Math.min(0.66, ang)) * 0.8 + (r() - 0.5) * 0.12;
+              const wf = Math.max(12, w * (0.55 + 0.45 * Math.abs(Math.cos(ang)))) - 3;
+              const h = hh + r() * 3;
+              const rp = roundRectPts(-wf / 2, -h / 2, wf, h, h * 0.45).map(([a, b]) => [x + a * Math.cos(rot) - b * Math.sin(rot), y + yOff + a * Math.sin(rot) + b * Math.cos(rot)]);
+              piece(g, rough(rp, 0.6, Math.floor(r() * 1e6)), cols[Math.floor(r() * cols.length)], { dev: k, sa: 0.3, sb: 4, sx: 2, sy: 2.5 });
+              l += w;
+            }
+          };
+          for (let c = 0; c < 3; c++) course(-8 - c * 15, 13, COL.stone, false);
+          course(-H + 3, 12, COL.cap, true);
+        }
+        function postPieces(g, k, x, yb, h, seed) {
+          const r = Z.rng(seed); let y = yb - 10;
+          while (y > yb - h) { const w = 48 + r() * 12, hh = 17 + r() * 5, xo = x + (r() - 0.5) * 6, rot = (r() - 0.5) * 0.14; const rp = roundRectPts(-w / 2, -hh / 2, w, hh, hh * 0.45).map(([a, b]) => [xo + a * Math.cos(rot) - b * Math.sin(rot), y + a * Math.sin(rot) + b * Math.cos(rot)]); piece(g, rough(rp, 0.6, Math.floor(r() * 1e6)), COL.stone[Math.floor(r() * 5)], { dev: k, sa: 0.34, sb: 5, sx: 3, sy: 3 }); y -= hh - 1.5; }
+          piece(g, rough(roundRectPts(x - 29, y - 6, 58, 16, 7), 0.6, seed + 99), COL.cap[0], { dev: k, sa: 0.34, sb: 5, sx: 3, sy: 3 });
+        }
+        const BG = bake(P.cx - P.rx - 30, P.cy - P.ry - 70, P.rx * 2 + 60, P.ry + 100, (g, k) => stonesAlong(g, k, P.cx - P.rx + 2, P.cx + P.rx - 2, Z.backY, 1));
+        const FL = bake(P.cx - P.rx - 30, Z.POSTL.y - Z.POST_H - 40, Z.POSTL.x - P.cx + P.rx + 80, Z.POST_H + 90, (g, k) => { stonesAlong(g, k, P.cx - P.rx + 2, Z.POSTL.x - 16, Z.frontY, 2); postPieces(g, k, Z.POSTL.x, Z.POSTL.y, Z.POST_H, 3); });
+        const FR = bake(Z.POSTR.x - 4, P.cy - 70, P.cx + P.rx - Z.POSTR.x + 40, 220, (g, k) => stonesAlong(g, k, Z.POSTR.x + 16, P.cx + P.rx - 2, Z.frontY, 4));
+        const S = Z.STICK;
+        const PR = bake(Z.POSTR.x - 40, Z.POSTR.y - Z.POST_H - 60, 170, Z.POST_H + 80, (g, k) => {
+          postPieces(g, k, Z.POSTR.x, Z.POSTR.y, Z.POST_H, 5);
+          const a = Math.atan2(S.y1 - S.y0, S.x1 - S.x0), L = Math.hypot(S.x1 - S.x0, S.y1 - S.y0);
+          const sp = roundRectPts(0, -5, L, 10, 5).map(([x, y]) => [S.x0 + x * Math.cos(a) - y * Math.sin(a), S.y0 + x * Math.sin(a) + y * Math.cos(a)]);
+          piece(g, rough(sp, 0.6, 77), COL.wood, { dev: k, sb: 6, sx: 3, sy: 5 });
+        });
+        const SL = Z.SLAB;
+        const SLAB = bake(SL.x - SL.rx - 30, SL.y - SL.ry - 20, SL.rx * 2 + 80, SL.ry * 2 + 70, (g, k) => {
+          const top = []; for (let s = 0; s < 80; s++) { const a = (s / 80) * Math.PI * 2; top.push([SL.x + Math.cos(a) * SL.rx * (1 + 0.04 * Math.sin(a * 3)), SL.y + Math.sin(a) * SL.ry * (1 + 0.06 * Math.cos(a * 2))]); }
+          piece(g, rough(top.map(([x, y]) => [x, y + 16]), 1.4, 61), COL.slabSide, { dev: k, sb: 12, sx: 6, sy: 8 });
+          piece(g, rough(top, 1.4, 62), COL.slab, { dev: k, sa: 0.25, sb: 6, sx: 2, sy: 4 });
+          piece(g, rough(ellipsePts(SL.x - 40, SL.y - 14, SL.rx * 0.6, SL.ry * 0.35, 40), 1.0, 63), "#DAD2C4", { dev: k, sa: 0.12, sb: 4, sx: 1, sy: 2 });
+        });
+        const TREE = bake(470, 250, 150, 160, (g, k) => {
+          piece(g, rough(roundRectPts(535, 320, 12, 76, 5), 0.5, 71), COL.trunk, { dev: k, sa: 0.3 });
+          piece(g, rough(scallopPts(540, 300, 48, 42, 9, 1.22, 21), 1.2, 72), COL.tree, { dev: k });
+          piece(g, rough(scallopPts(530, 290, 30, 24, 7, 1.2, 22), 1.0, 73), COL.tree2, { dev: k, sa: 0.2, sb: 5, sx: 2, sy: 3 });
+        });
+        const tuftSp = bake(-20, -34, 40, 38, (g, k) => {
+          const bl = [[-10, 0], [-6, -22], [-2, 0], [0, 0], [4, -30], [7, 0], [8, 0], [14, -20], [15, 0]];
+          piece(g, rough([[-12, 0], [-7, -22], [-3, -2], [3, -30], [7, -2], [14, -20], [15, 0]], 0.4, 81), "#7F9253", { dev: k, sa: 0.3, sb: 4, sx: 2, sy: 2 });
+        });
+        const cloudSp = [0, 1, 2].map((q) => bake(-150, -50, 300, 90, (g, k) => {
+          piece(g, rough(scallopPts(0, 0, 120, 26, 9, 1.35, 11 + q), 1.4, 90 + q), "#FBEBDD", { dev: k, sa: 0.22, sb: 10, sx: 3, sy: 6 });
+          piece(g, rough(scallopPts(20, -6, 70, 14, 7, 1.3, 14 + q), 1.0, 93 + q), "#FFF6EC", { dev: k, sa: 0.12, sb: 5, sx: 2, sy: 3 });
+        }));
+
+        // ---------- big landscape pieces: drawn every frame (cheap fills), torn edges
+        function ridge(pts, bottom, amp, seed, tornAmp) {
+          const poly = pts.concat([[pts[pts.length - 1][0], bottom], [pts[0][0], bottom]]);
+          return { path: rough(poly, amp, seed, 5), torn: tornAmp ? rough(poly.map(([x, y]) => [x, y - 3.5]), tornAmp, seed + 1, 3) : null };
+        }
+        function curve(list, n) { // catmull-rom through list
+          const out = [];
+          for (let k = 0; k < list.length - 1; k++) {
+            const p0 = list[Math.max(0, k - 1)], p1 = list[k], p2 = list[k + 1], p3 = list[Math.min(list.length - 1, k + 2)];
+            for (let s = 0; s < n; s++) { const t = s / n, t2 = t * t, t3 = t2 * t; out.push([0, 1].map((d) => 0.5 * (2 * p1[d] + (-p0[d] + p2[d]) * t + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * t2 + (-p0[d] + 3 * p1[d] - 3 * p2[d] + p3[d]) * t3))); }
+          }
+          out.push(list[list.length - 1]); return out;
+        }
+        const SKY = [
+          ridge(curve([[-500, 150], [300, 120], [900, 170], [1500, 110], [2400, 160]], 20), 1400, 2, 201, 2.2),
+          ridge(curve([[-500, 250], [400, 230], [1000, 270], [1600, 220], [2400, 260]], 20), 1400, 2, 203, 2.2),
+          ridge(curve([[-500, 330], [500, 318], [1100, 344], [1700, 310], [2400, 340]], 20), 1400, 2, 205, 2.2),
+        ];
+        const SUN = [rough(ellipsePts(300, 350, 130, 130, 90), 2, 210), rough(ellipsePts(300, 350, 92, 92, 70), 1.6, 211), rough(ellipsePts(300, 350, 60, 60, 60), 1.2, 212)];
+        const FAR = ridge(curve([[-500, 420], [0, 340], [380, 330], [720, 372], [1000, 405], [1260, 330], [1560, 318], [1800, 310], [2050, 350], [2500, 380]], 16), 1400, 2.5, 220, 3);
+        const FAR2 = ridge(curve([[-500, 440], [100, 390], [500, 400], [900, 420], [1300, 440], [1700, 400], [2500, 420]], 16), 1400, 2.5, 222, 3);
+        const MID = ridge(curve([[-500, 470], [200, 432], [700, 440], [1100, 430], [1500, 420], [1900, 440], [2500, 452]], 16), 1400, 2.5, 224, 3);
+        const GROUND = ridge(curve([[-600, 500], [0, 480], [600, 470], [1100, 470], [1600, 468], [2000, 478], [2600, 490]], 16), 1800, 2.5, 226, 3);
+        const PATHP = rough(curve([[-300, 720], [200, 700], [500, 690], [720, 680], [860, 662], [Z.GATE.x, Z.GATE.y - 8]], 10).concat([[Z.GATE.x + 20, Z.GATE.y + 8]]).concat(curve([[900, 690], [720, 714], [500, 736], [200, 760], [-300, 800]], 10)), 2.5, 230, 5);
+        const FLOOR = rough(ellipsePts(P.cx, P.cy, P.rx, P.ry, 120), 2, 232, 5);
+        const TUFTS = [[120, 640, 1], [300, 860, 1.2], [520, 940, 1.3], [180, 990, 1.4], [640, 612, 0.9], [760, 860, 1.1], [1840, 560, 0.8], [1380, 700, 0.9], [60, 820, 1.2], [1720, 690, 0.9]];
+
+        // ---------- per frame
+        function cam(c, p) { const m = Z.camMatrix(c, p); ctx.setTransform(m.s, 0, 0, m.s, m.tx, m.ty); return m.s; }
+        function drawSheep(i, st, t, k) {
+          const sp = st.faceS >= 0 ? SHEEP[i].n : SHEEP[i].m, dir = st.faceS >= 0 ? 1 : -1;
+          const sx = Math.max(0.04, Math.abs(st.faceS));
+          ctx.save();
+          ctx.translate(st.x, st.y); ctx.scale(st.s * sx, st.s);
+          const w0 = Z.walk(st, 0); ctx.translate(0, w0.bob);
+          const leg = (kk, spr) => { const w = Z.walk(st, kk); ctx.save(); ctx.translate(HIPS[kk][0] * dir, HIPS[kk][1]); ctx.rotate(w.leg * Math.PI / 180 * dir); put(ctx, spr); ctx.restore(); };
+          leg(0, sp.legF); leg(1, sp.legF); leg(2, sp.legN); leg(3, sp.legN);
+          put(ctx, sp.body);
+          const nod = (st.head * 22 + Math.sin(t * 2.3 + i) * 3 * st.v) * Math.PI / 180 * dir;
+          ctx.save(); ctx.translate(46 * dir, -62); ctx.rotate(nod); ctx.translate(-46 * dir, 62); put(ctx, sp.head); ctx.restore();
+          ctx.restore();
+        }
+        function shadowOf(st) {
+          ctx.save(); ctx.fillStyle = "rgba(70, 44, 36, 0.2)"; ctx.beginPath(); ctx.ellipse(st.x + 36 * st.s, st.y + 1, 84 * st.s, 10 * st.s, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+        function render(t) {
+          const c = Z.cam(t);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.fillStyle = "#EFD2B4"; ctx.fillRect(0, 0, 1920, 1080);
+          // sky: paper bands + sun + clouds
+          let k = cam(c, 0.05);
+          ctx.fillStyle = "#EEC4A6"; ctx.fillRect(-300, -300, 2600, 1800);
+          ctx.fillStyle = pat(ctx, 0.8); ctx.globalAlpha = 0.6; ctx.fillRect(-300, -300, 2600, 1800); ctx.globalAlpha = 1;
+          SKY.forEach((b, q) => {
+            if (q === 2) {
+              piece(ctx, SUN[0], "#F8DDB2", { dev: k, sa: 0.16, sb: 14, sx: 3, sy: 5 });
+              piece(ctx, SUN[1], "#FAE6BC", { dev: k, sa: 0.16, sb: 10, sx: 3, sy: 4 });
+              piece(ctx, SUN[2], COL.sun, { dev: k, sa: 0.18, sb: 8, sx: 2, sy: 3 });
+            }
+            piece(ctx, b.path, COL.sky[q + 1], { dev: k, torn: b.torn, sa: 0.24, sb: 12, sx: 0, sy: 6, ts: 0.8 });
+          });
+          [[760, 170, 1], [1450, 110, 0.8], [1780, 250, 0.6]].forEach(([x, y, sc], q) => { ctx.save(); ctx.translate(x + t * (6 + q * 3), y); ctx.scale(sc, sc); put(ctx, cloudSp[q]); ctx.restore(); });
+          k = cam(c, 0.25);
+          piece(ctx, FAR.path, COL.far, { dev: k, torn: FAR.torn, sa: 0.3, sb: 14, sx: 0, sy: 7, ts: 0.8 });
+          piece(ctx, FAR2.path, COL.far2, { dev: k, torn: FAR2.torn, sa: 0.3, sb: 14, sx: 0, sy: 7, ts: 0.8 });
+          put(ctx, TREE);
+          k = cam(c, 0.55);
+          piece(ctx, MID.path, COL.mid, { dev: k, torn: MID.torn, sa: 0.32, sb: 16, sx: 0, sy: 8, ts: 0.8 });
+          k = cam(c, 1);
+          piece(ctx, GROUND.path, COL.ground, { dev: k, torn: GROUND.torn, sa: 0.34, sb: 18, sx: 0, sy: 9, ts: 0.8 });
+          piece(ctx, PATHP, COL.path, { dev: k, sa: 0.18, sb: 6, sx: 2, sy: 3 });
+          TUFTS.forEach(([x, y, s]) => { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); put(ctx, tuftSp); ctx.restore(); });
+          piece(ctx, FLOOR, COL.pen, { dev: k, sa: 0.22, sb: 8, sx: 0, sy: -3 });
+          put(ctx, BG);
+          const sh = [...Array(8)].map((_, i) => [i, Z.sheep(i, t)]).sort((a, b) => a[1].y - b[1].y);
+          const behind = (st) => st.y < Z.frontY(st.x) - 2 && st.x > Z.POSTL.x - 40;
+          sh.filter(([, st]) => behind(st)).forEach(([, st]) => shadowOf(st));
+          sh.filter(([, st]) => behind(st)).forEach(([i, st]) => drawSheep(i, st, t, k));
+          put(ctx, FL);
+          sh.filter(([, st]) => !behind(st)).forEach(([, st]) => shadowOf(st));
+          sh.filter(([, st]) => !behind(st)).forEach(([i, st]) => drawSheep(i, st, t, k));
+          put(ctx, FR);
+          put(ctx, PR);
+          // pouch
+          const sw = Z.swing(t) * Math.PI / 180, sl = Z.slack(t);
+          ctx.save();
+          ctx.translate(Z.PEG.x, Z.PEG.y); ctx.rotate(sw); ctx.translate(-Z.PEG.x, -Z.PEG.y);
+          ctx.save(); ctx.strokeStyle = "#6A4A36"; ctx.lineWidth = 4.5; ctx.lineCap = "round";
+          ctx.shadowColor = SHADOW + "0.3)"; ctx.shadowBlur = 4 * k; ctx.shadowOffsetX = 2 * k; ctx.shadowOffsetY = 3 * k;
+          ctx.beginPath(); ctx.moveTo(Z.PEG.x, Z.PEG.y); ctx.lineTo(M.x - 40, M.y - 6); ctx.moveTo(Z.PEG.x, Z.PEG.y); ctx.lineTo(M.x + 40, M.y - 6); ctx.stroke(); ctx.restore();
+          ctx.translate(M.x, M.y + 6 * sl);
+          put(ctx, pouchBack);
+          const inP = [];
+          for (let q = 0; q < 9; q++) { const pb = Z.pebble(q, t); if (pb.inPouch) inP.push([q, pb]); }
+          inP.sort((a, b) => Z.SLOTS[a[1].slot][1] - Z.SLOTS[b[1].slot][1]).forEach(([q, pb]) => { ctx.save(); ctx.translate(Z.SLOTS[pb.slot][0], Z.SLOTS[pb.slot][1]); ctx.rotate(pb.rot * Math.PI / 180); put(ctx, PEBS[q]); ctx.restore(); });
+          ctx.translate(0, 30); ctx.scale(1 - 0.07 * sl, 1 - 0.07 * sl); ctx.translate(0, -30);
+          put(ctx, pouchFront);
+          ctx.restore();
+          put(ctx, SLAB);
+          for (let q = 0; q < 8; q++) {
+            const pb = Z.pebble(q, t); if (pb.inPouch) continue;
+            ctx.save(); ctx.translate(pb.x, pb.y); ctx.scale(pb.sq, 1 / pb.sq); ctx.rotate(pb.rot * Math.PI / 180); put(ctx, PEBS[q]); ctx.restore();
+            if (pb.landed && pb.age < 0.5) {   // tiny paper flecks hop off the slab
+              const a = pb.age / 0.5;
+              for (let j = 0; j < 4; j++) { const dir = j < 2 ? -1 : 1, off = (j % 2) * 10; ctx.save(); ctx.globalAlpha = 1 - a; ctx.fillStyle = j % 2 ? "#F4EADB" : "#E2D3BC"; ctx.translate(pb.x + dir * (24 + a * 26 + off), pb.y + 6 - Math.sin(a * Math.PI) * 16 - off * 0.4); ctx.rotate(a * 4 * dir); ctx.fillRect(-4, -3, 8, 6); ctx.restore(); }
+            }
+          }
+          // glint (light, not paper): additive
+          const gi = Z.glint(t);
+          if (gi > 0) {
+            const m = Z.mouthAt(t), gx = m.x + Z.SLOTS[0][0] - 7, gy = m.y + Z.SLOTS[0][1] - 6;
+            ctx.save(); ctx.globalCompositeOperation = "lighter";
+            const rg = ctx.createRadialGradient(gx, gy, 0, gx, gy, 46); rg.addColorStop(0, `rgba(255,236,190,${0.4 * gi})`); rg.addColorStop(0.4, `rgba(255,200,120,${0.14 * gi})`); rg.addColorStop(1, "rgba(255,190,110,0)");
+            ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(gx, gy, 46, 0, Math.PI * 2); ctx.fill();
+            ctx.translate(gx, gy); ctx.rotate((t - Z.GLINT) * 0.1); const R = 22 * (0.8 + 0.2 * gi), r2 = 1.8;
+            ctx.fillStyle = `rgba(255,246,222,${0.9 * gi})`; ctx.beginPath(); ctx.moveTo(0, -R); ctx.quadraticCurveTo(r2, -r2, R * 0.72, 0); ctx.quadraticCurveTo(r2, r2, 0, R); ctx.quadraticCurveTo(-r2, r2, -R * 0.72, 0); ctx.quadraticCurveTo(-r2, -r2, 0, -R); ctx.fill();
+            ctx.restore();
+          }
+          // warm evening light + vignette (screen space)
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.save(); ctx.globalCompositeOperation = "soft-light";
+          const lg = ctx.createLinearGradient(0, 0, 1920, 1080); lg.addColorStop(0, "rgba(255,180,110,0.45)"); lg.addColorStop(0.6, "rgba(255,190,120,0.05)"); lg.addColorStop(1, "rgba(110,60,80,0.4)");
+          ctx.fillStyle = lg; ctx.fillRect(0, 0, 1920, 1080); ctx.restore();
+          const vg = ctx.createRadialGradient(920, 500, 600, 960, 540, 1150); vg.addColorStop(0, "rgba(60,30,30,0)"); vg.addColorStop(1, "rgba(60,30,30,0.32)");
+          ctx.fillStyle = vg; ctx.fillRect(0, 0, 1920, 1080);
+        }
+        const tl = gsap.timeline({ paused: true });
+        const D = { t: 0 };
+        tl.fromTo(D, { t: 0 }, { t: Z.DUR, duration: Z.DUR, ease: "none", onUpdate() { render(D.t); } }, 0);
+        render(0);
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

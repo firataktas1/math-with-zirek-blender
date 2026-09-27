@@ -1,0 +1,108 @@
+# Math with Zirek · HyperFrames tarz denemeleri, grup a (duz2d, kagit2d, kurzgesagt, piksel)
+# Elle başlatılır:
+#   gh workflow run hf-a.yml -f stil=hepsi            (dört stil paralel)
+#   gh workflow run hf-a.yml -f stil=piksel -f crf=16
+# Çıktı: her stil için mp4 + kareler.png (68., 180., 290. kareler yan yana) "artifact" (3 gün).
+# Render süresi adım özetine ve sure.txt'ye yazılır.
+
+name: HF a
+
+on:
+  workflow_dispatch:
+    inputs:
+      stil:
+        description: "duz2d | kagit2d | kurzgesagt | piksel | hepsi (virgülle birden çok da olur)"
+        required: true
+        default: "hepsi"
+      crf:
+        description: "H.264 CRF"
+        required: true
+        default: "16"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf-a-${{ inputs.stil }}
+  cancel-in-progress: false
+
+jobs:
+  liste:
+    runs-on: ubuntu-latest
+    outputs:
+      stiller: ${{ steps.l.outputs.stiller }}
+    steps:
+      - id: l
+        env:
+          STIL: ${{ inputs.stil }}
+        run: |
+          if [ "$STIL" = "hepsi" ]; then S="duz2d,kagit2d,kurzgesagt,piksel"; else S="$STIL"; fi
+          J=$(echo "$S" | tr -d ' ' | awk -F, '{printf "["; for(i=1;i<=NF;i++){printf "%s\"%s\"", (i>1?",":""), $i}; printf "]"}')
+          echo "stiller=$J" >> "$GITHUB_OUTPUT"
+          echo "$J"
+
+  render:
+    needs: liste
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        stil: ${{ fromJson(needs.liste.outputs.stiller) }}
+    env:
+      HYPERFRAMES_VERSION: "0.8.75"
+      HYPERFRAMES_NO_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
+      PROJE: videolar/hf-tarzlar/${{ matrix.stil }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: videolar/hf-tarzlar/${{ matrix.stil }}
+          lfs: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ffmpeg
+          nproc; free -h
+
+      - name: Tarayıcı
+        working-directory: ${{ env.PROJE }}
+        run: npx --yes hyperframes@${HYPERFRAMES_VERSION} browser ensure
+
+      - name: Kontrol
+        working-directory: ${{ env.PROJE }}
+        run: npx --yes hyperframes@${HYPERFRAMES_VERSION} check || true
+
+      - name: Render
+        working-directory: ${{ env.PROJE }}
+        run: |
+          start=$(date +%s)
+          npx --yes hyperframes@${HYPERFRAMES_VERSION} render . -o "${{ matrix.stil }}.mp4" --fps 30 --resolution landscape \
+            --crf "${{ inputs.crf }}" --no-browser-gpu --workers auto --quiet
+          sure=$(( $(date +%s) - start ))
+          echo "${{ matrix.stil }} render süresi: $((sure / 60)) dk $((sure % 60)) sn ($(nproc) çekirdek)" | tee -a "$GITHUB_STEP_SUMMARY" | tee sure.txt
+          ffprobe -v error -show_entries stream=codec_name,width,height,pix_fmt,nb_frames -show_entries format=duration,size -of default=nw=1 "${{ matrix.stil }}.mp4" | tee -a "$GITHUB_STEP_SUMMARY" | tee -a sure.txt
+
+      - name: Kareler
+        working-directory: ${{ env.PROJE }}
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -i "${{ matrix.stil }}.mp4" \
+            -vf "select='eq(n\,68)+eq(n\,180)+eq(n\,290)',scale=1280:720:flags=lanczos,tile=3x1" \
+            -frames:v 1 -fps_mode passthrough kareler.png
+          ls -l kareler.png
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hf-a-${{ matrix.stil }}-${{ github.run_number }}
+          path: |
+            ${{ env.PROJE }}/${{ matrix.stil }}.mp4
+            ${{ env.PROJE }}/kareler.png
+            ${{ env.PROJE }}/sure.txt
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error

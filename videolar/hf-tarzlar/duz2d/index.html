@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/sahne.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #F3E6CF; }
+      #root { width: 100%; height: 100%; position: relative; overflow: hidden; background: #F3E6CF; }
+      .kat { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+      #tane { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; background-image: url("assets/kagit-tane.png"); background-size: 640px 640px; opacity: 0.36; }
+      #vinyet { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; background: radial-gradient(ellipse 78% 72% at 48% 46%, rgba(0,0,0,0) 58%, rgba(70, 38, 40, 0.30) 100%); }
+      #isik { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; background: linear-gradient(100deg, rgba(255, 196, 120, 0.16) 0%, rgba(255, 196, 120, 0) 45%); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+      <svg class="kat" id="svg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gok" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#E9B79A" />
+            <stop offset="0.45" stop-color="#F4CFA3" />
+            <stop offset="1" stop-color="#FBE6BF" />
+          </linearGradient>
+          <radialGradient id="gunesHale">
+            <stop offset="0" stop-color="#FFF4D2" stop-opacity="0.9" />
+            <stop offset="0.35" stop-color="#FFE3A8" stop-opacity="0.45" />
+            <stop offset="1" stop-color="#FFE3A8" stop-opacity="0" />
+          </radialGradient>
+          <radialGradient id="parlakHale">
+            <stop offset="0" stop-color="#FFF1C8" stop-opacity="0.95" />
+            <stop offset="0.4" stop-color="#FFD58A" stop-opacity="0.45" />
+            <stop offset="1" stop-color="#FFC870" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <rect x="-100" y="-100" width="2120" height="1280" fill="url(#gok)" />
+        <g id="L0"></g>
+        <g id="L1"></g>
+        <g id="L2"></g>
+        <g id="L3"></g>
+      </svg>
+      <div id="isik"></div>
+      <div id="vinyet"></div>
+      <div id="tane"></div>
+    </div>
+    <script>
+      (function () {
+        const Z = window.ZS, R = Z.rng(20260927);
+        const INK = "#3A2F3F";
+        const $ = (s) => document.querySelector(s);
+        const f1 = (v) => (+v).toFixed(1);
+        // ---------- builders
+        function scallop(cx, cy, rx, ry, n, bump, seed) {
+          const r = Z.rng(seed); const pts = [];
+          for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2 + 0.2; const j = 1 + (r() - 0.5) * 0.08; pts.push([cx + Math.cos(a) * rx * j, cy + Math.sin(a) * ry * j, a]); }
+          let d = `M${f1(pts[0][0])} ${f1(pts[0][1])}`;
+          for (let k = 0; k < n; k++) {
+            const p = pts[k], q = pts[(k + 1) % n];
+            let am = (p[2] + q[2] + (k === n - 1 ? Math.PI * 2 : 0)) / 2;
+            const cxp = cx + Math.cos(am) * rx * bump, cyp = cy + Math.sin(am) * ry * bump;
+            d += ` Q${f1(cxp)} ${f1(cyp)} ${f1(q[0])} ${f1(q[1])}`;
+          }
+          return d + " Z";
+        }
+        function stone(x, y, w, h, fill, rot) {
+          return `<rect x="${f1(x - w / 2)}" y="${f1(y - h / 2)}" width="${f1(w)}" height="${f1(h)}" rx="${f1(h * 0.48)}" fill="${fill}" stroke="${INK}" stroke-width="2.4" transform="rotate(${f1(rot)} ${f1(x)} ${f1(y)})"/>`;
+        }
+        const WALLC = ["#BDB8B4", "#ADA8A6", "#C8C2BA", "#A39FA2", "#B6B0AC"];
+        function wall(x0, x1, arc, seed) {
+          const r = Z.rng(seed); const H = Z.PEN.h;
+          let top = "", bot = "";
+          for (let x = x0; x <= x1 + 0.1; x += 4) { top += `${f1(x)},${f1(arc(x) - H)} `; }
+          for (let x = x1; x >= x0 - 0.1; x -= 4) { bot += `${f1(x)},${f1(arc(x) + 2)} `; }
+          let s = `<polygon points="${top}${bot}" fill="#8F8A8E" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+          // arc-length sampling so stones keep their size where the wall turns away
+          const pts = []; let L = 0;
+          for (let x = x0; x <= x1 + 0.01; x += 1) { const y = arc(x); if (pts.length) L += Math.hypot(1, y - pts[pts.length - 1][1]); pts.push([x, y, L]); }
+          const at = (l) => { let lo = 0, hi = pts.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (pts[m][2] < l) lo = m; else hi = m; } const p = pts[lo], q = pts[hi]; return [p[0], p[1], Math.atan2(q[1] - p[1], q[0] - p[0] || 1e-3) * 180 / Math.PI]; };
+          const course = (yOff, hMin, cols, cap) => {
+            let l = cap ? 2 : r() * 14;
+            while (l < L - 6) {
+              const w = (cap ? 30 : 24) + r() * 16; const lm = Math.min(l + w / 2, L - 8);
+              const [x, y, ang] = at(lm); const rot = Math.max(-38, Math.min(38, ang)) * 0.8 + (r() - 0.5) * 7;
+              const wf = Math.max(12, w * (0.55 + 0.45 * Math.abs(Math.cos(ang * Math.PI / 180))));
+              s += stone(x, y + yOff, wf - 2, hMin + r() * 3, cols[Math.floor(r() * cols.length)], rot);
+              l += w;
+            }
+          };
+          for (let c = 0; c < 3; c++) course(-8 - c * 15, 14, WALLC, false);
+          course(-H + 2, 12, ["#D9D2C6", "#CFC8BD", "#E0D9CC"], true);
+          return s;
+        }
+        function post(x, yb, h, seed) {
+          const r = Z.rng(seed); let s = `<ellipse cx="${x + 34}" cy="${yb + 2}" rx="54" ry="9" fill="#4B3B5A" opacity="0.2"/>`;
+          let y = yb - 10;
+          while (y > yb - h) { const w = 48 + r() * 12, hh = 17 + r() * 5; s += stone(x + (r() - 0.5) * 6, y, w, hh, WALLC[Math.floor(r() * WALLC.length)], (r() - 0.5) * 8); y -= hh - 1.5; }
+          s += stone(x, y + 2, 58, 16, "#D9D2C6", (r() - 0.5) * 6);
+          return s;
+        }
+        function pebbleSVG(id, k, big) {
+          const rx = Z.PEB.rx, ry = Z.PEB.ry;
+          const c = ["#D6904A", "#DDA05A", "#CF8A48", "#E0A862", "#D39352", "#DB9B55", "#D08C4C", "#DEA25E", "#D8964F"][k % 9];
+          return `<g id="${id}"><g class="pk">
+            <ellipse rx="${rx}" ry="${ry}" fill="${c}" stroke="${INK}" stroke-width="3"/>
+            <path d="M${-rx + 5} 3 C ${-rx + 8} ${ry - 2}, ${rx - 8} ${ry - 1}, ${rx - 3} 2 C ${rx - 6} ${ry - 5}, ${-rx + 10} ${ry - 5}, ${-rx + 5} 3 Z" fill="#A9642F" opacity="0.45"/>
+            <ellipse cx="-7" cy="-6" rx="7" ry="4" fill="#F6CE92" opacity="0.9"/></g></g>`;
+        }
+        // sheep: feet at origin, facing right, ~1 = 130 px long
+        function sheepSVG(i) {
+          const body = scallop(0, -58, 58, 33, 12, 1.2, 100 + i);
+          const lit = scallop(-6, -63, 47, 24, 10, 1.18, 200 + i);
+          const tuft = scallop(52, -84, 13, 10, 6, 1.3, 300 + i);
+          const leg = (cls, x, col) => `<g class="${cls}"><path d="M${x} -36 L${x} -3" stroke="${col}" stroke-width="10" stroke-linecap="round"/><path d="M${x - 5} -4 L${x + 6} -4" stroke="#241D29" stroke-width="7" stroke-linecap="round"/></g>`;
+          return `<g id="sh${i}"><g class="bob">
+            ${leg("l0", -30, "#2A232F")}${leg("l1", 30, "#2A232F")}
+            <path class="kuyruk" d="M-56 -66 q-14 -2 -12 12 q4 8 12 2" fill="#F2E8D6" stroke="${INK}" stroke-width="3"/>
+            ${leg("l2", -22, "#3F3547")}${leg("l3", 38, "#3F3547")}
+            <path d="${body}" fill="#E9DDC6" stroke="${INK}" stroke-width="3.6" stroke-linejoin="round"/>
+            <path d="${lit}" fill="#FFFAF0"/>
+            <path d="M-26 -52 q6 -6 12 0 M4 -46 q6 -6 12 0 M-10 -70 q6 -6 12 0 M22 -66 q5 -5 10 0" stroke="#D8C9AE" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+            <g class="bas">
+              <ellipse cx="44" cy="-80" rx="12" ry="6" fill="#2F2836" transform="rotate(-35 44 -80)"/>
+              <g class="kulak"><ellipse cx="50" cy="-66" rx="14" ry="6.5" fill="#3F3547" stroke="${INK}" stroke-width="2" transform="rotate(28 50 -66)"/><ellipse cx="51" cy="-65" rx="8" ry="3" fill="#C98F86" transform="rotate(28 51 -65)"/></g>
+              <path d="M44 -84 C 60 -92, 86 -80, 92 -62 C 96 -50, 88 -42, 76 -44 C 62 -46, 48 -58, 44 -70 Z" fill="#3F3547" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M84 -52 q5 2 6 -3" stroke="#6E5E72" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <circle cx="72" cy="-70" r="5.2" fill="#FFFAF0"/><circle cx="73.6" cy="-69.5" r="2.8" fill="#1E1822"/><circle cx="72.4" cy="-71" r="1" fill="#FFFFFF"/>
+              <path d="${tuft}" fill="#FFFAF0" stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"/>
+            </g>
+          </g></g>`;
+        }
+
+        // ---------- sky (L0, parallax 0.08)
+        let s0 = `<circle cx="300" cy="300" r="250" fill="url(#gunesHale)"/><circle cx="300" cy="300" r="62" fill="#FFF3D0"/>`;
+        const cloud = (x, y, sc, sd) => `<g class="bulut" data-x="${x}" data-sc="${sc}" transform="translate(${x} ${y}) scale(${sc})"><path d="${scallop(0, 0, 120, 26, 9, 1.35, sd)}" fill="#FBE9D4" opacity="0.9"/><path d="M-110 12 L110 12" stroke="#E6BFA0" stroke-width="5" stroke-linecap="round" opacity="0.7"/></g>`;
+        s0 += cloud(760, 170, 1.0, 11) + cloud(1450, 110, 0.8, 12) + cloud(1780, 250, 0.6, 13);
+        $("#L0").innerHTML = s0;
+        // ---------- far hills (L1, 0.3)
+        let s1 = `<path d="M-400 420 C 0 340, 380 330, 720 372 C 1000 405, 1260 330, 1560 318 C 1800 310, 2050 350, 2400 380 L2400 1400 L-400 1400 Z" fill="#C7B98E" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+        s1 += `<path d="M-400 440 C 100 390, 500 400, 900 420 C 1300 440, 1700 400, 2400 420 L2400 1400 L-400 1400 Z" fill="#B7B784" opacity="0.9"/>`;
+        // tree on the far hill
+        s1 += `<g transform="translate(540 392)"><path d="M-6 0 L-4 -60 L4 -60 L7 0 Z" fill="#6E5140" stroke="${INK}" stroke-width="2.5"/><path d="${scallop(0, -92, 46, 40, 9, 1.22, 21)}" fill="#8FA06A" stroke="${INK}" stroke-width="3"/><path d="${scallop(-10, -100, 30, 24, 7, 1.2, 22)}" fill="#A3B277"/><ellipse cx="34" cy="2" rx="46" ry="5" fill="#4B3B5A" opacity="0.2"/></g>`;
+        $("#L1").innerHTML = s1;
+        // ---------- mid hill (L2, 0.6)
+        $("#L2").innerHTML = `<path d="M-400 470 C 200 432, 700 440, 1100 430 C 1500 420, 1900 440, 2400 452 L2400 1400 L-400 1400 Z" fill="#AFB779" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+        // ---------- stage (L3, 1.0)
+        const P = Z.PEN;
+        let g = `<path d="M-500 500 C 0 480, 600 470, 1100 470 C 1600 468, 2000 478, 2500 490 L2500 1700 L-500 1700 Z" fill="#B8C07F"/>`;
+        g += `<path d="M-500 760 C 300 700, 1200 720, 2500 700 L2500 1700 L-500 1700 Z" fill="#B2BB79" opacity="0.8"/>`;
+        // worn path to the gate
+        g += `<path d="M-300 720 C 200 700, 500 690, 720 680 C 820 674, 880 652, ${Z.GATE.x} ${Z.GATE.y - 8} L ${Z.GATE.x + 20} ${Z.GATE.y + 8} C 900 690, 820 706, 720 714 C 500 736, 200 760, -300 800 Z" fill="#D4C597" opacity="0.85"/>`;
+        // tufts (kept out of the lower-right third)
+        const tuft = (x, y, s) => `<path class="ot" data-x="${x}" data-y="${y}" d="M${x - 8 * s} ${y} q${2 * s} ${-12 * s} ${-4 * s} ${-20 * s} M${x} ${y} q${1 * s} ${-14 * s} ${2 * s} ${-24 * s} M${x + 8 * s} ${y} q${-1 * s} ${-12 * s} ${6 * s} ${-19 * s}" stroke="#7F8C52" stroke-width="${2.6 * s}" fill="none" stroke-linecap="round"/>`;
+        [[120, 640, 1], [300, 860, 1.2], [520, 940, 1.3], [180, 990, 1.4], [640, 612, 0.9], [760, 860, 1.1], [1840, 560, 0.8], [1380, 700, 0.9], [60, 820, 1.2], [1720, 690, 0.9]].forEach(([x, y, s]) => (g += tuft(x, y, s)));
+        // pen floor
+        g += `<ellipse cx="${P.cx}" cy="${P.cy}" rx="${P.rx}" ry="${P.ry}" fill="#A6B06E"/>`;
+        g += `<ellipse cx="${P.cx + 40}" cy="${P.cy + 20}" rx="${P.rx - 90}" ry="${P.ry - 40}" fill="#B3BC78" opacity="0.7"/>`;
+        // back wall (inner face)
+        g += wall(P.cx - P.rx + 2, P.cx + P.rx - 2, Z.backY, 1);
+        g += `<g id="gShB"></g><g id="gSheepB"></g>`;
+        // front wall left of the gate + left post
+        g += wall(P.cx - P.rx + 2, Z.POSTL.x - 16, Z.frontY, 2) + post(Z.POSTL.x, Z.POSTL.y, Z.POST_H, 3);
+        g += `<g id="gShM"></g><g id="gSheepM"></g>`;
+        g += wall(Z.POSTR.x + 16, P.cx + P.rx - 2, Z.frontY, 4);
+        // pouch shadow on the wall
+        g += `<ellipse cx="${Z.MOUTH.x + 40}" cy="${Z.MOUTH.y + 96}" rx="84" ry="70" fill="#4B3B5A" opacity="0.18"/>`;
+        g += post(Z.POSTR.x, Z.POSTR.y, Z.POST_H, 5);
+        // wooden arm
+        const S = Z.STICK;
+        g += `<path d="M${S.x0} ${S.y0} L${S.x1} ${S.y1}" stroke="${INK}" stroke-width="14" stroke-linecap="round"/><path d="M${S.x0} ${S.y0} L${S.x1} ${S.y1}" stroke="#8A6242" stroke-width="8" stroke-linecap="round"/><path d="M${S.x0 + 8} ${S.y0 - 5} L${S.x1 - 6} ${S.y1 - 3}" stroke="#B88B5E" stroke-width="2.5" stroke-linecap="round"/>`;
+        // pouch (world coords, swings around the peg)
+        const M = Z.MOUTH;
+        const pouchBody = `M${M.x - 44} ${M.y + 28} C ${M.x - 104} ${M.y + 52}, ${M.x - 112} ${M.y + 138}, ${M.x - 52} ${M.y + 154} C ${M.x - 22} ${M.y + 161}, ${M.x + 22} ${M.y + 161}, ${M.x + 52} ${M.y + 154} C ${M.x + 112} ${M.y + 138}, ${M.x + 104} ${M.y + 52}, ${M.x + 44} ${M.y + 28} Z`;
+        // front frill: rim (lower arc of the opening, gently scalloped) down to the gathered neck
+        let rim = ""; for (let k = 0; k <= 12; k++) { const a = Math.PI - (k / 12) * Math.PI; rim += ` L${f1(M.x + Math.cos(a) * 70)} ${f1(M.y + Math.sin(a) * 19 + (k % 2 ? 3 : 0))}`; }
+        const frill = `M${M.x - 70} ${M.y}${rim} C ${M.x + 66} ${M.y + 12}, ${M.x + 52} ${M.y + 22}, ${M.x + 44} ${M.y + 30} L ${M.x - 44} ${M.y + 30} C ${M.x - 52} ${M.y + 22}, ${M.x - 66} ${M.y + 12}, ${M.x - 70} ${M.y} Z`;
+        let peb = ""; for (let k = 0; k < 9; k++) peb += pebbleSVG("pp" + k, k);
+        g += `<g id="kese"><path d="M${Z.PEG.x} ${Z.PEG.y} L${M.x - 40} ${M.y - 6} M${Z.PEG.x} ${Z.PEG.y} L${M.x + 40} ${M.y - 6}" stroke="#5A3E2C" stroke-width="4.5" stroke-linecap="round"/>
+          <circle cx="${Z.PEG.x}" cy="${Z.PEG.y}" r="7" fill="#5A3E2C"/>
+          <g id="keseIc">
+          <ellipse cx="${M.x}" cy="${M.y}" rx="70" ry="20" fill="#A8472F" stroke="${INK}" stroke-width="3.5"/>
+          <ellipse cx="${M.x}" cy="${M.y + 3}" rx="56" ry="13" fill="#4A1C15"/>
+          <g id="kesePeb">${peb}</g>
+          <g id="keseGovde">
+          <path d="${pouchBody}" fill="#C65A3A" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M${M.x + 24} ${M.y + 40} C ${M.x + 92} ${M.y + 62}, ${M.x + 94} ${M.y + 132}, ${M.x + 44} ${M.y + 152} C ${M.x + 74} ${M.y + 118}, ${M.x + 66} ${M.y + 72}, ${M.x + 24} ${M.y + 40} Z" fill="#A5432D" opacity="0.85"/>
+          <path d="M${M.x - 62} ${M.y + 62} C ${M.x - 84} ${M.y + 90}, ${M.x - 78} ${M.y + 122}, ${M.x - 56} ${M.y + 136}" stroke="#E2845F" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.85"/>
+          <path d="M${M.x - 26} ${M.y + 36} C ${M.x - 40} ${M.y + 70}, ${M.x - 38} ${M.y + 100}, ${M.x - 30} ${M.y + 118} M${M.x + 6} ${M.y + 36} C ${M.x + 4} ${M.y + 62}, ${M.x + 8} ${M.y + 84}, ${M.x + 12} ${M.y + 100} M${M.x + 34} ${M.y + 36} C ${M.x + 52} ${M.y + 60}, ${M.x + 58} ${M.y + 84}, ${M.x + 58} ${M.y + 100}" stroke="#96392A" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8"/>
+          <path d="${frill}" fill="#D46E4B" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>
+          <path d="M${M.x - 50} ${M.y + 12} q 6 8 4 14 M${M.x - 24} ${M.y + 18} q 3 6 2 10 M${M.x + 2} ${M.y + 20} q 1 6 0 9 M${M.x + 28} ${M.y + 18} q -2 6 -2 10 M${M.x + 52} ${M.y + 12} q -5 8 -4 14" stroke="#A8472F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M${M.x - 50} ${M.y + 30} Q ${M.x} ${M.y + 40} ${M.x + 50} ${M.y + 30}" stroke="${INK}" stroke-width="11" fill="none" stroke-linecap="round"/>
+          <path d="M${M.x - 50} ${M.y + 30} Q ${M.x} ${M.y + 40} ${M.x + 50} ${M.y + 30}" stroke="#E7B04E" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <path d="M${M.x - 8} ${M.y + 36} q -14 18 -8 36 M${M.x - 2} ${M.y + 36} q 10 18 22 26" stroke="${INK}" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M${M.x - 8} ${M.y + 36} q -14 18 -8 36 M${M.x - 2} ${M.y + 36} q 10 18 22 26" stroke="#E7B04E" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <circle cx="${M.x - 5}" cy="${M.y + 36}" r="6" fill="#E7B04E" stroke="${INK}" stroke-width="2.5"/>
+          <path d="M${M.x - 76} ${M.y + 104} l8 4 M${M.x - 66} ${M.y + 122} l8 4 M${M.x - 52} ${M.y + 136} l8 3" stroke="#8C3624" stroke-width="3" stroke-linecap="round"/>
+          </g></g></g>`;
+        // slab
+        const SL = Z.SLAB;
+        g += `<ellipse cx="${SL.x + 40}" cy="${SL.y + 20}" rx="${SL.rx + 20}" ry="${SL.ry}" fill="#4B3B5A" opacity="0.2"/>`;
+        g += `<path d="M${SL.x - SL.rx} ${SL.y + 4} C ${SL.x - SL.rx + 10} ${SL.y - SL.ry}, ${SL.x + SL.rx - 30} ${SL.y - SL.ry - 6}, ${SL.x + SL.rx} ${SL.y - 6} C ${SL.x + SL.rx + 8} ${SL.y + 22}, ${SL.x + SL.rx - 40} ${SL.y + SL.ry}, ${SL.x} ${SL.y + SL.ry - 2} C ${SL.x - SL.rx + 40} ${SL.y + SL.ry}, ${SL.x - SL.rx - 6} ${SL.y + 30}, ${SL.x - SL.rx} ${SL.y + 4} Z" fill="#CFC6B6" stroke="${INK}" stroke-width="3.5"/>`;
+        g += `<path d="M${SL.x - SL.rx + 16} ${SL.y + 12} C ${SL.x - 120} ${SL.y + 44}, ${SL.x + 140} ${SL.y + 46}, ${SL.x + SL.rx - 10} ${SL.y + 8} C ${SL.x + SL.rx - 30} ${SL.y + 50}, ${SL.x - 150} ${SL.y + 60}, ${SL.x - SL.rx + 16} ${SL.y + 12} Z" fill="#B5AB9A"/>`;
+        g += `<path d="M${SL.x - 150} ${SL.y - 38} C ${SL.x - 60} ${SL.y - 52}, ${SL.x + 80} ${SL.y - 54}, ${SL.x + 170} ${SL.y - 42}" stroke="#E8E1D4" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+        let row = ""; for (let k = 0; k < 8; k++) row += `<ellipse id="gl${k}" cx="0" cy="0" rx="24" ry="7" fill="#4B3B5A" opacity="0"/>`;
+        g += `<g id="gGolge">${row}</g><g id="gPuf"></g>`;
+        let fl = ""; for (let k = 0; k < 8; k++) fl += pebbleSVG("fp" + k, k);
+        g += `<g id="gUcan">${fl}</g>`;
+        g += `<g id="parilti" opacity="0"><circle r="58" fill="url(#parlakHale)" opacity="0.8"/><path id="yildiz" d="M0 -34 Q 2.6 -2.6 24 0 Q 2.6 2.6 0 34 Q -2.6 2.6 -24 0 Q -2.6 -2.6 0 -34 Z" fill="#FFF3D6"/><circle r="3.5" fill="#FFFFFF"/></g>`;
+        $("#L3").innerHTML = g;
+        // sheep
+        let sb = "", shd = "";
+        for (let i = 0; i < 8; i++) { sb += sheepSVG(i); shd += `<ellipse id="sg${i}" cx="0" cy="0" rx="80" ry="10" fill="#4B3B5A" opacity="0.2"/>`; }
+        $("#gSheepM").innerHTML = sb; $("#gShM").innerHTML = shd;
+        // puffs
+        let pf = ""; for (let k = 0; k < 8; k++) for (let j = 0; j < 4; j++) pf += `<circle id="pf${k}_${j}" r="6" fill="#F6EBD5" stroke="${INK}" stroke-width="2" opacity="0"/>`;
+        $("#gPuf").innerHTML = pf;
+
+        // ---------- per-frame
+        const layers = [["#L0", 0.08], ["#L1", 0.3], ["#L2", 0.6], ["#L3", 1]].map(([s, p]) => [$(s), p]);
+        const SH = [...Array(8)].map((_, i) => { const e = $("#sh" + i); return { e, bob: e.querySelector(".bob"), legs: [0, 1, 2, 3].map((k) => e.querySelector(".l" + k)), bas: e.querySelector(".bas"), kulak: e.querySelector(".kulak"), kuyruk: e.querySelector(".kuyruk"), sg: $("#sg" + i) }; });
+        // pile order: back (top) pebbles first, front row last
+        { const kp = $("#kesePeb"); [...Array(9)].map((_, k) => [k, Z.SLOTS[k === 8 ? 0 : Z.TAKE[k]][1]]).sort((a, b) => a[1] - b[1]).forEach(([k]) => kp.appendChild($("#pp" + k))); }
+        const gSB = $("#gSheepB"), gSM = $("#gSheepM"), gShB = $("#gShB"), gShM = $("#gShM");
+        const PP = [...Array(9)].map((_, k) => $("#pp" + k)), FP = [...Array(8)].map((_, k) => $("#fp" + k)), GL = [...Array(8)].map((_, k) => $("#gl" + k));
+        const KESE = $("#kese"), KIC = $("#keseIc"), KGOV = $("#keseGovde"), PAR = $("#parilti"), YLD = $("#yildiz");
+        const clouds = [...document.querySelectorAll(".bulut")];
+        const HIPS = [[-30, -36], [30, -36], [-22, -36], [38, -36]];
+
+        function render(t) {
+          const c = Z.cam(t);
+          layers.forEach(([el, p]) => { const m = Z.camMatrix(c, p); el.setAttribute("transform", `matrix(${m.s.toFixed(5)} 0 0 ${m.s.toFixed(5)} ${m.tx.toFixed(2)} ${m.ty.toFixed(2)})`); });
+          clouds.forEach((e, k) => { const x = +e.dataset.x + t * (6 + k * 3), sc = +e.dataset.sc; e.setAttribute("transform", `translate(${f1(x)} ${[170, 110, 250][k]}) scale(${sc})`); });
+          // sheep
+          const order = [...Array(8)].map((_, i) => [i, Z.sheep(i, t)]).sort((a, b) => a[1].y - b[1].y);
+          order.forEach(([i, st]) => {
+            const o = SH[i];
+            const behind = st.y < Z.frontY(st.x) - 2 && st.x > Z.POSTL.x - 40;
+            const par = behind ? gSB : gSM, spar = behind ? gShB : gShM;
+            par.appendChild(o.e); spar.appendChild(o.sg);
+            o.e.setAttribute("transform", `translate(${f1(st.x)} ${f1(st.y)}) scale(${(st.s * (Math.abs(st.faceS) < 0.04 ? 0.04 * Math.sign(st.faceS || 1) : st.faceS)).toFixed(4)} ${st.s.toFixed(4)})`);
+            o.sg.setAttribute("cx", f1(st.x + 34 * st.s)); o.sg.setAttribute("cy", f1(st.y + 1)); o.sg.setAttribute("rx", f1(86 * st.s)); o.sg.setAttribute("ry", f1(10 * st.s));
+            const w0 = Z.walk(st, 0);
+            o.bob.setAttribute("transform", `translate(0 ${f1(w0.bob)})`);
+            o.legs.forEach((l, k) => { const w = Z.walk(st, k); l.setAttribute("transform", `rotate(${f1(w.leg)} ${HIPS[k][0]} ${HIPS[k][1]})`); });
+            const nod = st.head * 22 + Math.sin(t * 2.3 + i) * 3 * st.v;
+            o.bas.setAttribute("transform", `rotate(${f1(nod)} 46 -62)`);
+            const flick = Math.max(0, Math.sin(t * 1.3 + i * 2.1) - 0.93) * 300;
+            o.kulak.setAttribute("transform", `rotate(${f1(flick)} 44 -68)`);
+            o.kuyruk.setAttribute("transform", `rotate(${f1(Math.sin(t * 9 + i) * 14 * st.v)} -56 -62)`);
+          });
+          // pouch
+          const sw = Z.swing(t), sl = Z.slack(t);
+          KESE.setAttribute("transform", `rotate(${sw.toFixed(3)} ${Z.PEG.x} ${Z.PEG.y})`);
+          KIC.setAttribute("transform", `translate(0 ${f1(6 * sl)})`);
+          KGOV.setAttribute("transform", `translate(${Z.MOUTH.x} ${Z.MOUTH.y + 30}) scale(${(1 - 0.07 * sl).toFixed(4)} ${(1 - 0.07 * sl).toFixed(4)}) translate(${-Z.MOUTH.x} ${-Z.MOUTH.y - 30})`);
+          // pebbles
+          for (let k = 0; k < 9; k++) {
+            const q = Z.pebble(k, t);
+            const slot = Z.SLOTS[q.slot];
+            const pe = PP[q.slot === 0 ? 8 : k];
+            if (k === 8) { pe.setAttribute("transform", `translate(${Z.MOUTH.x + slot[0]} ${Z.MOUTH.y + slot[1]}) rotate(-6)`); continue; }
+            const fe = FP[k];
+            if (q.inPouch) { pe.setAttribute("opacity", 1); pe.setAttribute("transform", `translate(${Z.MOUTH.x + slot[0]} ${Z.MOUTH.y + slot[1]}) rotate(${f1(q.rot)})`); fe.setAttribute("opacity", 0); }
+            else { pe.setAttribute("opacity", 0); fe.setAttribute("opacity", 1); fe.setAttribute("transform", `translate(${f1(q.x)} ${f1(q.y)}) scale(${q.sq.toFixed(3)} ${(1 / q.sq).toFixed(3)}) rotate(${f1(q.rot)})`); }
+            const g2 = GL[k];
+            if (q.landed) { g2.setAttribute("opacity", 0.26); g2.setAttribute("cx", q.x + 8); g2.setAttribute("cy", q.y + 13); }
+            else g2.setAttribute("opacity", 0);
+            // landing puffs
+            for (let j = 0; j < 4; j++) {
+              const e = document.getElementById(`pf${k}_${j}`);
+              if (q.landed && q.age < 0.5) {
+                const a = q.age / 0.5, dir = j < 2 ? -1 : 1, off = (j % 2) * 10;
+                e.setAttribute("opacity", ((1 - a) * 0.9).toFixed(3));
+                e.setAttribute("cx", f1(q.x + dir * (22 + a * 26 + off))); e.setAttribute("cy", f1(q.y + 10 - a * 12 - off * 0.5)); e.setAttribute("r", f1(4 + a * 5 - off * 0.2));
+              } else e.setAttribute("opacity", 0);
+            }
+          }
+          // glint on the one that stays
+          const gi = Z.glint(t);
+          PAR.setAttribute("opacity", gi.toFixed(3));
+          if (gi > 0) {
+            const m = Z.mouthAt(t);
+            PAR.setAttribute("transform", `translate(${f1(m.x + Z.SLOTS[0][0] - 7)} ${f1(m.y + Z.SLOTS[0][1] - 6)}) scale(${(0.5 + 0.2 * gi).toFixed(3)})`);
+            YLD.setAttribute("transform", `rotate(${f1((t - Z.GLINT) * 6)}) scale(${(0.8 + 0.2 * gi).toFixed(3)} ${(0.8 + 0.2 * gi).toFixed(3)})`);
+          }
+          if (typeof extra === "function") extra(t, c);
+        }
+        const tl = gsap.timeline({ paused: true });
+        const D = { t: 0 };
+        tl.fromTo(D, { t: 0 }, { t: Z.DUR, duration: Z.DUR, ease: "none", onUpdate() { render(D.t); } }, 0);
+        render(0);
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

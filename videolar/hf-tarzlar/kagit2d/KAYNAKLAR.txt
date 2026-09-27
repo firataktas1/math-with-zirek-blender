@@ -1,0 +1,5 @@
+Kaynaklar ve lisanslar (kagit2d)
+- Çizimler, dokular, sahne kodu: bu projede yazılan kod (assets/sahne.js ve index.html), dış görsel, fotoğraf ya da font yok.
+- Dokular (varsa) yordamsal olarak üretildi: sabit tohumlu kod, dış dosya yok.
+- assets/vendor/gsap.min.js: GSAP 3.14.2 (GreenSock, Standard "no charge" lisansı), kanalın mevcut HyperFrames projesinden (video1-v5) aynen alındı; yalnız zaman çizelgesi sürücüsü olarak kullanılıyor.
+- Yazı yok, font dosyası yok.
