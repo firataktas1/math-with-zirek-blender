@@ -1516,7 +1516,7 @@ for _f in (1, 68, 210, 296):
 _dg2 = bpy.context.evaluated_depsgraph_get()
 _nc = _np = 0
 for _in in _dg2.object_instances:
-    if _in.object.type in ('CURVES', 'CURVE'):
+    if _in.object.type == 'CURVES':
         _nc += 1
         _np += len(_in.object.data.points)
 print('LIF nesne %d nokta %d' % (_nc, _np), flush=True)
