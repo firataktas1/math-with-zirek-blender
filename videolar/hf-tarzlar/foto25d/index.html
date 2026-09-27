@@ -212,7 +212,7 @@
         el("path", { d: gov, fill: "url(#p-kese)" }, keseArka);
         el("path", { d: gov, fill: "url(#g-kese)" }, keseArka);
         el("path", { d: "M" + (mx - 30) + " " + (my + 40) + " C " + (mx - 44) + " " + (my + 70) + ", " + (mx - 40) + " " + (my + 104) + ", " + (mx - 28) + " " + (my + 122) + " M " + (mx + 6) + " " + (my + 30) + " C " + (mx + 2) + " " + (my + 70) + ", " + (mx + 6) + " " + (my + 104) + ", " + (mx + 10) + " " + (my + 132) + " M " + (mx + 34) + " " + (my + 36) + " C " + (mx + 46) + " " + (my + 70) + ", " + (mx + 46) + " " + (my + 100) + ", " + (mx + 38) + " " + (my + 124), fill: "none", stroke: "#3A2612", "stroke-width": 2.4, opacity: 0.35, "stroke-linecap": "round" }, keseArka);
-        el("path", { d: gov, fill: "none", stroke: "#FFD89C", "stroke-width": 2.5, opacity: 0.5, transform: "translate(-1 -1)", "stroke-dasharray": "0 0" }, keseArka);
+        el("path", { d: gov, fill: "none", stroke: "#FFD89C", "stroke-width": 2, opacity: 0.2, transform: "translate(-1 -1)" }, keseArka);
         // ağız: arka dudak (içi koyu)
         var agiz = "M" + (mx - 34) + " " + (my + 4) + " C " + (mx - 32) + " " + (my - 10) + ", " + (mx - 20) + " " + (my - 6) + ", " + (mx - 14) + " " + (my - 14) + " C " + (mx - 6) + " " + (my - 6) + ", " + mx + " " + (my - 16) + ", " + (mx + 8) + " " + (my - 12) + " C " + (mx + 16) + " " + (my - 18) + ", " + (mx + 22) + " " + (my - 6) + ", " + (mx + 30) + " " + (my - 12) + " C " + (mx + 34) + " " + (my - 6) + ", " + (mx + 38) + " " + (my - 2) + ", " + (mx + 36) + " " + (my + 6) + " C " + (mx + 14) + " " + (my + 14) + ", " + (mx - 14) + " " + (my + 14) + ", " + (mx - 34) + " " + (my + 4) + " Z";
         el("path", { d: agiz, fill: "url(#p-kese)" }, keseArka);
@@ -241,7 +241,7 @@
         el("path", { d: ust, fill: "#3A342C", opacity: 0.18 }, tasAlan);
         el("path", { d: ust, fill: "url(#g-tasust)" }, tasAlan);
         el("path", { d: "M" + (SX - 200) + " " + (SY - 20) + " C " + (SX - 120) + " " + (SY - 10) + ", " + (SX - 60) + " " + (SY - 30) + ", " + (SX + 10) + " " + (SY - 24) + " M " + (SX + 120) + " " + (SY + 20) + " C " + (SX + 170) + " " + (SY + 10) + ", " + (SX + 220) + " " + (SY + 24) + ", " + (SX + 260) + " " + (SY + 8), fill: "none", stroke: "#3B342A", "stroke-width": 1.6, opacity: 0.45 }, tasAlan);
-        el("path", { d: ust, fill: "none", stroke: "#FFE6BE", "stroke-width": 1.6, opacity: 0.4 }, tasAlan);
+        
         var tufts2 = "";
         for (var b = 0; b < 44; b++) { var x = SX - 300 + b * 14 + rr(-5, 5), y = SY + 60 + Math.abs(b - 22) * -0.4 + rr(0, 8), l = rr(10, 24); tufts2 += "M" + f1(x) + " " + f1(y + 12) + " q" + f1(rr(-3, 3)) + " " + f1(-l * 0.6) + " " + f1(rr(-7, 7)) + " " + f1(-l) + " "; }
         el("path", { d: tufts2, fill: "none", stroke: "#4F5224", "stroke-width": 2, "stroke-linecap": "round", opacity: 0.8 }, tasAlan);
@@ -252,10 +252,10 @@
           var s = el("svg", { viewBox: "-30 -20 60 40" }, parent);
           var r = mulberry(seed), a = 27, b = 13.5;
           var pts = [];
-          for (var i = 0; i < 10; i++) { var t = (i / 10) * Math.PI * 2, k = 1 + (r() - 0.5) * 0.16; pts.push([Math.cos(t) * a * k, Math.sin(t) * b * k * (Math.sin(t) > 0 ? 0.85 : 1.05)]); }
+          for (var i = 0; i < 10; i++) { var t = (i / 10) * Math.PI * 2, k = 1 + (r() - 0.5) * 0.26; pts.push([Math.cos(t) * a * k, Math.sin(t) * b * k * (Math.sin(t) > 0 ? 0.85 : 1.05)]); }
           var d = "M" + pts.map(function (p) { return f1(p[0]) + " " + f1(p[1]); }).join(" L") + " Z";
           d = (function (p) { var n = p.length, dd = "M" + f1((p[0][0] + p[1][0]) / 2) + " " + f1((p[0][1] + p[1][1]) / 2); for (var i = 1; i <= n; i++) { var c = p[i % n], nx = p[(i + 1) % n]; dd += " Q" + f1(c[0]) + " " + f1(c[1]) + " " + f1((c[0] + nx[0]) / 2) + " " + f1((c[1] + nx[1]) / 2); } return dd + " Z"; })(pts);
-          el("path", { d: d, fill: "#A8865C" }, s);
+          el("path", { d: d, fill: "#9E8C72" }, s);
           el("path", { d: d, fill: "url(#p-cakil)", opacity: 0.9 }, s);
           var sp = "";
           for (var j = 0; j < 9; j++) { var qx = (r() - 0.5) * a * 1.4, qy = (r() - 0.5) * b * 1.2, rad = 0.6 + r() * 1.3; sp += "M" + f1(qx - rad) + " " + f1(qy) + " a" + f1(rad) + " " + f1(rad * 0.8) + " 0 1 0 " + f1(rad * 2) + " 0 a" + f1(rad) + " " + f1(rad * 0.8) + " 0 1 0 " + f1(-rad * 2) + " 0 "; }
@@ -369,7 +369,7 @@
           tl.to(gl, { opacity: 0.45, duration: 0.15 }, T + 0.62);
           tl.fromTo(c.el, { scaleY: 0.86, scaleX: 1.06 }, { scaleY: 1, scaleX: 1, duration: 0.22, ease: "back.out(3)", immediateRender: false }, T + 0.7);
         });
-        tl.to(cakil[7].el, { y: my - 5, scale: 0.62, rotation: 0, duration: 0.45, ease: "back.out(2)" }, 6.95);
+        tl.to(cakil[7].el, { y: my - 6, scale: 0.74, rotation: 0, duration: 0.45, ease: "back.out(2)" }, 6.95);
 
         // ---------- kamera: hafif yan kayma, sonra katmanlı yaklaşma ----------
         var FX = mx, FY = my + 30, S2 = 2.2, S1 = 1.75, TX = 960, TY = 560;
@@ -380,12 +380,12 @@
         tl.to("#uzak-flu", { opacity: 1, duration: 2.2, ease: "sine.inOut" }, 7.3);
         tl.fromTo("#gren", { x: 0, y: 0 }, { x: 60, y: 44, duration: 10, ease: "steps(300)" }, 0);
         // parıltı
-        var GX = mx + 6, GY = my - 9;
+        var GX = mx + 12, GY = my - 13;
         gsap.set("#hale", { left: GX - 85, top: GY - 85 });
         gsap.set("#yildiz", { left: GX - 60, top: GY - 60 });
         tl.fromTo("#hale", { opacity: 0, scale: 0.5 }, { opacity: 0.75, scale: 1, duration: 0.9, ease: "sine.out" }, 8.15);
-        tl.fromTo("#yildiz", { opacity: 0, scale: 0.2, rotation: -25 }, { opacity: 1, scale: 0.44, rotation: 0, duration: 0.6, ease: "back.out(1.5)" }, 8.3);
-        tl.to("#yildiz", { scale: 0.34, duration: 0.55, ease: "sine.inOut", repeat: 1, yoyo: true }, 8.95);
+        tl.fromTo("#yildiz", { opacity: 0, scale: 0.2, rotation: -25 }, { opacity: 1, scale: 0.26, rotation: 0, duration: 0.6, ease: "back.out(1.5)" }, 8.3);
+        tl.to("#yildiz", { scale: 0.2, duration: 0.55, ease: "sine.inOut", repeat: 1, yoyo: true }, 8.95);
         tl.to("#hale", { scale: 1.1, opacity: 0.6, duration: 0.6, ease: "sine.inOut", repeat: 1, yoyo: true }, 9.1);
         window.__timelines["main"] = tl;
       })();
