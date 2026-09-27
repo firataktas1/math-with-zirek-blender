@@ -326,10 +326,14 @@ def build_pen():
     for c in range(courses):
         z0 = c * WALL_H / courses
         hh = WALL_H / courses
-        s = r.uniform(0, 0.25)
+        s = POST_R * 0.55 + r.uniform(0, 0.06)          # taşlar direğin içinden çıkmasın
         arc = (a1 - a0) * PEN_R
-        while s < arc - 0.15:
+        while True:
             w = r.uniform(0.42, 0.62)
+            if s + w > arc - POST_R * 0.55:
+                w = arc - POST_R * 0.55 - s
+                if w < 0.25:
+                    break
             a = a0 + (s + w / 2) / PEN_R
             p = ring_pos(a)
             k = r.randrange(len(M_WALL))
@@ -338,10 +342,14 @@ def build_pen():
                 subdiv=1, amp=0.14, seed=r.randrange(10000), rot=rot)
             s += w + r.uniform(-0.02, 0.03)
     # üst sıra: yassı kapak taşları
-    s = 0.1
+    s = POST_R * 0.8
     arc = (a1 - a0) * PEN_R
-    while s < arc - 0.15:
+    while True:
         w = r.uniform(0.5, 0.7)
+        if s + w > arc - POST_R * 0.8:
+            w = arc - POST_R * 0.8 - s
+            if w < 0.3:
+                break
         a = a0 + (s + w / 2) / PEN_R
         p = ring_pos(a)
         rot = Quaternion((0, 0, 1), a + math.pi / 2 + r.uniform(-0.1, 0.1))
@@ -916,6 +924,10 @@ spark = link(bpy.data.objects.new('parilti_nokta', me))
 M_SPARK = emissive('parilti_mat', (1.0, 0.86, 0.62), 0.0)
 spark.data.materials.append(M_SPARK)
 spark.parent = LAST
+# parıltı yanmadan önce nokta görünmesin (ışımasız küre siyah görünür)
+for f, hid in ((1, True), (262, True), (263, False)):
+    spark.hide_render = hid
+    spark.keyframe_insert('hide_render', frame=f)
 _M300 = pouch_matrix(N_FRAMES) @ Matrix.Translation(heap_local[0]) @ local_rot[0].to_matrix().to_4x4()
 _l3, _q3, _s3 = _M300.decompose()
 _top = (cam_dir_end * 0.4 + Vector((0, 0, 1))).normalized()
