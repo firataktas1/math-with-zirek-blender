@@ -16,7 +16,7 @@
         background: linear-gradient(180deg, #4A3D63 0%, #7A5877 24%, #C77E6E 40%, #F0A874 50%, #F6C58C 56%, #F6C58C 100%); }
       .katman { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
       .kelime { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: "Baloo", sans-serif; font-weight: 800; line-height: 1; }
-      #aksam { left: 330px; top: 318px; font-size: 170px; color: #FFB866; letter-spacing: 0.02em; opacity: 0.95;
+      #aksam { left: 250px; top: 196px; font-size: 170px; color: #FFB866; letter-spacing: 0.02em; opacity: 0.95;
         text-shadow: 0 0 40px rgba(255, 170, 90, 0.55), 0 0 90px rgba(255, 150, 80, 0.35); }
       #aksam-kap { position: absolute; left: 0; top: 0; width: 1920px; height: 376px; overflow: hidden; z-index: 2; }
       .bulut { font-weight: 700; color: rgba(255, 238, 226, 0.5); }
@@ -93,9 +93,15 @@
         var pid = 0;
         function wallWords(parent, th0, th1, courses, baseFont, color, shade, t0) {
           var hs = WH / courses;
+          // duvar gövdesi: yazıların arkasında taş rengi bant
+          var top = [], bot = [];
+          for (var th = th0; th <= th1 + 0.01; th += 2) { var q = ep(th), sc = 0.72 + (q[1] - 420) / 900; bot.push([q[0], q[1] + 4]); top.push([q[0], q[1] - WH * sc - 2]); }
+          var band = el("path", { d: "M" + bot.concat(top.reverse()).map(function (p) { return f1(p[0]) + " " + f1(p[1]); }).join(" L") + " Z", fill: "#8C8377", opacity: 0 }, parent);
+          tl.to(band, { opacity: 1, duration: 0.4 }, t0);
           for (var c = 0; c < courses; c++) {
             var pts = [];
             for (var th = th0; th <= th1 + 0.01; th += 2) { var q = ep(th), sc = 0.72 + (q[1] - 420) / 900; pts.push([q[0], q[1] - hs * c * sc - 3]); }
+            if (pts[pts.length - 1][0] < pts[0][0]) pts.reverse();
             var d = "M" + pts.map(function (p) { return f1(p[0]) + " " + f1(p[1]); }).join(" L");
             var id = "yol" + (pid++);
             el("path", { id: id, d: d, fill: "none" }, tanim);
@@ -112,6 +118,8 @@
         }
         function postWords(parent, th, n, t0) {
           var p = ep(th), sc = 0.72 + (p[1] - 420) / 900;
+          var blk = el("rect", { x: f1(p[0] - 30 * sc), y: f1(p[1] - n * 21 * sc - 10), width: f1(60 * sc), height: f1(n * 21 * sc + 14), rx: 6, fill: "#7E766B", opacity: 0 }, parent);
+          tl.to(blk, { opacity: 1, duration: 0.35 }, t0);
           for (var i = 0; i < n; i++) {
             var y = p[1] - 4 - i * 21 * sc;
             var sh = el("text", { x: p[0], y: y + 2.5, "text-anchor": "middle", "font-family": "Baloo", "font-weight": 800, "font-size": f1(30 * sc), fill: "#6F665A" }, parent);
@@ -126,9 +134,9 @@
         var icD = "M" + ic.map(function (p) { return f1(p[0]) + " " + f1(p[1]); }).join(" L") + " Z";
         var icP = el("path", { d: icD, fill: "#7C9A57", opacity: 0 }, arka);
         tl.to(icP, { opacity: 1, duration: 0.5 }, 0.2);
-        wallWords(arka, 165, 345, 3, 20, "#D8CDBB", "#7C7266", 0.15);
+        wallWords(arka, 165, 345, 3, 21, "#E6DCCB", "#5E564C", 0.15);
         postWords(arka, 165, 6, 0.45);
-        wallWords(onduvar, 345, 495, 3, 26, "#E4DACA", "#6F665A", 0.3);
+        wallWords(onduvar, 345, 495, 3, 27, "#EFE6D6", "#5A5248", 0.3);
         postWords(onduvar, 135, 6, 0.55);
         // çivi
         var civi = el("rect", { x: 858, y: 560, width: 32, height: 8, rx: 3, fill: "#8A5A36", opacity: 0 }, onduvar);
@@ -237,17 +245,17 @@
         // ---------- "taş" keseden çıkar, düz taşa dizilir ----------
         sira.forEach(function (ci, k) {
           var c = cakil[ci], T = T0 + DT * k + 0.05;
-          var tx = SX + (k - 3.5) * 64, ty = SY - 22;
+          var tx = SX + (k - 3.5) * 70, ty = SY - 24;
           var lift = c.y - 46, peak = Math.min(lift, ty) - 120;
           tl.set(c.el, { zIndex: 950 }, T);
           tl.to(c.el, { y: lift, scale: 0.8, duration: 0.2, ease: "power2.out" }, T);
           tl.to(c.el, { x: tx, duration: 0.5, ease: "power1.inOut" }, T + 0.2);
           tl.to(c.el, { keyframes: [{ y: peak, duration: 0.2, ease: "power2.out" }, { y: ty, duration: 0.3, ease: "power2.in" }] }, T + 0.2);
-          tl.to(c.el, { scale: 1, rotation: 0, duration: 0.5, ease: "power1.inOut" }, T + 0.2);
+          tl.to(c.el, { scale: 1.25, rotation: 0, duration: 0.5, ease: "power1.inOut" }, T + 0.2);
           tl.set(c.el, { zIndex: 890 }, T + 0.7);
-          tl.fromTo(c.el, { scaleY: 0.7, scaleX: 1.2 }, { scaleY: 1, scaleX: 1, duration: 0.3, ease: "back.out(3)", immediateRender: false }, T + 0.7);
+          tl.fromTo(c.el, { scaleY: 0.9, scaleX: 1.5 }, { scaleY: 1.25, scaleX: 1.25, duration: 0.3, ease: "back.out(3)", immediateRender: false }, T + 0.7);
         });
-        tl.to(cakil[7].el, { y: M[1] - 12, scale: 0.8, rotation: 0, duration: 0.45, ease: "back.out(2)" }, 6.95);
+        tl.to(cakil[7].el, { y: M[1] - 16, scale: 1.0, rotation: 0, duration: 0.45, ease: "back.out(2)" }, 6.95);
 
         // ---------- akşam güneşi, bulutlar ----------
         tl.fromTo("#aksam", { y: 90 }, { y: 0, duration: 1.4, ease: "power2.out" }, 0);
@@ -258,7 +266,7 @@
         // ---------- yaklaşma + parıltı ----------
         var FX = 880, FY = 655, S2 = 2.3;
         tl.fromTo(dunya, { x: 0, y: 0, scale: 1 }, { x: 960 - S2 * FX, y: 540 - S2 * FY, scale: S2, duration: 2.9, ease: "sine.inOut" }, 7.1);
-        var GX = M[0] + 20, GY = M[1] - 24;
+        var GX = M[0] + 26, GY = M[1] - 32;
         gsap.set("#yildiz", { left: GX - 60, top: GY - 60 });
         gsap.set("#hale", { left: M[0] - 100, top: M[1] - 112 });
         tl.fromTo("#hale", { opacity: 0, scale: 0.5 }, { opacity: 0.75, scale: 1, duration: 0.9, ease: "sine.out" }, 8.15);

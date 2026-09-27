@@ -73,8 +73,8 @@
               <stop offset="1" stop-color="#26180C" stop-opacity="0.6" />
             </radialGradient>
             <radialGradient id="g-cakil" cx="0.34" cy="0.3" r="0.8">
-              <stop offset="0" stop-color="#FFF0CF" stop-opacity="0.55" />
-              <stop offset="0.35" stop-color="#FFF0CF" stop-opacity="0" />
+              <stop offset="0" stop-color="#FFF0CF" stop-opacity="0.3" />
+              <stop offset="0.4" stop-color="#FFF0CF" stop-opacity="0" />
               <stop offset="0.8" stop-color="#3A220C" stop-opacity="0.35" />
               <stop offset="1" stop-color="#2A1606" stop-opacity="0.6" />
             </radialGradient>
@@ -170,8 +170,8 @@
             var s = kpm(p[1]) / 200;
             for (var b = 0; b < 3; b++) { var x = p[0] + rr(-6, 6), l = rr(8, 20) * s, lean = rr(-6, 6) * s; tufts += "M" + f1(x) + " " + f1(p[1] + 3) + " q" + f1(lean * 0.4) + " " + f1(-l * 0.6) + " " + f1(lean) + " " + f1(-l) + " "; }
           });
-          el("path", { d: tufts, fill: "none", stroke: "#6E7534", "stroke-width": 2, "stroke-linecap": "round", opacity: 0.9 }, parent);
-          el("path", { d: tufts, fill: "none", stroke: "#A4A054", "stroke-width": 1, "stroke-linecap": "round", opacity: 0.7, transform: "translate(2 1)" }, parent);
+          el("path", { d: tufts, fill: "none", stroke: "#4F5224", "stroke-width": 1.8, "stroke-linecap": "round", opacity: 0.8 }, parent);
+          el("path", { d: tufts, fill: "none", stroke: "#8C7F42", "stroke-width": 1, "stroke-linecap": "round", opacity: 0.55, transform: "translate(2 1)" }, parent);
         }
         function post(parent, th, hm) {
           var p = ep(th), k = kpm(p[1]), w = 0.19 * k, h = hm * k;
@@ -244,21 +244,24 @@
         el("path", { d: ust, fill: "none", stroke: "#FFE6BE", "stroke-width": 1.6, opacity: 0.4 }, tasAlan);
         var tufts2 = "";
         for (var b = 0; b < 44; b++) { var x = SX - 300 + b * 14 + rr(-5, 5), y = SY + 60 + Math.abs(b - 22) * -0.4 + rr(0, 8), l = rr(10, 24); tufts2 += "M" + f1(x) + " " + f1(y + 12) + " q" + f1(rr(-3, 3)) + " " + f1(-l * 0.6) + " " + f1(rr(-7, 7)) + " " + f1(-l) + " "; }
-        el("path", { d: tufts2, fill: "none", stroke: "#6E7534", "stroke-width": 2.4, "stroke-linecap": "round", opacity: 0.9 }, tasAlan);
-        el("path", { d: tufts2, fill: "none", stroke: "#A9A45A", "stroke-width": 1.1, "stroke-linecap": "round", opacity: 0.7, transform: "translate(2 0)" }, tasAlan);
+        el("path", { d: tufts2, fill: "none", stroke: "#4F5224", "stroke-width": 2, "stroke-linecap": "round", opacity: 0.8 }, tasAlan);
+        el("path", { d: tufts2, fill: "none", stroke: "#8C7F42", "stroke-width": 1, "stroke-linecap": "round", opacity: 0.55, transform: "translate(2 0)" }, tasAlan);
 
         // ---------- çakıllar ----------
         function pebbleSVG(parent, seed) {
           var s = el("svg", { viewBox: "-30 -20 60 40" }, parent);
           var r = mulberry(seed), a = 27, b = 13.5;
           var pts = [];
-          for (var i = 0; i < 10; i++) { var t = (i / 10) * Math.PI * 2, k = 1 + (r() - 0.5) * 0.16; pts.push([Math.cos(t) * a * k, Math.sin(t) * b * k]); }
+          for (var i = 0; i < 10; i++) { var t = (i / 10) * Math.PI * 2, k = 1 + (r() - 0.5) * 0.16; pts.push([Math.cos(t) * a * k, Math.sin(t) * b * k * (Math.sin(t) > 0 ? 0.85 : 1.05)]); }
           var d = "M" + pts.map(function (p) { return f1(p[0]) + " " + f1(p[1]); }).join(" L") + " Z";
           d = (function (p) { var n = p.length, dd = "M" + f1((p[0][0] + p[1][0]) / 2) + " " + f1((p[0][1] + p[1][1]) / 2); for (var i = 1; i <= n; i++) { var c = p[i % n], nx = p[(i + 1) % n]; dd += " Q" + f1(c[0]) + " " + f1(c[1]) + " " + f1((c[0] + nx[0]) / 2) + " " + f1((c[1] + nx[1]) / 2); } return dd + " Z"; })(pts);
-          el("path", { d: d, fill: "#B07E45" }, s);
-          el("path", { d: d, fill: "url(#p-cakil)" }, s);
+          el("path", { d: d, fill: "#A8865C" }, s);
+          el("path", { d: d, fill: "url(#p-cakil)", opacity: 0.9 }, s);
+          var sp = "";
+          for (var j = 0; j < 9; j++) { var qx = (r() - 0.5) * a * 1.4, qy = (r() - 0.5) * b * 1.2, rad = 0.6 + r() * 1.3; sp += "M" + f1(qx - rad) + " " + f1(qy) + " a" + f1(rad) + " " + f1(rad * 0.8) + " 0 1 0 " + f1(rad * 2) + " 0 a" + f1(rad) + " " + f1(rad * 0.8) + " 0 1 0 " + f1(-rad * 2) + " 0 "; }
+          el("path", { d: sp, fill: "#4A3420", opacity: 0.35 }, s);
+          el("path", { d: "M" + f1(-a * 0.5) + " " + f1(b * 0.1) + " q " + f1(a * 0.3) + " " + f1(-b * 0.3) + " " + f1(a * 0.6) + " " + f1(-b * 0.1), fill: "none", stroke: "#5A4028", "stroke-width": 0.7, opacity: 0.4 }, s);
           el("path", { d: d, fill: "url(#g-cakil)" }, s);
-          el("ellipse", { cx: -9, cy: -6, rx: 8, ry: 2.6, fill: "#FFF1D6", opacity: 0.28, transform: "rotate(-12 -9 -6)" }, s);
           el("path", { d: d, fill: "none", stroke: "#4A3622", "stroke-width": 0.8, opacity: 0.45 }, s);
           return s;
         }
@@ -327,7 +330,7 @@
           // toynak otları
           var tf = "";
           [-46, -30, 22, 36].forEach(function (x) { for (var b = 0; b < 4; b++) { var bx = x + (b - 1.5) * 4 + r() * 3, l = 8 + r() * 9; tf += "M" + f1(bx) + " 2 q" + f1((r() - 0.5) * 4) + " " + f1(-l * 0.6) + " " + f1((r() - 0.5) * 9) + " " + f1(-l) + " "; } });
-          var grass = el("path", { d: tf, fill: "none", stroke: "#6A7232", "stroke-width": 2.2, "stroke-linecap": "round", opacity: 0.95 }, s);
+          var grass = el("path", { d: tf, fill: "none", stroke: "#555826", "stroke-width": 2, "stroke-linecap": "round", opacity: 0.95 }, s);
           return { div: div, legs: legs, govde: govde, bas: bas };
         }
         for (var i = 0; i < N; i++) {
