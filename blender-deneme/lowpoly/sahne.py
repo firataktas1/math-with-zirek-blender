@@ -109,7 +109,7 @@ def prism(bm, p0, p1, r0, r1, seg=6, mi=0, rot=0.0):
 
 
 # ---------------------------------------------------------------- malzemeler: düz renk + hafif geçiş
-def mat(name, color, color2=None, axis='Z', lo=0.0, hi=1.0, rough=0.9, coord='Object', facet=0.05, sheen=0.0):
+def mat(name, color, color2=None, axis='Z', lo=0.0, hi=1.0, rough=0.9, coord='Object', facet=0.05, sheen=0.0, haze=True):
     """Mat pastel yüzey. color2 verilirse nesne ekseni boyunca yumuşak geçiş (lo..hi). facet: yüz başına küçük ton farkı."""
     m = bpy.data.materials.new(name)
     m.use_nodes = True
@@ -152,6 +152,17 @@ def mat(name, color, color2=None, axis='Z', lo=0.0, hi=1.0, rough=0.9, coord='Ob
         hs = N.new('ShaderNodeHueSaturation')
         L.new(col, hs.inputs['Color']); L.new(mm.outputs[0], hs.inputs['Value'])
         col = hs.outputs['Color']
+    if haze:
+        # uzaklık pusu: uzak yüzeyler yumuşakça şeftali havaya karışır (sakin renk geçişi)
+        cd = N.new('ShaderNodeCameraData')
+        hz = N.new('ShaderNodeMapRange'); hz.interpolation_type = 'SMOOTHSTEP'
+        hz.inputs['From Min'].default_value = 11.0; hz.inputs['From Max'].default_value = 42.0
+        hz.inputs['To Max'].default_value = 0.72
+        L.new(cd.outputs['View Distance'], hz.inputs['Value'])
+        hc = N.new('ShaderNodeRGB'); hc.outputs[0].default_value = (1.0, 0.74, 0.62, 1)
+        hm = N.new('ShaderNodeMix'); hm.data_type = 'RGBA'
+        L.new(hz.outputs[0], hm.inputs['Factor']); L.new(col, hm.inputs['A']); L.new(hc.outputs[0], hm.inputs['B'])
+        col = hm.outputs['Result']
     L.new(col, b.inputs['Base Color'])
     return m
 
@@ -172,37 +183,38 @@ def emissive(name, color, strength):
 
 
 # pastel, sıcak akşam paleti (kanal: sıcak ışık, krem; soğuk/karanlık renk alınmaz)
-M_GROUND = mat('zemin', (0.50, 0.66, 0.42), (0.66, 0.70, 0.46), axis='Y', lo=-4.0, hi=22.0, coord='Object', facet=0.035)
-M_GRASS = mat('ot', (0.36, 0.56, 0.34), facet=0.06)
-M_GRASS2 = mat('ot2', (0.55, 0.70, 0.38), facet=0.06)
-M_FLOWER = mat('cicek', (0.98, 0.86, 0.72), facet=0.0)
+M_GROUND = mat('zemin', (0.30, 0.52, 0.26), (0.50, 0.56, 0.26), axis='Y', lo=-4.0, hi=22.0, coord='Object', facet=0.035)
+M_GRASS = mat('ot', (0.16, 0.38, 0.20), facet=0.06)
+M_GRASS2 = mat('ot2', (0.36, 0.52, 0.18), facet=0.06)
+M_FLOWER = mat('cicek', (0.98, 0.80, 0.55), facet=0.0)
 M_FLOWER2 = mat('cicek2', (0.96, 0.66, 0.62), facet=0.0)
-M_WALL = [mat('duvar1', (0.80, 0.74, 0.72), facet=0.06), mat('duvar2', (0.72, 0.68, 0.72), facet=0.06),
-          mat('duvar3', (0.86, 0.79, 0.72), facet=0.06)]
-M_CAP = mat('kapak', (0.90, 0.84, 0.78), facet=0.05)
-M_WOOL = mat('yun', (0.97, 0.92, 0.83), facet=0.045, sheen=0.3)
-M_WOOL2 = mat('yun2', (0.93, 0.86, 0.76), facet=0.045, sheen=0.3)
-M_FACE = mat('yuz', (0.36, 0.28, 0.30), facet=0.05)
+M_WALL = [mat('duvar1', (0.72, 0.52, 0.48), facet=0.06), mat('duvar2', (0.56, 0.48, 0.62), facet=0.06),
+          mat('duvar3', (0.80, 0.60, 0.44), facet=0.06)]
+M_CAP = mat('kapak', (0.86, 0.72, 0.62), facet=0.05)
+M_POST = mat('direk', (0.64, 0.44, 0.58), facet=0.05)
+M_WOOL = mat('yun', (0.92, 0.86, 0.74), facet=0.045, sheen=0.3)
+M_WOOL2 = mat('yun2', (0.84, 0.77, 0.66), facet=0.045, sheen=0.3)
+M_FACE = mat('yuz', (0.20, 0.13, 0.15), facet=0.05)
 M_EYE = mat('goz', (0.08, 0.06, 0.07), rough=0.5, facet=0.0)
-M_POUCH = mat('kese', (0.33, 0.58, 0.64), (0.45, 0.68, 0.72), axis='Z', lo=-0.4, hi=0.05, facet=0.05)
-M_POUCH_IN = mat('kese_ic', (0.16, 0.30, 0.34), facet=0.0)
-M_CORD = mat('ip', (0.98, 0.90, 0.74), facet=0.03)
-M_WOOD = mat('civi', (0.62, 0.42, 0.34), facet=0.05)
-M_PEBBLE = mat('cakil', (0.95, 0.46, 0.28), facet=0.07)
-M_SLAB = mat('yassi_tas', (0.93, 0.89, 0.80), facet=0.04)
-M_TREE = mat('agac', (0.44, 0.64, 0.46), facet=0.07)
-M_TREE2 = mat('agac2', (0.62, 0.74, 0.50), facet=0.07)
-M_TRUNK = mat('govde', (0.62, 0.46, 0.40), facet=0.04)
+M_POUCH = mat('kese', (0.06, 0.30, 0.40), (0.14, 0.44, 0.52), axis='Z', lo=-0.5, hi=0.05, facet=0.05)
+M_POUCH_IN = mat('kese_ic', (0.03, 0.10, 0.14), facet=0.0)
+M_CORD = mat('ip', (0.95, 0.80, 0.52), facet=0.03)
+M_WOOD = mat('civi', (0.40, 0.24, 0.14), facet=0.05)
+M_PEBBLE = mat('cakil', (0.95, 0.30, 0.12), facet=0.07)
+M_SLAB = mat('yassi_tas', (0.62, 0.60, 0.70), facet=0.04)
+M_TREE = mat('agac', (0.16, 0.42, 0.26), facet=0.07)
+M_TREE2 = mat('agac2', (0.40, 0.56, 0.22), facet=0.07)
+M_TRUNK = mat('govde', (0.40, 0.24, 0.18), facet=0.04)
 M_HILL = [mat('tepe_uzak', (0.93, 0.76, 0.72), facet=0.03), mat('tepe_orta', (0.84, 0.74, 0.70), facet=0.03),
           mat('tepe_yakin', (0.66, 0.72, 0.56), facet=0.04)]
-M_ROCK = mat('kaya', (0.80, 0.72, 0.74), facet=0.07)
+M_ROCK = mat('kaya', (0.60, 0.50, 0.62), facet=0.07)
 
 # ---------------------------------------------------------------- yerleşim (öteki sürümlerle aynı)
 PEN_C = Vector((0.0, 6.0))
 PEN_R = 4.0
 GATE_ANG = math.radians(228)
 GAP_HALF = 0.25
-WALL_H = 0.78
+WALL_H = 0.62
 POST_R = 0.34
 POST_H = 1.30
 
@@ -310,7 +322,7 @@ def build_pen():
     r = rng(11)
     a0 = GATE_ANG + GAP_HALF
     a1 = GATE_ANG - GAP_HALF + 2 * math.pi
-    courses = 3
+    courses = 2
     for c in range(courses):
         z0 = c * WALL_H / courses
         hh = WALL_H / courses
@@ -322,7 +334,7 @@ def build_pen():
             p = ring_pos(a)
             k = r.randrange(len(M_WALL))
             rot = Quaternion((0, 0, 1), a + math.pi / 2) @ Quaternion((1, 0, 0), r.uniform(-0.1, 0.1))
-            gem(bms[k], Vector((p.x, p.y, hfun(p.x, p.y) + z0 + hh * 0.55)), (w * 0.55, 0.26, hh * 0.62),
+            gem(bms[k], Vector((p.x, p.y, hfun(p.x, p.y) + z0 + hh * 0.55)), (w * 0.55, 0.24, hh * 0.6),
                 subdiv=1, amp=0.14, seed=r.randrange(10000), rot=rot)
             s += w + r.uniform(-0.02, 0.03)
     # üst sıra: yassı kapak taşları
@@ -354,7 +366,7 @@ def build_pen():
             prism(bm, Vector((p.x, p.y, h0 - 0.01)), Vector((p.x, p.y, h1 - 0.015)), rr, rr * 0.96, seg=6, rot=tmp_rot)
         prism(bm, Vector((p.x, p.y, z + POST_H - 0.02)), Vector((p.x, p.y, z + POST_H + 0.1)), POST_R * 1.2, POST_R * 1.05, seg=6,
               rot=0.3)
-        bm_obj('direk_' + side, bm, [M_WALL[2] if sgn > 0 else M_WALL[0]])
+        bm_obj('direk_' + side, bm, [M_POST])
         posts.append((side, a, p))
     return posts
 
@@ -519,8 +531,8 @@ posts = build_pen()
 front_post = [p for p in posts if p[0] == 'on'][0]
 _, FA, FP = front_post
 TO_CAM0 = (CAM_POS0.xy - FP).normalized()
-PEB_R = 0.075                       # çakıl yarı boyu (14-15 cm): geniş planda telefonda okunur
-ROW_GAP = 0.19
+PEB_R = 0.10                       # çakıl yarı boyu (14-15 cm): geniş planda telefonda okunur
+ROW_GAP = 0.25
 ROW_START = FP + TO_CAM0 * (POST_R + 0.75) - RIGHT * 0.05
 ROW_DIR = RIGHT
 ROW_CENTER = ROW_START + ROW_DIR * (ROW_GAP * 3.5)
@@ -540,7 +552,7 @@ grass_tufts([lambda p: abs((p - PEN_C).length - PEN_R) < 0.35,
 # yassı taş: açık krem, çakıllar üstünde mercan rengi (yüksek karşıtlık)
 slab_c = ROW_CENTER
 bm = bmesh.new()
-gem(bm, Vector((0, 0, 0)), (ROW_GAP * 4 + 0.22, 0.3, 0.06), subdiv=2, amp=0.05, seed=55, nscale=1.3)
+gem(bm, Vector((0, 0, 0)), (ROW_GAP * 3.5 + 0.26, 0.27, 0.06), subdiv=2, amp=0.05, seed=55, nscale=1.3)
 SLAB = bm_obj('yassi_tas', bm, [M_SLAB])
 SLAB.location = (slab_c.x, slab_c.y, hfun(slab_c.x, slab_c.y) + 0.0)
 SLAB.rotation_euler = (0, 0, math.atan2(ROW_DIR.y, ROW_DIR.x))
@@ -562,11 +574,11 @@ bm_obj('civi', bm, [M_WOOD])
 HANG = peg_base + pegdir * (PEG_LEN - 0.07) + Vector((0, 0, 0.02))
 
 POUCH_S = 1.0
-DROP = 0.50          # çividen kesenin dibine
-PROF = [(0.0, 0.0), (0.12, 0.012), (0.19, 0.06), (0.215, 0.13), (0.205, 0.2), (0.17, 0.26), (0.12, 0.30),
-        (0.105, 0.325), (0.125, 0.35), (0.16, 0.38), (0.175, 0.40)]
-LIP_Z = 0.40 - DROP
-NECK_Z = 0.318 - DROP
+DROP = 0.58          # çividen kesenin dibine
+PROF = [(0.0, 0.0), (0.15, 0.015), (0.24, 0.075), (0.27, 0.16), (0.26, 0.25), (0.215, 0.32), (0.155, 0.37),
+        (0.135, 0.395), (0.155, 0.42), (0.19, 0.445), (0.205, 0.46)]
+LIP_Z = 0.46 - DROP
+NECK_Z = 0.385 - DROP
 
 
 def build_pouch():
@@ -581,7 +593,7 @@ def build_pouch():
             th = 2 * math.pi * s / seg + (0.5 * math.pi / seg if k % 2 else 0)
             dz = 0.0
             if k == len(PROF) - 2:
-                dz = 0.03 * (1 if s % 2 else -0.3)           # ağız: köşeli fırfır
+                dz = 0.022 * (1 if s % 2 else -0.3)           # ağız: köşeli fırfır
             ring.append(bm.verts.new((r_ * math.cos(th) * (1 + rr.uniform(-0.04, 0.04)),
                                       r_ * math.sin(th) * 0.92 * (1 + rr.uniform(-0.04, 0.04)), z - DROP + dz)))
         rings.append(ring)
@@ -596,7 +608,7 @@ def build_pouch():
     ob.data.materials.append(M_POUCH_IN)
     # iç karanlık disk: ağızdan bakınca taşlar koyu zeminde okunur
     bm = bmesh.new()
-    gem(bm, Vector((0, 0, NECK_Z + 0.01)), (0.1, 0.09, 0.012), subdiv=1, amp=0.0, seed=3)
+    gem(bm, Vector((0, 0, NECK_Z + 0.01)), (0.13, 0.12, 0.012), subdiv=1, amp=0.0, seed=3)
     inn = bm_obj('kese_ic', bm, [M_POUCH_IN])
     inn.parent = ob
     # büzgü ipi: boğazda halka + fiyonk uçları + çiviye asma halkası
@@ -604,7 +616,7 @@ def build_pouch():
     n = 10
     for s in range(n):
         a0_, a1_ = 2 * math.pi * s / n, 2 * math.pi * (s + 1) / n
-        r0 = 0.112
+        r0 = 0.142
         p0 = Vector((r0 * math.cos(a0_), r0 * math.sin(a0_) * 0.92, NECK_Z + 0.006))
         p1 = Vector((r0 * math.cos(a1_), r0 * math.sin(a1_) * 0.92, NECK_Z + 0.006))
         prism(bm, p0, p1, 0.016, 0.016, seg=5)
@@ -616,23 +628,23 @@ pouch.location = HANG
 pouch.rotation_mode = 'QUATERNION'
 # kese kameraya hafif dönük: ağız görünsün diye kameraya doğru 14° eğik
 _tilt_axis = Vector((-TO_CAM0.y, TO_CAM0.x, 0)).normalized()
-POUCH_Q0 = Quaternion(_tilt_axis, math.radians(-14))
+POUCH_Q0 = Quaternion(_tilt_axis, math.radians(-24))
 pouch.rotation_quaternion = POUCH_Q0
 # kese çivinin önünde: ağzının arka kenarı çiviye yakın, ip arka kenardan çıkar
 _back = POUCH_Q0.inverted() @ (-TO_CAM0.to_3d()); _back.z = 0; _back.normalize()
-POUCH_OFF = -_back * 0.16
+POUCH_OFF = -_back * 0.2
 pouch.data.transform(Matrix.Translation(POUCH_OFF))
 for ch in pouch.children:
     ch.location = POUCH_OFF
 cord_bm.transform(Matrix.Translation(POUCH_OFF))
 _front = -_back
 _side = Vector((-_front.y, _front.x, 0))
-_kn = POUCH_OFF + _front * 0.115 + Vector((0, 0, NECK_Z + 0.006))
+_kn = POUCH_OFF + _front * 0.145 + Vector((0, 0, NECK_Z + 0.006))
 prism(cord_bm, _kn, _kn + _front * 0.03 + _side * 0.07 + Vector((0, 0, -0.08)), 0.014, 0.012, seg=5)
 prism(cord_bm, _kn, _kn + _front * 0.03 - _side * 0.05 + Vector((0, 0, -0.1)), 0.014, 0.012, seg=5)
 gem(cord_bm, _kn + _front * 0.01, (0.026, 0.026, 0.024), subdiv=1, amp=0.0, seed=8)
-_bk = POUCH_OFF + _back * 0.11 + Vector((0, 0, NECK_Z + 0.006))
-prism(cord_bm, _bk, Vector((0, 0, 0.0)), 0.012, 0.012, seg=5)
+_bk = POUCH_OFF + _back * 0.14 + Vector((0, 0, NECK_Z + 0.006))
+prism(cord_bm, _bk, Vector((0, 0, 0.0)), 0.009, 0.009, seg=5)
 cord = bm_obj('ip', cord_bm, [M_CORD])
 cord.parent = pouch
 
@@ -671,13 +683,14 @@ def pebble_mesh(name, seed):
 
 
 # kesedeki yığın (kese yerel ekseni): 0 = en son kalan, ağzın ortasında en üstte
-heap_local = [POUCH_OFF + Vector((0.0, 0.0, LIP_Z - 0.035))]
+# yığın ağızdan taşar (geniş planda da taşlar görünür); son kalan ortada, ağız hizasında
+heap_local = [POUCH_OFF + Vector((0.0, 0.0, LIP_Z - 0.02))]
 for k in range(5):
     th = 2 * math.pi * k / 5 + 0.3
-    heap_local.append(POUCH_OFF + Vector((0.09 * math.cos(th), 0.08 * math.sin(th), LIP_Z - 0.065)))
+    heap_local.append(POUCH_OFF + Vector((0.1 * math.cos(th), 0.09 * math.sin(th), LIP_Z - 0.005)))
 for k in range(3):
     th = 2 * math.pi * k / 3 + 0.9
-    heap_local.append(POUCH_OFF + Vector((0.045 * math.cos(th), 0.045 * math.sin(th), LIP_Z - 0.01)))
+    heap_local.append(POUCH_OFF + Vector((0.05 * math.cos(th), 0.05 * math.sin(th), LIP_Z + 0.06)))
 take_order = [8, 7, 6, 5, 4, 3, 2, 1]
 pebbles = [pebble_mesh('cakil_%d' % k, 3000 + k) for k in range(9)]
 LAST = pebbles[0]
@@ -803,7 +816,7 @@ WL.new(mr.outputs[0], cr.inputs['Fac'])
 lp = WN.new('ShaderNodeLightPath')
 amb = WN.new('ShaderNodeBackground')
 amb.inputs['Color'].default_value = (1.0, 0.86, 0.80, 1)
-amb.inputs['Strength'].default_value = 0.85
+amb.inputs['Strength'].default_value = 0.42
 sky = WN.new('ShaderNodeBackground')
 WL.new(cr.outputs['Color'], sky.inputs['Color'])
 sky.inputs['Strength'].default_value = 1.0
@@ -836,7 +849,7 @@ def light(name, kind, energy, color, loc=None, direction=None, size=None):
 SUN_AZ = math.radians(200.0)
 SUN_EL = math.radians(26.0)
 SUN_VEC = Vector((math.cos(SUN_AZ) * math.cos(SUN_EL), math.sin(SUN_AZ) * math.cos(SUN_EL), math.sin(SUN_EL)))
-light('gunes', 'SUN', 2.6, (1.0, 0.82, 0.66), direction=-SUN_VEC, size=math.radians(6.0))
+light('gunes', 'SUN', 3.0, (1.0, 0.80, 0.62), direction=-SUN_VEC, size=math.radians(6.0))
 
 # ---------------------------------------------------------------- kamera
 cam_data = bpy.data.cameras.new('kamera')
@@ -865,7 +878,7 @@ TGT1 = TGT0 + Vector((0, 0, -0.05)) - RIGHT3 * 0.12
 CAM1 = CAM_POS0 + (TGT0 - CAM_POS0).normalized() * 0.6
 v_end = (CAM1 - P_END); v_end.z = 0
 v_end = Matrix.Rotation(math.radians(8), 3, 'Z') @ v_end.normalized()
-CAM_END = P_END + (v_end * 0.85 + Vector((0, 0, 0.55))).normalized() * 1.25
+CAM_END = P_END + (v_end * 0.8 + Vector((0, 0, 0.62))).normalized() * 1.9
 PUSH0, PUSH1 = 212, 296
 for f in range(-2, N_FRAMES + 3):
     t0 = max(0.0, min(1.0, (f - 1) / (PUSH0 - 1)))
@@ -874,7 +887,7 @@ for f in range(-2, N_FRAMES + 3):
     tpos = TGT0.lerp(TGT1, t0)
     e = smoother((f - PUSH0) / (PUSH1 - PUSH0))
     cpos = cpos.lerp(CAM_END, e)
-    tpos = tpos.lerp(P_END + Vector((0, 0, -0.04)), e)
+    tpos = tpos.lerp(P_END + Vector((0, 0, -0.12)), e)
     cam.location = cpos
     cam.keyframe_insert('location', frame=f)
     target.location = tpos
@@ -895,7 +908,7 @@ for f, en in ((1, 0.0), (258, 0.0), (278, 1.2), (300, 1.0)):
     glint.data.energy = en
     glint.data.keyframe_insert('energy', frame=f)
 b2 = bmesh.new()
-bmesh.ops.create_icosphere(b2, subdivisions=2, radius=0.0045)
+bmesh.ops.create_icosphere(b2, subdivisions=2, radius=0.007)
 me = bpy.data.meshes.new('parilti_nokta'); b2.to_mesh(me); b2.free()
 spark = link(bpy.data.objects.new('parilti_nokta', me))
 M_SPARK = emissive('parilti_mat', (1.0, 0.86, 0.62), 0.0)
@@ -908,7 +921,7 @@ spark.location = (Matrix.Translation(_l3) @ _q3.to_matrix().to_4x4()).inverted()
 for attr in ('visible_shadow', 'visible_diffuse', 'visible_glossy', 'visible_transmission'):
     setattr(spark, attr, False)
 _sp = next(n for n in M_SPARK.node_tree.nodes if n.type == 'EMISSION').inputs['Strength']
-for f, v in ((1, 0.0), (262, 0.0), (272, 240.0), (281, 110.0), (290, 190.0), (300, 140.0)):
+for f, v in ((1, 0.0), (262, 0.0), (272, 420.0), (281, 200.0), (290, 340.0), (300, 260.0)):
     _sp.default_value = v
     _sp.keyframe_insert('default_value', frame=f)
 # yakın planda keseye yumuşak ön dolgu (geniş planda kapalı)
@@ -974,9 +987,9 @@ R.use_motion_blur = bool(A.bulanik)
 R.motion_blur_shutter = 0.3
 R.use_persistent_data = True
 vs = scene.view_settings
-vs.view_transform = 'AgX'
-vs.look = 'AgX - Medium High Contrast' if False else 'None'
-vs.exposure = 0.15
+vs.view_transform = 'Standard'
+vs.look = 'None'
+vs.exposure = -0.1
 
 ng = bpy.data.node_groups.new('kompozit', 'CompositorNodeTree')
 ng.interface.new_socket('Image', in_out='OUTPUT', socket_type='NodeSocketColor')
