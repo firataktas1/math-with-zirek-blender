@@ -206,19 +206,21 @@ class NB:
             n.inputs['Factor'].default_value = fac
         else:
             self.L.new(fac, n.inputs['Factor'])
-        for sock, v in ((n.inputs[6], a), (n.inputs[7], b)):
+        ca = [s for s in n.inputs if s.type == 'RGBA']
+        for sock, v in ((ca[0], a), (ca[1], b)):
             if isinstance(v, tuple):
                 sock.default_value = (*v[:3], 1)
             else:
                 self.L.new(v, sock)
-        return n.outputs[2]
+        return [s for s in n.outputs if s.type == 'RGBA'][0]
 
 
 AXIS_SCALE = {'X': (0.07, 1.0, 1.0), 'Y': (1.0, 0.07, 1.0), 'Z': (1.0, 1.0, 0.07)}
 
 
 def paint(name, color=None, palette=None, rough=0.4, axis='X', gscale=1.0, chip=1.0, wear=0.0, var=0.06,
-          wood_col=(0.74, 0.54, 0.33), grain_show=0.1, bevel_r=0.01, planks=0.0, emission=None, sat=1.0):
+          wood_col=(0.74, 0.54, 0.33), grain_show=0.1, bevel_r=0.01, planks=0.0, emission=None, sat=1.0, coat=0.12,
+          spec=0.45, bev_samples=6):
     """Boyalı tahta: tahta damarı (halka dokusu, bir eksende uzamış), üstünde ipeksi boya; damar boyanın
     altından hem renkte hem kabartmada okunur; kenarlarda (Bevel düğümü ile bulunan) boya kopukları."""
     m = bpy.data.materials.new(name)
@@ -268,7 +270,7 @@ def paint(name, color=None, palette=None, rough=0.4, axis='X', gscale=1.0, chip=
     mask = None
     if chip > 0:
         bev = N.new('ShaderNodeBevel')
-        bev.samples = 6
+        bev.samples = bev_samples
         bev.inputs['Radius'].default_value = bevel_r
         geo = N.new('ShaderNodeNewGeometry')
         dt = N.new('ShaderNodeVectorMath'); dt.operation = 'DOT_PRODUCT'
@@ -324,8 +326,8 @@ def paint(name, color=None, palette=None, rough=0.4, axis='X', gscale=1.0, chip=
     if chip > 0:
         L.new(bev.outputs['Normal'], bp.inputs['Normal'])
     L.new(bp.outputs['Normal'], b.inputs['Normal'])
-    _inp(b, ['Specular IOR Level'], 0.45)
-    _inp(b, ['Coat Weight'], 0.12)
+    _inp(b, ['Specular IOR Level'], spec)
+    _inp(b, ['Coat Weight'], coat)
     _inp(b, ['Coat Roughness'], 0.3)
     if emission is not None:
         _inp(b, ['Emission Color'], (*emission, 1))
@@ -370,8 +372,8 @@ def emissive(name, color, strength):
 
 
 # renk: kanalın sıcak krem / aşı / yeşil paleti; çakıl safran-aşı, kese kök boya kırmızısı, çakıl tahtası arduvaz gri
-M_BOARD = paint('zemin_boya', (0.21, 0.36, 0.10), rough=0.5, axis='X', gscale=0.35, chip=0.0, wear=0.25, var=0.0,
-                grain_show=0.16, planks=2.4)
+M_BOARD = paint('zemin_boya', (0.17, 0.31, 0.08), rough=0.66, axis='X', gscale=0.35, chip=0.0, wear=0.25, var=0.0,
+                grain_show=0.2, planks=2.4, coat=0.0, spec=0.3)
 M_BLOCK = paint('blok', palette=[(0.50, 0.49, 0.46), (0.38, 0.39, 0.40), (0.58, 0.56, 0.50), (0.44, 0.44, 0.42),
                                  (0.33, 0.34, 0.36), (0.62, 0.47, 0.30)], rough=0.45, axis='X', gscale=1.6, chip=1.0,
                 grain_show=0.14, bevel_r=0.012)
@@ -387,8 +389,8 @@ M_EYE_W = paint('goz_ak', (0.95, 0.93, 0.87), rough=0.3, chip=0.0, var=0.0, grai
 M_EYE_B = paint('goz_bebek', (0.02, 0.02, 0.02), rough=0.25, chip=0.0, var=0.0, grain_show=0.0)
 M_LEG = paint('bacak', (0.22, 0.14, 0.09), rough=0.45, axis='Z', gscale=3.0, chip=0.8, var=0.05, grain_show=0.3,
               bevel_r=0.006)
-M_POUCH = paint('kese_boya', (0.56, 0.12, 0.08), rough=0.4, axis='Z', gscale=1.8, chip=1.0, wear=0.3, var=0.0,
-                grain_show=0.14, bevel_r=0.012)
+M_POUCH = paint('kese_boya', (0.56, 0.12, 0.08), rough=0.5, axis='Z', gscale=1.8, chip=1.4, wear=0.6, var=0.0,
+                grain_show=0.4, bevel_r=0.012, coat=0.05)
 M_CORD = cord('kese_ipi', (0.88, 0.80, 0.62))
 M_PEG = paint('civi', (0.70, 0.52, 0.32), rough=0.55, axis='Z', gscale=2.0, chip=0.0, var=0.0, grain_show=1.0,
               wood_col=(0.70, 0.52, 0.32))
@@ -398,10 +400,10 @@ M_LAST = paint('son_cakil', (0.90, 0.58, 0.16), rough=0.5, axis='X', gscale=3.0,
                grain_show=0.14, emission=(1.0, 0.72, 0.38))
 M_SLAB = paint('cakil_tahtasi', (0.36, 0.40, 0.44), rough=0.45, axis='X', gscale=1.0, chip=1.0, var=0.0, grain_show=0.16,
                bevel_r=0.012)
-M_HILL = [paint('tepe1', (0.30, 0.45, 0.14), rough=0.5, axis='X', gscale=0.25, chip=0.0, var=0.0, grain_show=0.18),
-          paint('tepe2', (0.74, 0.52, 0.18), rough=0.5, axis='X', gscale=0.25, chip=0.0, var=0.0, grain_show=0.18),
-          paint('tepe3', (0.55, 0.60, 0.36), rough=0.5, axis='X', gscale=0.2, chip=0.0, var=0.0, grain_show=0.18),
-          paint('tepe4', (0.40, 0.52, 0.17), rough=0.5, axis='X', gscale=0.25, chip=0.0, var=0.0, grain_show=0.18)]
+M_HILL = [paint('tepe1', (0.26, 0.42, 0.12), rough=0.6, axis='X', gscale=0.25, chip=0.0, var=0.0, grain_show=0.2, coat=0.0, spec=0.3),
+          paint('tepe2', (0.72, 0.50, 0.16), rough=0.6, axis='X', gscale=0.25, chip=0.0, var=0.0, grain_show=0.2, coat=0.0, spec=0.3),
+          paint('tepe3', (0.50, 0.56, 0.30), rough=0.6, axis='X', gscale=0.2, chip=0.0, var=0.0, grain_show=0.2, coat=0.0, spec=0.3),
+          paint('tepe4', (0.36, 0.50, 0.15), rough=0.6, axis='X', gscale=0.25, chip=0.0, var=0.0, grain_show=0.2, coat=0.0, spec=0.3)]
 M_TREE = paint('agac_boya', palette=[(0.16, 0.36, 0.14), (0.24, 0.43, 0.13), (0.12, 0.30, 0.16)], rough=0.4, axis='Z',
                gscale=1.2, chip=1.0, grain_show=0.16, bevel_r=0.01)
 M_TRUNK = paint('govde', (0.70, 0.52, 0.32), rough=0.55, axis='Z', gscale=2.0, chip=0.0, var=0.0, grain_show=1.0,
@@ -623,7 +625,6 @@ def build_hurdle():
     setmat(ob, M_HURDLE)
 
 
-build_hurdle()
 
 # ---------------------------------------------------------------- çakıl tahtası (dizinin yeri)
 SLAB_T = 0.03
@@ -675,6 +676,16 @@ for k, (c, rad, mat) in enumerate((((-6.5, 16.0, -0.4), (8.5, 3.4, 2.1), M_HILL[
     setmat(ob, mat)
 
 
+for k, (c, rad, mat) in enumerate((((-2.8, 7.6, -0.35), (3.0, 1.5, 1.0), M_HILL[2]),
+                                   ((1.6, 8.6, -0.45), (3.6, 1.7, 1.2), M_HILL[1]),
+                                   ((5.0, 7.2, -0.35), (2.6, 1.3, 0.85), M_HILL[0]))):
+    c = (c[0], c[1], c[2] + hfun(c[0], c[1]))
+    bm = bmesh.new()
+    blob(bm, c, rad, subdiv=5, amp=0.03, nscale=1.4, seed=950 + k)
+    ob = bm_to_obj('yakin_tepe_%d' % k, bm)
+    setmat(ob, mat)
+
+
 def cone_tree(name, x, y, sc, seed):
     """Erzgebirge usulü tornalanmış çam: basamaklı koni + tahta gövde."""
     z = hfun(x, y)
@@ -714,6 +725,8 @@ cone_tree('agac3', 2.9, 5.2, 0.6, 1311)
 ball_tree('agac4', 3.6, 6.2, 0.6, 1312)
 cone_tree('agac5', -3.7, 2.2, 0.55, 1313)
 cone_tree('agac6', -0.6, 6.0, 0.6, 1314)
+cone_tree('agac7', 1.2, 5.3, 0.5, 1315)
+ball_tree('agac8', 4.4, 4.6, 0.5, 1316)
 
 
 def bushes_and_beads():
@@ -721,11 +734,11 @@ def bushes_and_beads():
     bmb = bmesh.new()
     bmf = bmesh.new()
     k = 0
-    while k < 22:
+    while k < 12:
         a = r.uniform(0, 2 * math.pi)
         if ang_dist(a, GATE_ANG) < GAP_HALF + 0.3:
             continue
-        p = ring_pos(a, PEN_R + r.choice((0.16, -0.16)))
+        p = ring_pos(a, PEN_R + 0.17)
         if calm_right(p, 0.3) or (p - ROW_CENTER).length < 0.8 or (p - FP).length < 0.4:
             continue
         k += 1
@@ -754,7 +767,8 @@ bushes_and_beads()
 # ---------------------------------------------------------------- kese: oyma, boyalı tahta; ip
 POUCH_S = 1.45
 PEG_Z = POST_TOP - 0.16
-_pegdir = Vector((TO_CAM.x, TO_CAM.y, 0.16)).normalized()
+_pd = (TO_CAM * 0.55 + RIGHT * 0.8).normalized()
+_pegdir = Vector((_pd.x, _pd.y, 0.16)).normalized()
 PEG_BASE = Vector((FP.x, FP.y, PEG_Z))
 PEG_LEN = 0.3
 bm = bmesh.new()
@@ -788,7 +802,7 @@ def build_pouch():
             gather = smooth(0.13, 0.18, zz) * (1 - smooth(0.2, 0.23, zz))
             fold = gather * 0.006 * math.sin(10 * th + 1.3)
             crease = (1 - gather) * smooth(0.04, 0.15, zz) * 0.005 * math.sin(6 * th + 0.4)
-            facet = 0.0025 * math.sin(28 * th + zz * 40)
+            facet = 0.0045 * abs(math.sin(9 * th + zz * 30 + 2.0 * math.sin(3 * th)))
             r2 = rr + fold + crease + facet * (rr / 0.12)
             ring.append(bm.verts.new((r2 * math.cos(th) * 1.04, r2 * math.sin(th) * 0.96, zz - DROP)))
         rings.append(ring)
@@ -1028,22 +1042,22 @@ def build_sheep(i):
         ear.location = (-0.02, sgn * 0.058, 0.035)
         ear.rotation_euler = (math.radians(90) * sgn + sgn * 0.3, -0.35, sgn * math.radians(95))
         # boyalı göz: beyaz daire + siyah bebek (hafif kabarık boya)
-        for nm, rad, th, mat, dz in (('goz', 0.02, 0.004, M_EYE_W, 0.0), ('bebek', 0.0105, 0.0055, M_EYE_B, 0.004)):
+        for nm, rad, th, mat, dz in (('goz', 0.026, 0.004, M_EYE_W, 0.0), ('bebek', 0.0135, 0.0056, M_EYE_B, 0.004)):
             bm = bmesh.new()
             lathe(bm, [(0.0, 0.0), (rad, 0.0), (rad, th * 0.6), (rad * 0.7, th), (0.0, th)], seg=24)
             e = bm_to_obj('koyun_%d_%s' % (i, nm), bm)
             setmat(e, mat)
             e.parent = head
-            nrm = Vector((0.45, sgn * 0.85, 0.3)).normalized()
-            base = Vector((0.052, sgn * 0.047, 0.03)) + nrm * (0.021 - 0.018) + nrm * (dz * 0.3)
+            nrm = Vector((0.55, sgn * 0.8, 0.25)).normalized()
+            base = Vector((0.058, sgn * 0.054, 0.03)) + nrm * (dz * 0.3)
             e.location = base + Vector((0.004, 0, 0.001)) * (1 if nm == 'bebek' else 0)
             e.rotation_mode = 'QUATERNION'
             e.rotation_quaternion = Vector((0, 0, 1)).rotation_difference(nrm)
     # bacaklar: sabit tahta çubuklar (oyuncak), koyu boya
     for k, (lx, ly) in enumerate(((0.11, 0.07), (0.11, -0.07), (-0.11, 0.07), (-0.11, -0.07))):
         bm = bmesh.new()
-        lathe(bm, [(0.0, 0.0), (0.02, 0.0), (0.024, 0.006), (0.024, 0.02), (0.02, 0.028), (0.02, 0.2), (0.0, 0.2)],
-              seg=24, M=Matrix.Translation((lx, ly, 0.0)))
+        lathe(bm, [(0.0, 0.0), (0.026, 0.0), (0.031, 0.006), (0.031, 0.022), (0.027, 0.032), (0.026, 0.19), (0.0, 0.19)],
+              seg=28, M=Matrix.Translation((lx, ly, 0.0)))
         leg = bm_to_obj('koyun_%d_bacak_%d' % (i, k), bm)
         setmat(leg, M_LEG)
         leg.parent = bob

@@ -178,7 +178,7 @@ def fibre_height(nb, vec, scale):
 
 
 def felt(name, color, palette=None, var=0.08, hue_var=0.012, sheen=0.9, rough=0.93, bump=0.35, sss=0.05,
-         mottle=0.10, fscale=1.0, fcontrast=0.14, emission=None):
+         mottle=0.10, fscale=1.0, fcontrast=0.14, emission=None, heather=0.0, dimple=0.0):
     m = bpy.data.materials.new(name)
     nt = m.node_tree
     nb = NB(nt)
@@ -206,12 +206,33 @@ def felt(name, color, palette=None, var=0.08, hue_var=0.012, sheen=0.9, rough=0.
     mm = nb.m('MULTIPLY_ADD', mt, mottle * 2, 1.0 - mottle)
     fh = fibre_height(nb, tc.outputs['Object'], fscale)
     fc = nb.m('MULTIPLY_ADD', fh, fcontrast * 2, 1.0 - fcontrast * 0.9)
-    L.new(nb.m('MULTIPLY', nb.m('MULTIPLY', vr, mm), fc), hs.inputs['Value'])
+    val = nb.m('MULTIPLY', nb.m('MULTIPLY', vr, mm), fc)
+    if heather > 0:
+        # karışık yün: seyrek açık ve koyu lifler (benekli yün)
+        hv = nb.mapping(tc.outputs['Object'], (1.0, 1.0, 5.0), (0.4, 0.9, 0.2))
+        hn = nb.noise(hv, 120 * fscale, 3.0, 0.5, 2.0)
+        hi = N.new('ShaderNodeMapRange'); hi.inputs['From Min'].default_value = 0.66; hi.inputs['From Max'].default_value = 0.7
+        L.new(hn, hi.inputs['Value'])
+        lo = N.new('ShaderNodeMapRange'); lo.inputs['From Min'].default_value = 0.34; lo.inputs['From Max'].default_value = 0.3
+        L.new(hn, lo.inputs['Value'])
+        val = nb.m('MULTIPLY', val, nb.m('MULTIPLY_ADD', hi.outputs['Result'], heather * 0.35,
+                                         nb.m('MULTIPLY_ADD', lo.outputs['Result'], -heather * 0.45, 1.0)))
+    L.new(val, hs.inputs['Value'])
     L.new(hs.outputs['Color'], b.inputs['Base Color'])
     bp = N.new('ShaderNodeBump')
     bp.inputs['Strength'].default_value = bump
     bp.inputs['Distance'].default_value = 0.0015
-    L.new(fh, bp.inputs['Height'])
+    height = fh
+    if dimple > 0:
+        # iğne izleri: küçük çukurlar
+        vo = N.new('ShaderNodeTexVoronoi')
+        vo.feature = 'F1'
+        vo.inputs['Scale'].default_value = 140.0 * fscale
+        L.new(tc.outputs['Object'], vo.inputs['Vector'])
+        dm = N.new('ShaderNodeMapRange'); dm.inputs['From Min'].default_value = 0.0; dm.inputs['From Max'].default_value = 0.22
+        L.new(vo.outputs['Distance'], dm.inputs['Value'])
+        height = nb.m('MULTIPLY_ADD', dm.outputs['Result'], dimple, fh)
+    L.new(height, bp.inputs['Height'])
     L.new(bp.outputs['Normal'], b.inputs['Normal'])
     b.inputs['Roughness'].default_value = rough
     _inp(b, ['Specular IOR Level'], 0.2)
@@ -357,13 +378,15 @@ def emissive(name, color, strength):
 
 
 # renk: kanalın sıcak krem / aşı / yeşil paleti. Çakıl safran-aşı, kese kök boya kırmızısı, taş yastığı serin gri.
-M_GROUND = felt('zemin_kece', (0.20, 0.33, 0.085), var=0.0, mottle=0.16, fscale=0.7, bump=0.25, sss=0.0)
+M_GROUND = felt('zemin_kece', (0.14, 0.27, 0.055), var=0.0, mottle=0.18, fscale=0.7, bump=0.3, sss=0.0, sheen=0.3, heather=0.5)
 M_PATCH = [felt('yama1', (0.36, 0.45, 0.12), var=0.0, bump=0.3, sss=0.0),
            felt('yama2', (0.52, 0.52, 0.18), var=0.0, bump=0.3, sss=0.0)]
 M_GRASS_F = simple('ot_lif', (0.25, 0.42, 0.09), rough=0.7, spec=0.3)
 M_STONE = felt('tas_kece', None, palette=[(0.40, 0.39, 0.37), (0.31, 0.31, 0.31), (0.47, 0.45, 0.42),
-                                           (0.36, 0.34, 0.33), (0.27, 0.28, 0.29)], var=0.08, sss=0.0, bump=0.45)
-M_WOOL = felt('yun', (0.93, 0.87, 0.74), var=0.05, sss=0.15, bump=0.5, sheen=1.0, fcontrast=0.1)
+                                           (0.36, 0.34, 0.33), (0.27, 0.28, 0.29)], var=0.08, sss=0.0, bump=0.6,
+               heather=1.0, dimple=0.5, fcontrast=0.2, sheen=0.7)
+M_STONE_F = simple('tas_lif', (0.46, 0.45, 0.43), rough=0.6, spec=0.3)
+M_WOOL = felt('yun', (0.93, 0.87, 0.74), var=0.05, sss=0.15, bump=0.6, sheen=1.0, fcontrast=0.12, heather=0.6, dimple=0.6)
 M_WOOL_F = simple('yun_lif', (0.95, 0.90, 0.80), rough=0.6, spec=0.3)
 M_FACE = felt('yuz', (0.13, 0.095, 0.08), var=0.1, sss=0.0, bump=0.35, sheen=1.0, fcontrast=0.2)
 M_FACE_F = simple('yuz_lif', (0.18, 0.14, 0.12), rough=0.6, spec=0.3)
@@ -375,10 +398,10 @@ M_YARN = thread('ip_yun', (0.90, 0.80, 0.60), sheen=0.8)
 M_STITCH = thread('dikis', (0.93, 0.86, 0.70))
 M_STITCH_R = thread('dikis_kirmizi', (0.62, 0.20, 0.10))
 M_WOOD = wood('tahta', (0.46, 0.29, 0.15))
-M_PEBBLE = felt('cakil', (0.86, 0.54, 0.16), var=0.12, hue_var=0.02, sss=0.05, bump=0.4, fcontrast=0.12)
-M_LAST = felt('son_cakil', (0.86, 0.54, 0.16), var=0.0, sss=0.05, bump=0.4, fcontrast=0.12, emission=(1.0, 0.72, 0.38))
-M_PEBBLE_F = simple('cakil_lif', (0.92, 0.64, 0.26), rough=0.6, spec=0.3)
-M_SLAB = felt('yastik', (0.43, 0.45, 0.47), var=0.0, sss=0.0, bump=0.35)
+M_PEBBLE = felt('cakil', (0.84, 0.48, 0.13), var=0.12, hue_var=0.02, sss=0.05, bump=0.5, fcontrast=0.14, heather=0.6, dimple=0.4, sheen=0.7)
+M_LAST = felt('son_cakil', (0.84, 0.48, 0.13), var=0.0, sss=0.05, bump=0.5, fcontrast=0.14, heather=0.6, dimple=0.4, sheen=0.7, emission=(1.0, 0.72, 0.38))
+M_PEBBLE_F = simple('cakil_lif', (0.90, 0.58, 0.22), rough=0.6, spec=0.3)
+M_SLAB = felt('yastik', (0.40, 0.42, 0.45), var=0.0, sss=0.0, bump=0.4, heather=0.6, sheen=0.5)
 M_HILL = [felt('tepe1', (0.30, 0.40, 0.13), var=0.0, fscale=0.4, sss=0.0),
           felt('tepe2', (0.68, 0.48, 0.18), var=0.0, fscale=0.4, sss=0.0),
           felt('tepe3', (0.52, 0.55, 0.36), var=0.0, fscale=0.4, sss=0.0),
@@ -468,11 +491,12 @@ def add_fuzz(ob, group):
     md.node_group = group
 
 
-FZ_WOOL = fuzz_group('lif_yun', 22000.0, 0.014, 0.00045, M_WOOL_F, tilt=0.9)
-FZ_FACE = fuzz_group('lif_yuz', 9000.0, 0.006, 0.0003, M_FACE_F, tilt=0.9)
-FZ_KNIT = fuzz_group('lif_kese', 9000.0, 0.008, 0.0003, M_KNIT_F, tilt=1.0)
-FZ_PEB = fuzz_group('lif_cakil', 16000.0, 0.007, 0.00035, M_PEBBLE_F, tilt=1.0)
-FZ_GRASS = fuzz_group('lif_ot', 5200.0, 0.045, 0.0011, M_GRASS_F, tilt=0.45, smin=0.35, smax=1.2, dens_attr='ot')
+FZ_WOOL = fuzz_group('lif_yun', 26000.0, 0.018, 0.0007, M_WOOL_F, tilt=1.0)
+FZ_FACE = fuzz_group('lif_yuz', 12000.0, 0.008, 0.0005, M_FACE_F, tilt=1.0)
+FZ_KNIT = fuzz_group('lif_kese', 12000.0, 0.011, 0.0005, M_KNIT_F, tilt=1.1)
+FZ_PEB = fuzz_group('lif_cakil', 20000.0, 0.009, 0.0005, M_PEBBLE_F, tilt=1.1)
+FZ_STONE = fuzz_group('lif_tas', 9000.0, 0.011, 0.0006, M_STONE_F, tilt=1.1)
+FZ_GRASS = fuzz_group('lif_ot', 6000.0, 0.05, 0.0016, M_GRASS_F, tilt=0.45, smin=0.35, smax=1.2, dens_attr='ot')
 
 
 # ---------------------------------------------------------------- yerleşim (kil sürümüyle aynı düzen)
@@ -735,7 +759,7 @@ def blob_outline(rx, ry, n, seed, jit=0.12, rot=0.0, c=Vector((0, 0))):
 def stone(bm, loc, radii, yaw, seed, tilt=0.1):
     r = rng(seed)
     rot = Euler((r.uniform(-tilt, tilt), r.uniform(-tilt, tilt), yaw))
-    blob(bm, loc, radii, subdiv=3, amp=0.16, nscale=1.3, seed=seed, rot=rot)
+    blob(bm, loc, radii, subdiv=3, amp=0.2, nscale=1.8, seed=seed, rot=rot)
 
 
 def build_pen():
@@ -763,6 +787,7 @@ def build_pen():
             ob = bm_to_obj('duvar_%d_%d' % (course, g), bmg)
             add_subsurf(ob, 1, 0)
             setmat(ob, M_STONE)
+            add_fuzz(ob, FZ_STONE)
     # kapı direkleri: iri keçe taşlar üst üste
     for side, a in (('on', FRONT_A), ('arka', BACK_A)):
         p = ring_pos(a)
@@ -776,6 +801,7 @@ def build_pen():
             ob = bm_to_obj('direk_%s_%d' % (side, k), bm)
             add_subsurf(ob, 1, 0)
             setmat(ob, M_STONE)
+            add_fuzz(ob, FZ_STONE)
             z += hz * 1.78
     return z
 
@@ -806,7 +832,6 @@ def build_hurdle():
     setmat(ob, M_WOOD)
 
 
-build_hurdle()
 
 # ---------------------------------------------------------------- taş yastığı (dizinin yeri): gri keçe, battaniye dikişi
 _slab_out = blob_outline(0.62, 0.155, 72, 55, jit=0.06, rot=math.atan2(RIGHT.y, RIGHT.x), c=ROW_CENTER)
@@ -841,6 +866,15 @@ for k, (c, rad, mat) in enumerate((((-6.5, 16.0, -0.4), (8.5, 3.4, 2.1), M_HILL[
     bm = bmesh.new()
     blob(bm, c, rad, subdiv=5, amp=0.04, nscale=1.2, seed=900 + k)
     ob = bm_to_obj('tepe_%d' % k, bm)
+    setmat(ob, mat)
+    HILLS.append((ob, c, rad))
+for k, (c, rad, mat) in enumerate((((-2.8, 7.6, -0.35), (3.0, 1.5, 1.0), M_HILL[2]),
+                                   ((1.6, 8.6, -0.45), (3.6, 1.7, 1.2), M_HILL[1]),
+                                   ((5.0, 7.2, -0.35), (2.6, 1.3, 0.85), M_HILL[0]))):
+    c = (c[0], c[1], c[2] + hfun(c[0], c[1]))
+    bm = bmesh.new()
+    blob(bm, c, rad, subdiv=5, amp=0.05, nscale=1.4, seed=950 + k)
+    ob = bm_to_obj('yakin_tepe_%d' % k, bm)
     setmat(ob, mat)
     HILLS.append((ob, c, rad))
 bpy.context.view_layer.update()
@@ -896,6 +930,8 @@ def felt_tree(name, x, y, sc, seed):
 
 felt_tree('agac1', -2.4, 3.0, 0.62, 1301)
 felt_tree('agac2', 2.9, 5.2, 0.5, 1311)
+felt_tree('agac3', -0.9, 5.6, 0.55, 1321)
+felt_tree('agac4', 3.9, 5.9, 0.45, 1331)
 
 
 def flowers():
@@ -928,7 +964,8 @@ flowers()
 # ---------------------------------------------------------------- kese (örgü), çivi, yün ip
 POUCH_S = 1.45
 PEG_Z = POST_TOP - 0.1
-_pegdir = Vector((TO_CAM.x, TO_CAM.y, 0.16)).normalized()
+_pd = (TO_CAM * 0.55 + RIGHT * 0.8).normalized()
+_pegdir = Vector((_pd.x, _pd.y, 0.16)).normalized()
 PEG_BASE = Vector((FP.x, FP.y, PEG_Z))
 PEG_LEN = 0.3
 
@@ -1285,7 +1322,7 @@ ramp.color_ramp.elements[1].position = 0.35
 ramp.color_ramp.elements[1].color = (0.95, 0.86, 0.70, 1)
 WL.new(sep.outputs['Z'], ramp.inputs['Fac'])
 WL.new(ramp.outputs['Color'], bg.inputs['Color'])
-bg.inputs['Strength'].default_value = 0.5
+bg.inputs['Strength'].default_value = 0.38
 
 
 def light(name, kind, energy, color, loc=None, direction=None, size=None):
@@ -1308,8 +1345,8 @@ def light(name, kind, energy, color, loc=None, direction=None, size=None):
 
 
 sun_dir = Vector((0.55, -0.80, -0.30)).normalized()
-light('gunes', 'SUN', 4.0, (1.0, 0.68, 0.40), direction=sun_dir, size=math.radians(9.0))
-light('dolgu', 'AREA', 80.0, (1.0, 0.90, 0.78), loc=(3.5, -4.5, 3.2),
+light('gunes', 'SUN', 4.6, (1.0, 0.68, 0.40), direction=sun_dir, size=math.radians(9.0))
+light('dolgu', 'AREA', 60.0, (1.0, 0.90, 0.78), loc=(3.5, -4.5, 3.2),
       direction=(Vector((-0.4, 0.4, 0.3)) - Vector((3.5, -4.5, 3.2))), size=4.5)
 light('arka_dolgu', 'AREA', 30.0, (1.0, 0.8, 0.6), loc=(-3.0, 4.0, 2.5),
       direction=(Vector((0, 1, 0.3)) - Vector((-3.0, 4.0, 2.5))), size=3.0)
@@ -1461,6 +1498,13 @@ for _f in (1, 68, 210, 296):
         print('KADRAJ f%d %-9s x=%.2f y(ust)=%.2f' % (_f, _nm, _c.x, 1 - _c.y))
     _c = world_to_camera_view(scene, cam, sheep[0][0].matrix_world.to_translation() + Vector((0, 0, 0.3)))
     print('KADRAJ f%d koyun0    x=%.2f y(ust)=%.2f' % (_f, _c.x, 1 - _c.y))
+_dg2 = bpy.context.evaluated_depsgraph_get()
+_nc = _np = 0
+for _in in _dg2.object_instances:
+    if _in.object.type == 'CURVES':
+        _nc += 1
+        _np += len(_in.object.data.points)
+print('LIF nesne %d nokta %d' % (_nc, _np), flush=True)
 print('sahne kuruldu: %.1f sn' % (time.time() - T_START), flush=True)
 os.makedirs(A.cikti, exist_ok=True)
 if A.blend:
