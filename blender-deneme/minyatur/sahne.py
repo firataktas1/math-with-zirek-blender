@@ -69,7 +69,7 @@ def s2l(c):
     return tuple(((x + 0.055) / 1.055) ** 2.4 if x > 0.04045 else x / 12.92 for x in c)
 
 
-def bm_obj(name, bm, mats, smooth_shade=True, noline=False, subsurf=0):
+def bm_obj(name, bm, mats, smooth_shade=True, noline=False, subsurf=0, mark_ground=False):
     for f in bm.faces:
         f.smooth = smooth_shade
     me = bpy.data.meshes.new(name)
@@ -78,6 +78,23 @@ def bm_obj(name, bm, mats, smooth_shade=True, noline=False, subsurf=0):
     for m in mats:
         me.materials.append(m)
     ob = link(bpy.data.objects.new(name, me), noline)
+    if mark_ground:
+        # zemine değen kenarlar: Freestyle kenar işareti (duvarın dibi de konturla çizilsin)
+        flags = []
+        for e in me.edges:
+            v0, v1 = me.vertices[e.vertices[0]].co, me.vertices[e.vertices[1]].co
+            ok = all(abs(v.z - hfun(v.x, v.y)) < 0.035 for v in (v0, v1)) and abs(v0.z - v1.z) < 0.03
+            flags.append(ok)
+        try:
+            at = me.attributes.get('freestyle_edge') or me.attributes.new('freestyle_edge', 'BOOLEAN', 'EDGE')
+            at.data.foreach_set('value', flags)
+        except Exception as ex:
+            print('kenar isareti', ex)
+            for e, fl in zip(me.edges, flags):
+                try:
+                    e.use_freestyle_mark = fl
+                except Exception:
+                    break
     if subsurf:
         ss = ob.modifiers.new('ss', 'SUBSURF'); ss.levels = subsurf; ss.render_levels = subsurf
     return ob
@@ -131,7 +148,7 @@ GAP_HALF = 0.33
 WALL_H = 0.8
 POST_R = 0.3
 POST_H = 1.3
-EL = math.radians(30.0)          # kamera yükselme açısı: zemin ekranda yukarı doğru "dizilir"
+EL = math.radians(27.0)          # kamera yükselme açısı: zemin ekranda yukarı doğru "dizilir"
 
 gu = Vector((math.cos(GATE_ANG), math.sin(GATE_ANG)))
 GATE_PT = PEN_C + gu * PEN_R
@@ -146,12 +163,12 @@ VIEW = Vector((-_FC.x * math.cos(EL), -_FC.y * math.cos(EL), -math.sin(EL)))   #
 LDIR = (-RIGHT3 * 0.55 + _FC.to_3d() * 0.35 + Vector((0, 0, 0.75))).normalized()  # boyadaki ışık: sol üst önden
 
 
-KD = PEN_R * 2 + 0.2        # sırtın başladığı derinlik (kapıdan, kamera yönünde)
+KD = PEN_R * 2 - 0.1        # sırtın başladığı derinlik (kapıdan, kamera yönünde)
 
 
 def ridge(u):
     """Ufuk sırtı: (tepe derinliği, yüksekliği) ekranda sağa kaydıkça dalgalanır."""
-    return (KD + 0.35 + 0.35 * math.sin(u * 0.33 + 0.4), 0.55 + 0.22 * math.sin(u * 0.52 + 1.3) + 0.1 * math.sin(u * 1.1))
+    return (KD + 0.35 + 0.3 * math.sin(u * 0.33 + 0.4), 0.42 + 0.16 * math.sin(u * 0.52 + 1.3) + 0.07 * math.sin(u * 1.1))
 
 
 def hfun(x, y):
@@ -348,11 +365,11 @@ def flat_emit(name, color, strength=1.0, paper=True):
 SEPIA = (0.30, 0.18, 0.10)
 M_GROUND = paint('zemin', (0.66, 0.70, 0.42), mottle=0.05, pattern='benek', pcol=(0.93, 0.86, 0.66), pscale=2.2, pwidth=0.075,
                  grad=((0.80, 0.72, 0.44), 'Z', 0.0, 3.2), soft=0.5, shade=(0.88, 0.88, 0.92))
-M_HILLROCK = paint('kaya', (0.62, 0.50, 0.66), mottle=0.06, pattern='sunger', pcol=(0.46, 0.34, 0.50), pscale=7.0, pwidth=0.12,
-                   grad=((0.94, 0.80, 0.78), 'Z', -0.3, 1.1), soft=0.3)
-M_HILLROCK2 = paint('kaya2', (0.80, 0.56, 0.40), mottle=0.06, pattern='sunger', pcol=(0.62, 0.40, 0.28), pscale=7.0, pwidth=0.12,
-                    grad=((0.97, 0.84, 0.66), 'Z', -0.3, 1.1), soft=0.3)
-M_WALL = paint('duvar', (0.88, 0.78, 0.64), pattern='tas', pcol=(0.46, 0.31, 0.20), pscale=3.4, pwidth=0.035, soft=0.25,
+M_HILLROCK = paint('kaya', (0.52, 0.40, 0.60), mottle=0.06, pattern='tas', pcol=(0.36, 0.24, 0.40), pscale=2.3, pwidth=0.03,
+                   grad=((0.93, 0.78, 0.80), 'Z', 0.3, 1.9), soft=0.3)
+M_HILLROCK2 = paint('kaya2', (0.74, 0.48, 0.34), mottle=0.06, pattern='tas', pcol=(0.50, 0.30, 0.20), pscale=2.3, pwidth=0.03,
+                    grad=((0.97, 0.84, 0.64), 'Z', 0.3, 1.9), soft=0.3)
+M_WALL = paint('duvar', (0.88, 0.78, 0.64), pattern='tas', pcol=(0.46, 0.31, 0.20), pscale=2.6, pwidth=0.03, soft=0.25,
                shade=(0.80, 0.76, 0.84), uv=True)
 M_CAP = paint('duvar_kapak', (0.93, 0.86, 0.74), pattern='tas', pcol=(0.42, 0.28, 0.18), pscale=2.2, pwidth=0.05, soft=0.25)
 WOOL_COLS = [(0.97, 0.94, 0.86), (0.96, 0.92, 0.84), (0.84, 0.68, 0.48), (0.97, 0.93, 0.85), (0.40, 0.31, 0.28),
@@ -532,7 +549,7 @@ def sweep_ring(name, a0, a1, prof, radius, center, m, step=0.05):
                 co = lp.vert.co
                 lp[uvl].uv = (co.x * 1.3 + 50.0, co.z)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    return bm_obj(name, bm, [m])
+    return bm_obj(name, bm, [m], mark_ground=True)
 
 
 def cyl_uv(bm, cx, cy, R):
@@ -561,6 +578,7 @@ def build_pen():
     a0 = GATE_ANG + GAP_HALF
     a1 = GATE_ANG - GAP_HALF + 2 * math.pi
     w = sweep_ring('duvar', a0, a1, WALL_PROF, PEN_R, PEN_C, M_WALL)
+    w.name = 'duvar'
     posts = []
     for side, sgn in (('on', 1), ('arka', -1)):
         a = GATE_ANG + sgn * GAP_HALF
@@ -570,7 +588,7 @@ def build_pen():
         tube(bm, Vector((p.x, p.y, z - 0.1)), Vector((p.x, p.y, z + POST_H)), POST_R, POST_R * 0.92, seg=32)
         bm.normal_update()
         cyl_uv(bm, p.x, p.y, POST_R)
-        ob = bm_obj('direk_' + side, bm, [M_WALL])
+        ob = bm_obj('direk_' + side, bm, [M_WALL], mark_ground=True)
         bm = bmesh.new()
         blob(bm, Vector((p.x, p.y, z + POST_H + 0.05)), (POST_R * 1.25, POST_R * 1.2, 0.12), subdiv=3, amp=0.08, seed=30 + sgn)
         bm_obj('direk_kapak_' + side, bm, [M_CAP])
@@ -1029,10 +1047,11 @@ def last_world(f):
 P_END = last_world(N_FRAMES)
 _g3 = Vector((GATE_PT.x, GATE_PT.y, hfun(GATE_PT.x, GATE_PT.y) + 0.5))
 _row3 = Vector((ROW_CENTER.x, ROW_CENTER.y, SLAB_TOP))
+TGT_FWD = float(os.environ.get('TGT_FWD', '2.5'))
 S0 = 10.6              # geniş plan: kadraj genişliği (m)
 S1 = 10.0
 S_END = 2.0            # yakın plan
-TGT0 = _g3.lerp(_row3, 0.35) + RIGHT3 * 1.6 + FWD3 * 2.2 + Vector((0, 0, 0.3))
+TGT0 = _g3.lerp(_row3, 0.35) + RIGHT3 * 1.6 + FWD3 * TGT_FWD + Vector((0, 0, 0.3))
 TGT1 = TGT0 - RIGHT3 * 0.15
 TGT_END = P_END + Vector((0, 0, -0.16)) - RIGHT3 * 0.02
 PUSH0, PUSH1 = 212, 296
@@ -1192,6 +1211,7 @@ if A.cizgi:
     ls.select_border = True
     ls.select_crease = True
     ls.select_external_contour = True
+    ls.select_edge_mark = True
     ls.select_by_collection = True
     ls.collection = NOLINE
     ls.collection_negation = 'EXCLUSIVE'
