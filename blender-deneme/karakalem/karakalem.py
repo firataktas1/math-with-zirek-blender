@@ -16,11 +16,11 @@ PARILTI = np.array([1.0, 0.80, 0.36], F32)
 # kimlik -> (ton koyuluğu 0..1, vurgu türü 0 yok / 1 kese / 2 çakıl, çizgi ağırlığı, gölge taraması çarpanı)
 LUT = {
     0: (0.00, 0, 0.0, 0.0),   # gök
-    1: (0.04, 0, 0.8, 0.75),  # çim zemin
+    1: (0.04, 0, 0.8, 0.62),  # çim zemin
     2: (0.30, 0, 0.8, 0.8),   # ot
     3: (0.16, 0, 1.0, 1.0),   # duvar taşı
     4: (0.18, 0, 1.0, 1.0),   # kapı direği
-    5: (0.00, 0, 1.0, 0.85),  # yün
+    5: (0.00, 0, 1.0, 0.62),  # yün
     6: (0.80, 0, 1.0, 1.0),   # yüz, bacak
     7: (0.00, 0, 0.7, 0.2),   # göz akı
     8: (0.97, 0, 0.6, 1.0),   # göz bebeği
@@ -126,7 +126,8 @@ def isle(P, meta, f):
         if not np.any(m > 0.01):
             continue
         kal = (0.9 + 1.6 * np.clip((D - esik) / 0.5, 0, 1)) * s + 0.3
-        t = _tarama(xx, yy, aci + rs.uniform(-2, 2), aralik * s + 0.8, kal, rs.uniform(0, 1), tit, seed + 10 * kaynama, s)
+        # kaynama hafif: açı ±1°, çizgiler aralığın en çok çeyreği kadar kayar (titreşim yormasın)
+        t = _tarama(xx, yy, aci + rs.uniform(-1, 1), aralik * s + 0.8, kal, rs.uniform(0, 0.25), tit, seed + 10 * kaynama, s)
         ag = 1 - (1 - ag) * (1 - 0.82 * m * t)
     # grafit tozu (parmakla yayılmış ton): diş tepelerinde birikir
     toz = np.clip(D * 0.55 - 0.03, 0, 1)
@@ -136,8 +137,13 @@ def isle(P, meta, f):
     # kontur
     sil, kv, idd = co.kenarlar(z, n, iob, bg, d_esik=0.010, n_esik=0.20)
     ln = np.maximum.reduce([sil, 0.65 * kv, 0.85 * idd])
-    ln = co.remap(ln, tx, ty)                                   # el titremesi
-    ln = co.blur3(co.dilate(ln, 1) * 0.55 + ln * 0.45) if s > 0.7 else co.blur3(ln)
+    ln0 = ln
+    ln = co.remap(ln0, tx, ty)                                   # el titremesi
+    # eskiz: aynı çizginin ikinci, hafifçe kayık ve soluk bir geçişi
+    tx2 = (co.vnoise(h, w, 70 * s, 700 + kaynama, octaves=2) - 0.5) * 4.0 * s
+    ty2 = (co.vnoise(h, w, 70 * s, 800 + kaynama, octaves=2) - 0.5) * 4.0 * s
+    ln = np.maximum(ln, 0.45 * co.remap(ln0, tx2, ty2))
+    ln = co.blur3(co.dilate(ln, 1) * 0.6 + ln * 0.4) if s > 0.7 else co.blur3(ln)
     ln = ln * cizw * np.maximum(uzak, 0.3)
     basinc = 0.72 + 0.28 * co.vnoise(h, w, 30 * s, 600 + kaynama)
     ln = np.clip(ln * basinc * (1.0 + 0.35 * np.clip(dis, -1.5, 1.5)), 0, 1)

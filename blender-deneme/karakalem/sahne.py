@@ -114,7 +114,7 @@ GAP_HALF = 0.25
 def hfun(x, y):
     d = (Vector((x, y)) - PEN_C).length
     flat = smooth(1.9, 3.8, d)
-    h = 0.6 * smooth(4.0, 14.0, y)
+    h = 1.6 * smooth(3.8, 12.0, y)            # uzak tepe yükselir: geniş planda ufuk çizgisi kadraja girmez
     h += flat * (0.06 * math.sin(0.55 * x + 0.3) * math.cos(0.42 * y + 0.8)
                  + 0.025 * math.sin(1.3 * x - 0.7 * y))
     return h
@@ -230,9 +230,9 @@ def build_tufts(avoid):
     bm = bmesh.new()
     count = 0
     tries = 0
-    while count < 150 and tries < 20000:
+    while count < 110 and tries < 20000:
         tries += 1
-        if r.random() < 0.93:
+        if True:
             a = r.uniform(0, 2 * math.pi)
             if ang_dist(a, GATE_ANG) < GAP_HALF + 0.1:
                 continue
@@ -548,11 +548,11 @@ OUT1 = GATE + gu * 0.75
 spots_rel = [(0.55, 0.5), (0.8, -0.05), (0.15, 0.8), (0.4, 0.05), (0.5, -0.55), (-0.3, 0.6),
              (-0.1, 0.1), (0.05, -0.5)]
 SPOTS = [PEN_C + Vector(s) for s in spots_rel]
-START = [Vector((-6.5, 0.05)), Vector((-2.9, 0.42))]
+START = [Vector((-9.5, 3.6)), Vector((-4.4, 3.1)), Vector((-2.05, 2.3))]      # sürü sol arkadan çapraz gelir: ilk karede kadrajda
 paths = []
 for i in range(N_SHEEP):
-    jit = Vector((0, 0.06 * ((i * 7) % 3 - 1)))
-    paths.append(Path([START[0] + jit, START[1] + jit * 0.6, OUT1, GATE, INSIDE, SPOTS[i]]))
+    jit = Vector((0.05, 0.05)) * ((i * 7) % 3 - 1)
+    paths.append(Path([START[0] + jit, START[1] + jit, START[2] + jit * 0.6, OUT1, GATE, INSIDE, SPOTS[i]]))
 
 build_ground()
 posts = build_pen()
