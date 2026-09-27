@@ -176,12 +176,12 @@ def isle(P, meta, f):
         dy = yy - gy
         r = np.sqrt(dx * dx + dy * dy)
         R = max(gr, 6.0 * s)
-        hale = np.exp(-(r / (1.6 * R)) ** 2) * 0.55 * gs
+        hale = np.exp(-(r / (1.5 * R)) ** 2) * 0.65 * gs
         silgi = np.exp(-(r / (0.55 * R)) ** 2) * 0.8 * gs
         out = out + (kagit * 1.04 - out) * silgi[..., None]
         out = out * (1 - hale[..., None]) + (out * PARILTI / KAGIT) * hale[..., None] * 1.0
-        L = 2.1 * R * (0.85 + 0.15 * gs)
-        wdt = 0.09 * R + 0.8 * s
+        L = 1.55 * R * (0.85 + 0.15 * gs)
+        wdt = 0.075 * R + 0.8 * s
         kol = np.zeros((h, w), F32)
         for (ux, uy) in ((1, 0), (0, 1)):
             al = np.abs(dx * ux + dy * uy)
@@ -189,11 +189,11 @@ def isle(P, meta, f):
             inc = wdt * np.clip(1 - al / L, 0, 1) ** 1.6
             kol = np.maximum(kol, np.clip((inc - pr) / (0.9 * s + 0.4) + 0.5, 0, 1) * (al < L))
         kol = np.maximum(kol, np.clip((0.22 * R - r) / (0.9 * s + 0.4) + 0.5, 0, 1))
-        kol *= gs
+        kol = co.blur3(kol) * gs
         yildiz = np.array([1.0, 0.93, 0.70], F32)
         out = out * (1 - kol[..., None]) + yildiz[None, None, :] * kol[..., None]
         # ince kurşun kenar (çizilmiş yıldız): kolun biraz dışında
-        kenar = np.clip(co.dilate(kol, max(1, int(1.2 * s))) - kol, 0, 1) * 0.45 * gs
+        kenar = np.clip(co.dilate(kol, max(1, int(1.2 * s))) - kol, 0, 1) * 0.22 * gs
         out = out * (1 - kenar[..., None]) + (GRAFIT * 1.6)[None, None, :] * kenar[..., None]
 
     return np.clip(out, 0, 1)

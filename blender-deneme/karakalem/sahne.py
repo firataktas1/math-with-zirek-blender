@@ -619,6 +619,8 @@ def tree(name, x, y, sc, seed):
     for pl in lf.data.polygons:
         pl.use_smooth = True
     setmat(lf, 'yaprak')
+    t.visible_shadow = False          # ağacın uzun gölgesi boş kâğıtta bulut gibi yüzüyordu
+    lf.visible_shadow = False
 
 
 tree('agac1', -2.6, 4.6, 0.75, 1301)

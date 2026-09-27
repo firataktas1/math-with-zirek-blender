@@ -106,8 +106,8 @@ def isle(P, meta, f):
         cov[..., 2] = np.maximum(cov[..., 2], 0.95 * hale)
         cov[..., 0] = cov[..., 0] * (1 - 0.6 * hale) + 0.30 * hale
         cov[..., 1] = cov[..., 1] * (1 - hale)
-        L = 2.2 * R * (0.85 + 0.15 * gs)
-        wdt = 0.10 * R + 0.8 * s
+        L = 1.6 * R * (0.85 + 0.15 * gs)
+        wdt = 0.08 * R + 0.8 * s
         kol = np.zeros((h, w), F32)
         for (ux, uy) in ((1, 0), (0, 1)):
             al = np.abs(dx * ux + dy * uy)
@@ -123,7 +123,7 @@ def isle(P, meta, f):
     ln = co.blur3(ln)
     ln = np.where(bg, 0, ln)
 
-    hucre = 6.5 * s + 1.2
+    hucre = 5.0 * s + 1.0
     out = kagit.copy()
     for k in range(3):
         c = cov[..., k]
