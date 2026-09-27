@@ -103,7 +103,7 @@
           if (o.torn) { c.fillStyle = "#F6EFE1"; c.fill(o.torn); c.shadowColor = "rgba(0,0,0,0)"; }
           c.fillStyle = fill; c.fill(path);
           c.shadowColor = "rgba(0,0,0,0)";
-          c.fillStyle = pat(c, o.ts || 0.5); c.globalAlpha = o.ta == null ? 0.8 : o.ta; c.fill(path);
+          c.fillStyle = pat(c, o.ts || 0.5); c.globalAlpha = o.ta == null ? 0.7 : o.ta; c.fill(path);
           if (o.torn) { c.fillStyle = pat(c, o.ts || 0.6); c.globalAlpha = 0.6; c.fill(o.torn); }
           c.restore();
         }
@@ -211,7 +211,7 @@
         const FL = bake(P.cx - P.rx - 30, Z.POSTL.y - Z.POST_H - 40, Z.POSTL.x - P.cx + P.rx + 80, Z.POST_H + 90, (g, k) => { stonesAlong(g, k, P.cx - P.rx + 2, Z.POSTL.x - 16, Z.frontY, 2); postPieces(g, k, Z.POSTL.x, Z.POSTL.y, Z.POST_H, 3); });
         const FR = bake(Z.POSTR.x - 4, P.cy - 70, P.cx + P.rx - Z.POSTR.x + 40, 220, (g, k) => stonesAlong(g, k, Z.POSTR.x + 16, P.cx + P.rx - 2, Z.frontY, 4));
         const S = Z.STICK;
-        const PR = bake(Z.POSTR.x - 40, Z.POSTR.y - Z.POST_H - 60, 170, Z.POST_H + 80, (g, k) => {
+        const PR = bake(Z.POSTR.x - 40, Z.POSTR.y - Z.POST_H - 70, 210, Z.POST_H + 90, (g, k) => {
           postPieces(g, k, Z.POSTR.x, Z.POSTR.y, Z.POST_H, 5);
           const a = Math.atan2(S.y1 - S.y0, S.x1 - S.x0), L = Math.hypot(S.x1 - S.x0, S.y1 - S.y0);
           const sp = roundRectPts(0, -5, L, 10, 5).map(([x, y]) => [S.x0 + x * Math.cos(a) - y * Math.sin(a), S.y0 + x * Math.sin(a) + y * Math.cos(a)]);
@@ -359,9 +359,9 @@
           // warm evening light + vignette (screen space)
           ctx.setTransform(1, 0, 0, 1, 0, 0);
           ctx.save(); ctx.globalCompositeOperation = "soft-light";
-          const lg = ctx.createLinearGradient(0, 0, 1920, 1080); lg.addColorStop(0, "rgba(255,180,110,0.45)"); lg.addColorStop(0.6, "rgba(255,190,120,0.05)"); lg.addColorStop(1, "rgba(110,60,80,0.4)");
+          const lg = ctx.createLinearGradient(0, 0, 1920, 1080); lg.addColorStop(0, "rgba(255,180,110,0.3)"); lg.addColorStop(0.6, "rgba(255,190,120,0)"); lg.addColorStop(1, "rgba(110,60,80,0.3)");
           ctx.fillStyle = lg; ctx.fillRect(0, 0, 1920, 1080); ctx.restore();
-          const vg = ctx.createRadialGradient(920, 500, 600, 960, 540, 1150); vg.addColorStop(0, "rgba(60,30,30,0)"); vg.addColorStop(1, "rgba(60,30,30,0.32)");
+          const vg = ctx.createRadialGradient(920, 500, 600, 960, 540, 1150); vg.addColorStop(0, "rgba(60,30,30,0)"); vg.addColorStop(1, "rgba(60,30,30,0.26)");
           ctx.fillStyle = vg; ctx.fillRect(0, 0, 1920, 1080);
         }
         const tl = gsap.timeline({ paused: true });

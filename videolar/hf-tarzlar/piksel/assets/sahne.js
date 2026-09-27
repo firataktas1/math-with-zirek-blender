@@ -30,8 +30,8 @@
   Z.POSTR = { x: 1004, y: Z.frontY(1004) };
   Z.POST_H = 150;
   Z.GATE = { x: 936, y: (Z.POSTL.y + Z.POSTR.y) / 2 };
-  Z.STICK = { x0: 996, y0: Z.POSTR.y - 132, x1: 1104, y1: Z.POSTR.y - 166 };  // wooden arm jammed in the right post
-  Z.PEG = { x: 1094, y: Z.POSTR.y - 162 };                   // pouch cord hangs from the arm's end
+  Z.STICK = { x0: 996, y0: Z.POSTR.y - 132, x1: 1146, y1: Z.POSTR.y - 172 };  // wooden arm jammed in the right post
+  Z.PEG = { x: 1136, y: Z.POSTR.y - 167 };                   // pouch cord hangs from the arm's end
   Z.MOUTH = { x: Z.PEG.x, y: Z.PEG.y + 64 };
   Z.POUCH = { x: Z.PEG.x, y: Z.MOUTH.y + 62, w: 176, h: 150 };  // pouch body centre
   Z.SLAB = { x: 1045, y: 808, rx: 280, ry: 64 };             // flat stone for the pebble row
@@ -51,7 +51,7 @@
   Z.tGate = (i) => Z.T0 + i * Z.GAP;
   Z.SPEED = 232;
   // rest spots inside the pen (feet), first sheep go deepest
-  Z.REST = [[1600, 524], [1440, 486], [1660, 592], [1290, 494], [1500, 586], [1640, 460], [1330, 598], [1215, 560]];
+  Z.REST = [[1600, 524], [1440, 486], [1660, 592], [1290, 494], [1500, 586], [1705, 530], [1330, 598], [1392, 540]];
   Z.REST_FACE = [-1, 1, -1, -1, 1, -1, -1, 1];
   const APPROACH = [[-300, 752], [420, 728], [700, 704], [870, 666], [Z.GATE.x, Z.GATE.y]];
   function polyLen(p) { let L = 0; for (let k = 1; k < p.length; k++) L += Math.hypot(p[k][0] - p[k - 1][0], p[k][1] - p[k - 1][1]); return L; }

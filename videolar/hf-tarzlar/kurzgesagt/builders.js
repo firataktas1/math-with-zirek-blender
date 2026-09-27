@@ -67,7 +67,7 @@
 
         // ---------- sky (L0)
         let s0 = "";
-        { const r = Z.rng(5); for (let k = 0; k < 46; k++) { const x = r() * 1920, y = r() * 300, rr = 0.8 + r() * 1.8; s0 += `<circle class="yildiz" data-p="${f1(r() * 6.28)}" cx="${f1(x)}" cy="${f1(y)}" r="${f1(rr)}" fill="#FFF3E0" opacity="0.7"/>`; } }
+        { const r = Z.rng(5); for (let k = 0; k < 22; k++) { const x = r() * 1920, y = r() * 200, rr = 0.8 + r() * 1.8; s0 += `<circle class="yildiz" data-p="${f1(r() * 6.28)}" cx="${f1(x)}" cy="${f1(y)}" r="${f1(rr)}" fill="#FFF3E0" opacity="0.7"/>`; } }
         s0 += `<circle cx="300" cy="330" r="340" fill="url(#gunesHale)" opacity="0.9"/><circle cx="300" cy="330" r="70" fill="#FFE7A8"/><circle cx="300" cy="330" r="56" fill="#FFF6D6"/>`;
         const cloud = (x, y, sc) => `<g class="bulut" data-x="${x}" data-sc="${sc}" transform="translate(${x} ${y}) scale(${sc})">${pill(0, 0, 300, 26, "#F08A86", 0)}${pill(60, -18, 160, 22, "#F7A08E", 0)}${pill(-2, -9, 280, 5, "#FFC7A0", 0)}</g>`;
         s0 += cloud(760, 170, 1.0) + cloud(1450, 110, 0.8) + cloud(1780, 250, 0.6);
