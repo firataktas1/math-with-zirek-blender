@@ -273,7 +273,7 @@ def setmat(ob, m):
 # Okunaklılık: çakıl sıcak aşı-turuncu, yassı taş serin açık gri-mavi, kese kök boya kırmızısı, duvar nötr gri.
 if SU:
     ST = None
-    M_GRASS = paint('cim', (0.68, 0.76, 0.42), var=0.0, patch=0.7, spread=0.26)
+    M_GRASS = paint('cim', (0.62, 0.75, 0.44), var=0.0, patch=0.7, spread=0.34)
     M_TUFT = paint('ot', (0.40, 0.56, 0.24), var=0.12, patch=2.0, spread=0.12)
     M_STONE = paint('tas_duvar', (0.70, 0.66, 0.62), var=0.28, patch=5.0, spread=0.16)
     M_WOOL = paint('yun', (0.97, 0.93, 0.84), var=0.05, patch=6.0, spread=0.06)
@@ -525,7 +525,7 @@ def build_pouch(front_post):
     zb = 0.182 - DROP
     back = inv @ Vector((-to_cam.x, -to_cam.y, 0)).normalized()
     curve('ip_aski', [(back * 0.052 + Vector((0, 0, zb)))[:], (back * 0.05 + Vector((0, 0, zb + 0.05)))[:],
-                      (back * 0.02 + Vector((0, 0, -0.01)))[:], (0, 0, 0.0)], bevel=0.0055)
+                      (back * 0.02 + Vector((0, 0, -0.01)))[:], (0, 0, 0.0)], bevel=0.0035)
     fr = -back
     curve('ip_uc', [(fr * 0.056 + sl * 0.01 + Vector((0, 0, zb)))[:], (fr * 0.066 + sl * 0.02 + Vector((0, 0, zb - 0.03)))[:],
                     (fr * 0.07 + sl * 0.015 + Vector((0, 0, zb - 0.06)))[:]], bevel=0.004)
@@ -1275,7 +1275,7 @@ if SU:
     wm, _ = tnoise(UV, 1.5, 3.0, 0.5, 0.3, w=9.0)             # ıslak leke
     dens = math_('MULTIPLY_ADD', edge, 3.2, 1.0)
     dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g1, 0.5), 0.22, dens)
-    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g2, 0.5), 0.3, dens)
+    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g2, 0.5), 0.22, dens)
     dens = math_('MULTIPLY_ADD', math_('SUBTRACT', wm, 0.5), 0.5, dens)
     pig2 = mix(pig, dens, 'MULTIPLY')
     col = mix((1, 1, 1), pig2, 'SUBTRACT', clamp=True)
