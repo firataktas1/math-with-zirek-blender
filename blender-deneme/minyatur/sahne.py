@@ -369,7 +369,7 @@ M_HILLROCK = paint('kaya', (0.52, 0.40, 0.60), mottle=0.06, pattern='tas', pcol=
                    grad=((0.93, 0.78, 0.80), 'Z', 0.3, 1.9), soft=0.3)
 M_HILLROCK2 = paint('kaya2', (0.74, 0.48, 0.34), mottle=0.06, pattern='tas', pcol=(0.50, 0.30, 0.20), pscale=2.3, pwidth=0.03,
                     grad=((0.97, 0.84, 0.64), 'Z', 0.3, 1.9), soft=0.3)
-M_WALL = paint('duvar', (0.88, 0.78, 0.64), pattern='tas', pcol=(0.46, 0.31, 0.20), pscale=2.6, pwidth=0.03, soft=0.25,
+M_WALL = paint('duvar', (0.88, 0.78, 0.64), pattern='tas', pcol=(0.46, 0.31, 0.20), pscale=2.0, pwidth=0.028, soft=0.25,
                shade=(0.80, 0.76, 0.84), uv=True)
 M_CAP = paint('duvar_kapak', (0.93, 0.86, 0.74), pattern='tas', pcol=(0.42, 0.28, 0.18), pscale=2.2, pwidth=0.05, soft=0.25)
 WOOL_COLS = [(0.97, 0.94, 0.86), (0.96, 0.92, 0.84), (0.84, 0.68, 0.48), (0.97, 0.93, 0.85), (0.40, 0.31, 0.28),
@@ -395,7 +395,7 @@ M_GRASS = flat_emit('ot', (0.22, 0.42, 0.26))
 M_GRASS2 = flat_emit('ot2', (0.36, 0.52, 0.28))
 M_FLOWER = [flat_emit('cicek_k', (0.84, 0.24, 0.14)), flat_emit('cicek_b', (0.98, 0.95, 0.86)),
             flat_emit('cicek_l', (0.20, 0.34, 0.70))]
-M_SKY = paint('gok', (0.82, 0.60, 0.22), gold=True, grad=((0.97, 0.84, 0.56), 'Y', 0.97, 0.70, 'Window'), soft=0.0, mottle=0.04)
+M_SKY = paint('gok', (0.84, 0.64, 0.27), gold=True, grad=((0.97, 0.86, 0.58), 'Y', 0.97, 0.70, 'Window'), soft=0.0, mottle=0.04)
 M_CLOUD = paint('bulut', (0.97, 0.93, 0.88), grad=((0.80, 0.76, 0.90), 'Z', 0.2, -0.3), soft=0.4)
 M_CREAM = flat_emit('pervaz_kagit', (0.94, 0.89, 0.77))
 M_LAPIS = flat_emit('pervaz_lacivert', (0.13, 0.24, 0.56))
@@ -453,7 +453,7 @@ def build_sky():
         # sırtın arkasında, gök şeridinde görünecek yükseklikte (ortografik: derinlik ekranda yukarı taşır)
         rd, rh = ridge(u)
         pos = GATE_PT.to_3d() + FWD3 * (rd + 2.2) + RIGHT3 * u
-        pos.z = rh - 0.35 + h
+        pos.z = rh - 0.75 + h
         cl.matrix_world = Matrix.Translation(pos) @ Matrix((x_, -n_, y_)).transposed().to_4x4()
     return sky
 
@@ -503,7 +503,7 @@ def build_backdrop():
                 bm.faces.new((rings[j][t], rings[j][(t + 1) % seg], rings[j + 1][(t + 1) % seg], rings[j + 1][t]))
         bm_obj('servi_%d' % k, bm, [M_CYPRESS], subsurf=1)
     # çiçekli ağaç
-    for k, (u, dep, s) in enumerate(((-7.6, 0.4, 0.8), (6.3, 0.5, 0.6))):
+    for k, (u, dep, s) in enumerate(((-7.6, 0.4, 0.8), (5.9, 0.5, 0.6))):
         p = on_ridge(u, dep)
         z = p.z
         bm = bmesh.new()
@@ -587,7 +587,7 @@ def build_pen():
         p = ring_pos(a)
         z = hfun(p.x, p.y)
         bm = bmesh.new()
-        tube(bm, Vector((p.x, p.y, z - 0.1)), Vector((p.x, p.y, z + POST_H)), POST_R, POST_R * 0.92, seg=32)
+        tube(bm, Vector((p.x, p.y, z - 0.012)), Vector((p.x, p.y, z + POST_H)), POST_R, POST_R * 0.92, seg=32)   # dip zemin hizasında: gömülü kısmın konturu sızmasın
         bm.normal_update()
         cyl_uv(bm, p.x, p.y, POST_R)
         ob = bm_obj('direk_' + side, bm, [M_WALL], mark_ground=True)
@@ -1147,6 +1147,10 @@ spark = link(bpy.data.objects.new('parilti_nokta', me), noline=True)
 M_SPARK = flat_emit('parilti_mat', (1.0, 0.9, 0.7), 0.0, paper=False)
 spark.data.materials.append(M_SPARK)
 spark.parent = LAST
+# parıltı yanmadan önce nokta görünmesin (ışımasız küre siyah görünür)
+for f, hid in ((1, True), (262, True), (263, False)):
+    spark.hide_render = hid
+    spark.keyframe_insert('hide_render', frame=f)
 _M300 = pouch_matrix(N_FRAMES) @ Matrix.Translation(heap_local[0]) @ local_rot[0].to_matrix().to_4x4()
 _l3, _q3, _s3 = _M300.decompose()
 _top = (-VIEW * 0.6 + Vector((0, 0, 0.8))).normalized()
