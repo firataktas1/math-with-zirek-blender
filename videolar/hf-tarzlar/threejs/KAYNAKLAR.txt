@@ -1,0 +1,4 @@
+threejs · dış kaynaklar
+- Kütüphane: three.js r181 (0.181.2, npm) · MIT lisansı · assets/three.module.min.js, assets/three.core.min.js, lisans assets/three-LICENSE.txt
+- Kütüphane: GSAP 3.14.2 (yalnız 10 sn'lik süre çizelgesi için)
+Model, doku, HDRI yok: bütün geometri (duvar taşları, koyunlar, kese, çakıllar, ağaçlar, tepe, gök kubbesi) index.html içinde kodla üretildi.
