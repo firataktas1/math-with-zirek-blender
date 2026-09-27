@@ -887,7 +887,7 @@ def felt_tree(name, x, y, sc, seed):
     for j in range(80):
         a = 2 * math.pi * j / 79
         o = Vector((x + math.cos(a) * 1.5 * sc, y + math.sin(a) * 1.5 * sc, z + 1.02 * sc))
-        hit, loc, nrm, idx, ob, mw = lf.ray_cast(lf.matrix_world.inverted() @ o, Vector((x, y, z + 1.02 * sc)) - o)
+        hit, loc, nrm, idx = lf.ray_cast(lf.matrix_world.inverted() @ o, Vector((x, y, z + 1.02 * sc)) - o)
         if hit:
             pts.append(lf.matrix_world @ loc + nrm * 0.004)
     if len(pts) > 10:
