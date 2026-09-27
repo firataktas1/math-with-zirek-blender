@@ -105,8 +105,8 @@
       ground.receiveShadow = true;
       scene.add(ground);
       // uzak tepeler
-      const farMat = mat("#8C9A74"), farMat2 = mat("#A3A086");
-      [[-30, -44, 16, 5.5, farMat], [-6, -52, 20, 7, farMat2], [22, -46, 18, 5, farMat], [40, -56, 22, 8, farMat2]].forEach(([x, z, r, h, m]) => {
+      const farMat = mat("#7F9468"), farMat2 = mat("#95977A");
+      [[-30, -48, 16, 2.4, farMat], [-6, -56, 20, 3.2, farMat2], [22, -50, 18, 2.2, farMat], [40, -60, 22, 3.4, farMat2]].forEach(([x, z, r, h, m]) => {
         const g = new THREE.SphereGeometry(r, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2);
         g.scale(1, h / r, 0.6);
         const me = new THREE.Mesh(g, m); me.position.set(x, -0.5, z); scene.add(me);
@@ -179,8 +179,8 @@
       peg.rotation.x = Math.PI / 2; peg.position.copy(pegBase).addScaledVector(toCam, 0.1); peg.castShadow = true; scene.add(peg);
       const pouchTop = pegBase.clone().addScaledVector(toCam, 0.2).add(new THREE.Vector3(0, -0.2, 0));
       const prof = [];
-      [[0.0, -0.56], [0.17, -0.55], [0.29, -0.47], [0.33, -0.34], [0.3, -0.2], [0.22, -0.09], [0.13, -0.01], [0.11, 0.03], [0.17, 0.08], [0.25, 0.15], [0.27, 0.19]].forEach(([r, y]) => prof.push(new THREE.Vector2(r, y)));
-      const pouchMat = mat("#A8825A", { side: THREE.DoubleSide, roughness: 1 });
+      [[0.0, -0.6], [0.16, -0.59], [0.26, -0.52], [0.3, -0.4], [0.29, -0.26], [0.23, -0.13], [0.14, -0.03], [0.1, 0.02], [0.15, 0.07], [0.24, 0.13], [0.3, 0.2]].forEach(([r, y]) => prof.push(new THREE.Vector2(r, y)));
+      const pouchMat = mat("#9A8466", { side: THREE.DoubleSide, roughness: 1 });
       const pouchGeo = new THREE.LatheGeometry(prof, 10);
       { const pa = pouchGeo.attributes.position; for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), y = pa.getY(i), z = pa.getZ(i), ang = Math.atan2(z, x); const f = 1 + 0.07 * Math.sin(ang * 5) * (y > 0.05 ? 1.6 : 0.5); pa.setX(i, x * f); pa.setZ(i, z * f); if (y < -0.3) pa.setY(i, y - 0.03 * Math.cos(ang)); } pouchGeo.computeVertexNormals(); }
       const pouch = new THREE.Mesh(pouchGeo, pouchMat);
@@ -212,7 +212,7 @@
 
       // ---------- çakıllar ----------
       const pebGeo = new THREE.IcosahedronGeometry(0.1, 1);
-      const pebMat = mat("#C99A62", { roughness: 0.95 });
+      const pebMat = mat("#BBA487", { roughness: 1 });
       const heapOff = [[0, 0.1, 0], [-0.06, 0.07, 0], [0.06, 0.07, 0], [-0.1, 0.035, 0.03], [0, 0.035, 0.05], [0.1, 0.035, 0.03], [-0.1, 0.0, -0.04], [0, 0.0, 0], [0.1, 0.0, -0.04]];
       const order = [0, 1, 2, 3, 4, 5, 6, 8];
       const pebbles = heapOff.map((o, i) => {
@@ -282,8 +282,8 @@
       scene.add(glintLight);
 
       // ---------- kamera yolu ----------
-      const CAM0 = new THREE.Vector3(-2.2, 3.5, 11.8), TGT0 = new THREE.Vector3(-0.3, 0.75, 0.2);
-      const CAM1 = new THREE.Vector3(-1.9, 3.45, 11.5), TGT1 = new THREE.Vector3(-0.2, 0.75, 0.15);
+      const CAM0 = new THREE.Vector3(-2.2, 3.5, 11.8), TGT0 = new THREE.Vector3(-0.3, 1.15, 0.2);
+      const CAM1 = new THREE.Vector3(-1.9, 3.45, 11.5), TGT1 = new THREE.Vector3(-0.2, 1.15, 0.15);
       function camAt(t) {
         const d = sine(t / 7.1);
         const p = CAM0.clone().lerp(CAM1, d), tg = TGT0.clone().lerp(TGT1, d);
@@ -329,7 +329,7 @@
           if (k < 0) {
             // son kalan: diğerleri gidince biraz yükselir
             const u = outBack((t - 6.95) / 0.45);
-            p.position.copy(home).add(new THREE.Vector3(0, 0.045 * u, 0));
+            p.position.copy(home).add(new THREE.Vector3(0, 0.08 * u, 0));
             p.rotation.set(0, p.userData.rot, 0); p.scale.set(1.25 + 0.15 * u, 0.62 + 0.08 * u, 1 + 0.12 * u);
             return;
           }
@@ -355,7 +355,7 @@
         const last = pebbles[7];
         const gk = sine((t - 8.2) / 0.7);
         const pulse = t > 8.9 ? 1 - 0.16 * Math.sin((t - 8.9) * Math.PI / 0.55) ** 2 : 1;
-        glint.material.opacity = gk * 0.8;
+        glint.material.opacity = gk * 0.65;
         glint.position.copy(last.position).add(new THREE.Vector3(0.07, 0.07, 0.1));
         glint.scale.setScalar(0.2 * gk * pulse + 0.001);
         glintLight.position.copy(last.position).add(new THREE.Vector3(0, 0.25, 0.25));
