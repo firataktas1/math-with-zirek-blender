@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Tebeşir · ağıl ve taşlar</title>
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #1c2622; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #1c2622; }
+      #sahne { position: absolute; inset: 0; overflow: hidden; }
+      #dunya { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+      #tahta { position: absolute; left: -200px; top: -120px; width: 2320px; height: 1320px; z-index: 0; }
+      .katman { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+      .teb {
+        -webkit-mask-image: url("assets/tebesir-maske.png");
+        mask-image: url("assets/tebesir-maske.png");
+        -webkit-mask-size: 384px 384px;
+        mask-size: 384px 384px;
+        -webkit-mask-repeat: repeat;
+        mask-repeat: repeat;
+      }
+      .koyun { position: absolute; left: -150px; top: -170px; width: 300px; height: 190px; transform-origin: 150px 170px; }
+      .koyun svg { position: absolute; left: 0; top: 0; width: 300px; height: 190px; overflow: visible; }
+      .cakil { position: absolute; left: -30px; top: -22px; width: 60px; height: 44px; transform-origin: 30px 22px; }
+      .cakil svg { width: 60px; height: 44px; overflow: visible; display: block; }
+      #hale { position: absolute; left: 795px; top: 539px; width: 180px; height: 180px; border-radius: 50%; opacity: 0; z-index: 990;
+        background: radial-gradient(circle at 50% 50%, rgba(255, 222, 140, 0.55) 0%, rgba(255, 205, 110, 0.22) 30%, rgba(255, 200, 100, 0) 68%); }
+      #yildiz { position: absolute; left: 841px; top: 557px; width: 120px; height: 120px; z-index: 995; opacity: 0; transform-origin: 60px 60px; }
+      #yildiz svg { width: 120px; height: 120px; overflow: visible; display: block; }
+      #toz { position: absolute; inset: 0; background-image: url("assets/toz.png"); background-size: 1920px 1080px; opacity: 0.55; pointer-events: none; }
+      #vinyet { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 78% 72% at 50% 50%, rgba(0,0,0,0) 58%, rgba(6, 10, 8, 0.5) 100%); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+      <div id="sahne" class="clip" data-start="0" data-duration="10" data-track-index="0">
+        <div id="dunya">
+          <img id="tahta" src="assets/tahta.jpg" alt="" />
+          <svg id="arka" class="katman teb" style="z-index: 1" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"><defs id="desenler"></defs></svg>
+          <svg id="onduvar" class="katman teb" style="z-index: 660" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="kese-arka" class="katman teb" style="z-index: 740" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="kese-on" class="katman teb" style="z-index: 760" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="tas-alan" class="katman teb" style="z-index: 880" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="hale"></div>
+          <div id="yildiz" class="teb"><svg viewBox="-60 -60 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 -52 C4 -12 12 -4 52 0 C12 4 4 12 0 52 C-4 12 -12 4 -52 0 C-12 -4 -4 -12 0 -52 Z" fill="#FFF1C6" stroke="#FFE08A" stroke-width="3" stroke-linejoin="round" />
+            <circle cx="0" cy="0" r="7" fill="#FFFBEA" />
+          </svg></div>
+        </div>
+        <div id="toz"></div>
+        <div id="vinyet"></div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var NS = "http://www.w3.org/2000/svg";
+        var tl = gsap.timeline({ paused: true });
+
+        // ---------- yardımcılar ----------
+        function mulberry(a) { return function () { a |= 0; a = (a + 0x6d2b79f5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+        var R = mulberry(20260927);
+        function rr(a, b) { return a + (b - a) * R(); }
+        function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+        function f1(v) { return Math.round(v * 10) / 10; }
+        function smoothClosed(p) {
+          var n = p.length, d = "M" + f1(p[0][0]) + " " + f1(p[0][1]);
+          for (var i = 0; i < n; i++) {
+            var p0 = p[(i - 1 + n) % n], p1 = p[i], p2 = p[(i + 1) % n], p3 = p[(i + 2) % n];
+            d += " C" + f1(p1[0] + (p2[0] - p0[0]) / 6) + " " + f1(p1[1] + (p2[1] - p0[1]) / 6) + " " + f1(p2[0] - (p3[0] - p1[0]) / 6) + " " + f1(p2[1] - (p3[1] - p1[1]) / 6) + " " + f1(p2[0]) + " " + f1(p2[1]);
+          }
+          return d + " Z";
+        }
+        function smoothOpen(p) {
+          var n = p.length, d = "M" + f1(p[0][0]) + " " + f1(p[0][1]);
+          for (var i = 0; i < n - 1; i++) {
+            var p0 = p[Math.max(0, i - 1)], p1 = p[i], p2 = p[i + 1], p3 = p[Math.min(n - 1, i + 2)];
+            d += " C" + f1(p1[0] + (p2[0] - p0[0]) / 6) + " " + f1(p1[1] + (p2[1] - p0[1]) / 6) + " " + f1(p2[0] - (p3[0] - p1[0]) / 6) + " " + f1(p2[1] - (p3[1] - p1[1]) / 6) + " " + f1(p2[0]) + " " + f1(p2[1]);
+          }
+          return d;
+        }
+        function roundPoly(p, r) {
+          var n = p.length, d = "";
+          for (var i = 0; i < n; i++) {
+            var a = p[(i - 1 + n) % n], b = p[i], c = p[(i + 1) % n];
+            var l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+            var r1 = Math.min(r, l1 / 2.2) / l1, r2 = Math.min(r, l2 / 2.2) / l2;
+            var s0 = [b[0] + (a[0] - b[0]) * r1, b[1] + (a[1] - b[1]) * r1], s1 = [b[0] + (c[0] - b[0]) * r2, b[1] + (c[1] - b[1]) * r2];
+            d += (i ? " L" : "M") + f1(s0[0]) + " " + f1(s0[1]) + " Q" + f1(b[0]) + " " + f1(b[1]) + " " + f1(s1[0]) + " " + f1(s1[1]);
+          }
+          return d + " Z";
+        }
+        function slabStone(cx, cy, w, h) {
+          var j = function () { return rr(-0.12, 0.12); };
+          var p = [[-w, -h * (0.8 + j())], [-w * rr(0.1, 0.4), -h * (1 + j())], [w * (0.95 + j()), -h * (0.9 + j())], [w, h * (0.7 + j())], [w * rr(0.0, 0.5), h * (1 + j())], [-w * (0.95 + j()), h * (0.95 + j())]];
+          return roundPoly(p.map(function (q) { return [cx + q[0], cy + q[1]]; }), Math.min(6, h * 0.6));
+        }
+        function blob(cx, cy, rx, ry, n, jit, rot) {
+          var pts = [], r0 = rot || 0;
+          for (var i = 0; i < n; i++) {
+            var a = r0 + (i / n) * Math.PI * 2, k = 1 + rr(-jit, jit);
+            pts.push([cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]);
+          }
+          return smoothClosed(pts);
+        }
+        // hatch patterns
+        var defs = document.getElementById("desenler");
+        function hatch(id, color, w, gap, ang) {
+          var p = el("pattern", { id: id, width: gap, height: gap, patternUnits: "userSpaceOnUse", patternTransform: "rotate(" + ang + ")" }, defs);
+          el("line", { x1: 0, y1: 0, x2: 0, y2: gap, stroke: color, "stroke-width": w, "stroke-linecap": "round" }, p);
+        }
+        hatch("h-beyaz", "#EEEBE2", 2.2, 6, -38);
+        hatch("h-beyaz2", "#EEEBE2", 1.6, 9, 52);
+        hatch("h-tas", "#D9D6CD", 1.6, 8, -30);
+        hatch("h-turuncu", "#EE9C6C", 2.4, 6, -40);
+        hatch("h-turuncu2", "#F4B58A", 1.5, 8, 45);
+        hatch("h-mavi", "#A9C2CC", 1.8, 7, -25);
+        hatch("h-yesil", "#94C47E", 1.6, 9, -20);
+        hatch("h-sari", "#F5CD55", 2.4, 5, -35);
+        var TAHTA = "#24302B";
+
+        // tebeşir çizgisi: ana iz + hafif kaymış ikinci iz; ikisi de kendini çizer
+        function chalk(parent, d, color, w, op, t0, dur, extra) {
+          var out = [];
+          var a = el("path", { d: d, fill: "none", stroke: color, "stroke-width": w, "stroke-linecap": "round", "stroke-linejoin": "round", "pathLength": 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, parent);
+          out.push([a, op]);
+          if (!extra || !extra.single) {
+            var b = el("path", { d: d, fill: "none", stroke: color, "stroke-width": Math.max(1.2, w * 0.45), "stroke-linecap": "round", "pathLength": 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, transform: "translate(" + f1(rr(-1.6, 1.6)) + " " + f1(rr(0.6, 1.8)) + ")", style: "opacity:0" }, parent);
+            out.push([b, op * 0.5]);
+          }
+          out.forEach(function (o) {
+            tl.set(o[0], { opacity: o[1] }, t0);
+            tl.to(o[0], { attr: { "stroke-dashoffset": 0 }, duration: dur, ease: "power1.inOut" }, t0);
+          });
+          return a;
+        }
+        function fillShape(parent, d, fill, op, t0, dur) {
+          var s = el("path", { d: d, fill: fill, stroke: "none", style: "opacity:0" }, parent);
+          tl.to(s, { opacity: op, duration: dur || 0.3, ease: "power1.out" }, t0);
+          return s;
+        }
+        function solid(parent, d, fill, t0) {
+          var s = el("path", { d: d, fill: fill, stroke: "none", style: "opacity:0" }, parent);
+          tl.set(s, { opacity: 1 }, t0);
+          return s;
+        }
+
+        var arka = document.getElementById("arka");
+        var onduvar = document.getElementById("onduvar");
+        var keseArka = document.getElementById("kese-arka");
+        var keseOn = document.getElementById("kese-on");
+        var tasAlan = document.getElementById("tas-alan");
+        var dunya = document.getElementById("dunya");
+
+        // ---------- gökyüzü, tepe, güneş ----------
+        var tepe = "M-40 356 C 220 318, 420 300, 640 318 S 1010 346, 1230 322 S 1620 282, 1960 300";
+        chalk(arka, tepe, "#DCE8D2", 4.2, 0.85, 0.0, 0.9);
+        chalk(arka, "M-40 404 C 260 382, 520 372, 760 386 S 1300 380, 1960 360", "#94C47E", 2.2, 0.35, 0.25, 0.8, { single: true });
+        // güneş: tepenin arkasından yarım
+        var gunesD = "M226 334 C 226 270, 276 228, 330 228 C 384 228, 434 270, 434 330";
+        chalk(arka, gunesD, "#F6D67A", 4.2, 0.9, 0.15, 0.6);
+        fillShape(arka, "M226 334 C 226 270, 276 228, 330 228 C 384 228, 434 270, 434 330 Z", "url(#h-sari)", 0.32, 0.7, 0.4);
+        for (var k = 0; k < 7; k++) {
+          var a = Math.PI + (k + 0.5) * (Math.PI / 7);
+          var x1 = 330 + Math.cos(a) * 128, y1 = 318 + Math.sin(a) * 118, x2 = 330 + Math.cos(a) * 170, y2 = 318 + Math.sin(a) * 158;
+          chalk(arka, "M" + f1(x1) + " " + f1(y1) + " L" + f1(x2) + " " + f1(y2), "#F6D67A", 3.2, 0.7, 0.55 + k * 0.05, 0.25, { single: true });
+        }
+        // uzak ağaç
+        chalk(arka, "M1592 300 L1590 246", "#CFC6B0", 5, 0.8, 0.5, 0.3);
+        var agac = blob(1590, 212, 46, 40, 9, 0.12);
+        fillShape(arka, agac, "url(#h-yesil)", 0.55, 0.9, 0.4);
+        chalk(arka, agac, "#94C47E", 3.6, 0.85, 0.55, 0.6);
+        // bulutlar
+        chalk(arka, "M1180 150 C 1190 118, 1240 112, 1256 134 C 1270 108, 1330 110, 1336 142 C 1366 140, 1378 172, 1350 180 L 1196 180 C 1168 178, 1164 156, 1180 150 Z", "#D6DEE0", 3, 0.55, 0.35, 0.7);
+        chalk(arka, "M700 112 C 710 90, 750 86, 764 104 C 780 86, 826 92, 826 116 C 848 118, 850 140, 828 144 L 712 144 C 690 142, 688 120, 700 112 Z", "#D6DEE0", 2.6, 0.45, 0.5, 0.6);
+
+        // çim tutamları (sağ alt üçte bir boş)
+        var tutam = [[120, 470], [310, 452], [520, 520], [640, 470], [980, 420], [1700, 420], [1840, 470], [90, 640], [200, 1000], [60, 820], [400, 1010], [760, 980], [1010, 800], [1130, 760], [980, 960], [1780, 700], [1500, 420], [1260, 405], [880, 470], [360, 560]];
+        tutam.forEach(function (p, i) {
+          var x = p[0], y = p[1], s = 0.7 + (y - 400) / 900, d = "";
+          for (var j = 0; j < 4; j++) { var bx = x + (j - 1.5) * 7 * s, lean = (j - 1.5) * 5 * s; d += "M" + f1(bx) + " " + f1(y) + " Q" + f1(bx + lean * 0.5) + " " + f1(y - 12 * s) + " " + f1(bx + lean) + " " + f1(y - (18 + (j % 2) * 7) * s) + " "; }
+          chalk(arka, d, "#94C47E", 2.6 * s + 0.6, 0.75, 0.3 + (i % 10) * 0.08, 0.35, { single: true });
+        });
+
+        // ---------- ağıl ----------
+        var CX = 1230, CY = 560, RX = 520, RY = 135, WH = 76;
+        function ep(th) { var t = th * Math.PI / 180; return [CX + RX * Math.cos(t), CY + RY * Math.sin(t)]; }
+        function wallStones(parent, th0, th1, tStart, tSpan) {
+          var courses = 4, hs = WH / courses, list = [];
+          for (var c = 0; c < courses; c++) {
+            var th = th0 + (c % 2 ? 2.2 : 0);
+            while (th < th1) {
+              var t = th * Math.PI / 180;
+              var ds = Math.sqrt(Math.pow(RX * Math.sin(t), 2) + Math.pow(RY * Math.cos(t), 2));
+              var w = rr(44, 70), dth = (w / ds) * 180 / Math.PI;
+              var mid = Math.min(th + dth / 2, th1 - 0.3);
+              var p = ep(mid), sc = 0.72 + (p[1] - 420) / 900;
+              list.push({ x: p[0], y: p[1] - hs * (c + 0.5) * sc, w: Math.min(w, ds * (th1 - th) * Math.PI / 180) * 0.5 - 2.5, h: hs * sc * 0.5 - 1.2, th: mid, c: c });
+              th += dth;
+            }
+          }
+          list.sort(function (a, b) { return a.th - b.th; });
+          list.forEach(function (s, i) {
+            if (s.w < 6) return;
+            var d = slabStone(s.x, s.y, s.w, s.h);
+            var t0 = tStart + (i / list.length) * tSpan;
+            solid(parent, d, TAHTA, t0);
+            fillShape(parent, d, "url(#h-tas)", 0.22, t0 + 0.15, 0.3);
+            chalk(parent, d, "#D8D5CC", 2.8, 0.85, t0, 0.28, { single: s.c !== 1 ? false : true });
+          });
+          // üst ve alt kenar çizgileri
+          var top = [], bot = [];
+          for (var th = th0; th <= th1 + 0.01; th += 3) { var q = ep(th), sc2 = 0.72 + (q[1] - 420) / 900; top.push([q[0], q[1] - WH * sc2 - 1]); bot.push([q[0], q[1] + 1]); }
+          chalk(parent, smoothOpen(top), "#E6E2D8", 3.2, 0.8, tStart + 0.1, tSpan * 0.9);
+          chalk(parent, smoothOpen(bot), "#CFCBC0", 2.4, 0.55, tStart + 0.2, tSpan * 0.9, { single: true });
+        }
+        function post(parent, th, hgt, t0) {
+          var p = ep(th), n = 7, sh = hgt / n;
+          for (var i = 0; i < n; i++) {
+            var d = slabStone(p[0] + rr(-3, 3), p[1] - sh * (i + 0.5), rr(22, 27), sh * 0.5 - 1);
+            solid(parent, d, TAHTA, t0 + i * 0.06);
+            fillShape(parent, d, "url(#h-tas)", 0.26, t0 + 0.2 + i * 0.06, 0.3);
+            chalk(parent, d, "#E3E0D7", 3.2, 0.9, t0 + i * 0.06, 0.25);
+          }
+          var cap = slabStone(p[0], p[1] - hgt - 3, 31, 7);
+          solid(parent, cap, TAHTA, t0 + 0.3);
+          chalk(parent, cap, "#EEEBE2", 3.4, 0.9, t0 + 0.3, 0.25);
+        }
+        // iç zemin: hafif yeşil tarama (ağılın içi)
+        var ic = [];
+        for (var th = 0; th < 360; th += 10) { var q = ep(th); ic.push([q[0], q[1] - 6]); }
+        fillShape(arka, smoothClosed(ic), "url(#h-yesil)", 0.05, 1.0, 0.6);
+        wallStones(arka, 165, 345, 0.15, 1.0);
+        post(arka, 165, 138, 0.55);
+        wallStones(onduvar, 345, 495, 0.35, 0.9);
+        post(onduvar, 135, 146, 0.6);
+        // tahta çivi (ön direkte)
+        chalk(onduvar, "M858 566 L 892 574", "#E8C9A0", 6, 0.95, 0.85, 0.2);
+
+        // ---------- kese ----------
+        var M = [885, 636];
+        var keseGovde = "M864 650 C 846 664, 826 690, 826 720 C 826 750, 852 766, 886 766 C 920 766, 946 750, 946 720 C 946 690, 926 664, 906 650 Z";
+        solid(keseArka, keseGovde, TAHTA, 0.8);
+        fillShape(keseArka, keseGovde, "url(#h-turuncu)", 0.55, 1.05, 0.35);
+        fillShape(keseArka, "M842 700 C 850 730, 870 748, 900 750 C 880 738, 862 720, 842 700 Z", "url(#h-turuncu2)", 0.5, 1.1, 0.3);
+        chalk(keseArka, keseGovde, "#EE9C6C", 4, 0.95, 0.8, 0.45);
+        // ağzın arka dudağı
+        var agizArka = "M846 640 C 848 628, 858 632, 864 622 C 872 630, 880 620, 887 623 C 894 618, 902 630, 908 622 C 914 630, 922 628, 924 640";
+        solid(keseArka, "M846 640 C 848 628, 858 632, 864 622 C 872 630, 880 620, 887 623 C 894 618, 902 630, 908 622 C 914 630, 922 628, 924 640 C 900 648, 870 648, 846 640 Z", "#1E2925", 0.85);
+        chalk(keseArka, agizArka, "#EE9C6C", 3.4, 0.9, 0.85, 0.3);
+        // ip: çividen boyun bağına
+        chalk(keseArka, "M878 572 C 870 596, 856 620, 848 644", "#EEEBE2", 2.6, 0.85, 0.95, 0.3);
+        chalk(keseArka, "M882 572 C 892 596, 910 620, 922 644", "#EEEBE2", 2.6, 0.85, 1.0, 0.3);
+        // ön dudak + bağ (çakılların önünde)
+        var onDudak = "M842 638 C 858 656, 912 656, 928 638 C 918 650, 906 654, 885 654 C 864 654, 850 650, 842 638 Z";
+        solid(keseOn, onDudak, TAHTA, 0.9);
+        fillShape(keseOn, onDudak, "url(#h-turuncu)", 0.6, 1.1, 0.3);
+        chalk(keseOn, "M842 638 C 858 656, 912 656, 928 638", "#F2A676", 3.8, 0.95, 0.9, 0.3);
+        chalk(keseOn, "M858 654 C 872 662, 900 662, 912 654", "#EEEBE2", 3, 0.85, 1.0, 0.25);
+        chalk(keseOn, "M862 648 L 858 657 M 876 651 L 875 660 M 894 651 L 896 660 M 908 648 L 912 657", "#F2A676", 2.4, 0.8, 1.05, 0.2, { single: true });
+        chalk(keseArka, "M866 664 C 852 690, 850 720, 858 748 M 906 664 C 922 690, 924 720, 916 748 M 886 668 C 884 700, 886 730, 888 756", "#F4B58A", 2.2, 0.5, 1.1, 0.3, { single: true });
+
+        // ---------- düz taş (çakıl dizisi yeri) ----------
+        var SX = 470, SY = 884;
+        var tasUst = "M178 876 C 186 846, 300 832, 470 832 C 640 832, 758 846, 764 876 C 768 902, 650 920, 470 920 C 290 920, 172 904, 178 876 Z";
+        solid(tasAlan, "M178 876 C 172 904, 290 920, 470 920 C 650 920, 768 902, 764 876 L 764 892 C 766 918, 650 938, 470 938 C 290 938, 174 922, 178 894 Z", TAHTA, 0.45);
+        chalk(tasAlan, "M178 880 C 176 910, 290 938, 470 938 C 650 938, 766 920, 764 882", "#A9C2CC", 3, 0.6, 0.55, 0.45);
+        solid(tasAlan, tasUst, TAHTA, 0.45);
+        fillShape(tasAlan, tasUst, "url(#h-mavi)", 0.3, 0.75, 0.4);
+        chalk(tasAlan, tasUst, "#B9D0D8", 4, 0.9, 0.45, 0.6);
+
+        // ---------- çakıllar ----------
+        function pebbleSVG(parent) {
+          var s = el("svg", { viewBox: "-30 -22 60 44" }, parent);
+          el("ellipse", { cx: 0, cy: 0, rx: 24, ry: 16, fill: "#E8B84A" }, s);
+          el("path", { d: "M-24 0 C -24 -10, -12 -16, 0 -16 C 12 -16, 24 -10, 24 0 C 24 10, 12 16, 0 16 C -12 16, -24 10, -24 0 Z", fill: "url(#h-sari)", opacity: 0.8 }, s);
+          el("path", { d: "M-16 -8 C -10 -12, -2 -13, 6 -12", fill: "none", stroke: "#FFF0C2", "stroke-width": 3, "stroke-linecap": "round", opacity: 0.8 }, s);
+          el("ellipse", { cx: 0, cy: 0, rx: 24, ry: 16, fill: "none", stroke: "#F9D877", "stroke-width": 3 }, s);
+          return s;
+        }
+        // yığın konumları (kese ağzı merkezine göre); son kalan: alt orta (index 7)
+        var yigin = [[0, -34], [-12, -24], [12, -24], [-24, -12], [0, -13], [24, -12], [-24, 0], [0, 0], [24, 0]];
+        var sira = [0, 1, 2, 3, 4, 5, 6, 8]; // alınma sırası; 7 kalır
+        var cakil = [];
+        yigin.forEach(function (o, i) {
+          var d = document.createElement("div");
+          d.className = "cakil teb";
+          d.style.zIndex = 750;
+          pebbleSVG(d);
+          dunya.appendChild(d);
+          var x = M[0] + o[0], y = M[1] + o[1];
+          tl.fromTo(d, { x: x, y: y, scale: 0, rotation: rr(-20, 20) }, { scale: 0.56, duration: 0.25, ease: "back.out(2)" }, 1.0 + i * 0.03);
+          cakil.push({ el: d, x: x, y: y });
+        });
+
+        // ---------- koyunlar ----------
+        var N = 8, T0 = 1.5, DT = 0.73;
+        var P0 = [-260, 772], G = [795, 640];
+        var dinlen = [[1580, 548], [1455, 505], [1330, 566], [1205, 500], [1480, 628], [1085, 566], [1250, 632], [985, 625]];
+        function olcek(y) { return 0.6 + (y - 480) * 0.0019; }
+        function scallop(cx, cy, rx, ry, n, bump) {
+          var d = "", pts = [];
+          for (var i = 0; i <= n; i++) { var a = (i / n) * Math.PI * 2 + 0.2; pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+          d = "M" + f1(pts[0][0]) + " " + f1(pts[0][1]);
+          for (var i = 1; i <= n; i++) {
+            var am = ((i - 0.5) / n) * Math.PI * 2 + 0.2, k = bump * (0.85 + 0.3 * R());
+            d += " Q" + f1(cx + Math.cos(am) * rx * k) + " " + f1(cy + Math.sin(am) * ry * k) + " " + f1(pts[i][0]) + " " + f1(pts[i][1]);
+          }
+          return d + " Z";
+        }
+        function makeSheep(i) {
+          var div = document.createElement("div");
+          div.className = "koyun teb";
+          var s = el("svg", { viewBox: "-150 -170 300 190" }, div);
+          dunya.appendChild(div);
+          var parts = { div: div, legs: [], strokes: [] };
+          var legX = [[-44, 1], [-26, -1], [24, -1], [42, 1]];
+          legX.forEach(function (lx) {
+            var g = el("g", {}, s);
+            var near = lx[0] === -44 || lx[0] === 24;
+            var col = near ? "#E4DFD4" : "#B9B4AA";
+            parts.strokes.push(el("path", { d: "M" + lx[0] + " -48 L " + (lx[0] + 1) + " -4", stroke: col, "stroke-width": 8.5, "stroke-linecap": "round", fill: "none", pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, g));
+            parts.legs.push({ g: g, x: lx[0], ph: lx[1] });
+          });
+          var govdeG = el("g", {}, s);
+          var bodyD = scallop(-6, -82, 70, 40, 12, 1.2);
+          el("path", { d: bodyD, fill: TAHTA }, govdeG);
+          var hf = el("path", { d: bodyD, fill: "url(#h-beyaz)", style: "opacity:0" }, govdeG);
+          var hf2 = el("path", { d: scallop(-16, -94, 40, 20, 7, 1.15), fill: "url(#h-beyaz2)", style: "opacity:0" }, govdeG);
+          parts.fills = [[hf, 0.62], [hf2, 0.5]];
+          parts.strokes.push(el("path", { d: bodyD, fill: "none", stroke: "#F1EEE6", "stroke-width": 4.2, "stroke-linejoin": "round", pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, govdeG));
+          // kuyruk
+          parts.strokes.push(el("path", { d: "M-78 -92 C -92 -96, -96 -80, -84 -76", fill: "none", stroke: "#F1EEE6", "stroke-width": 3.6, "stroke-linecap": "round", pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, govdeG));
+          // baş
+          var bas = el("g", {}, govdeG);
+          var kulak1 = "M64 -118 C 52 -128, 40 -126, 38 -118 C 46 -112, 56 -112, 64 -114 Z";
+          var kulak2 = "M80 -118 C 90 -130, 102 -128, 104 -120 C 98 -112, 88 -112, 82 -114 Z";
+          el("path", { d: kulak1, fill: TAHTA }, bas);
+          parts.strokes.push(el("path", { d: kulak1, fill: "none", stroke: "#DAD5CA", "stroke-width": 3, pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, bas));
+          var basD = "M60 -118 C 76 -126, 92 -118, 94 -100 C 96 -84, 92 -70, 82 -66 C 72 -64, 62 -72, 58 -86 C 55 -98, 54 -112, 60 -118 Z";
+          el("path", { d: basD, fill: "#1B2521" }, bas);
+          parts.strokes.push(el("path", { d: basD, fill: "none", stroke: "#F1EEE6", "stroke-width": 3.8, "stroke-linejoin": "round", pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, bas));
+          el("path", { d: kulak2, fill: TAHTA }, bas);
+          parts.strokes.push(el("path", { d: kulak2, fill: "none", stroke: "#F1EEE6", "stroke-width": 3.2, pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, bas));
+          // yün perçemi
+          parts.strokes.push(el("path", { d: "M58 -112 C 62 -126, 78 -130, 88 -120", fill: "none", stroke: "#F1EEE6", "stroke-width": 5, "stroke-linecap": "round", pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, bas));
+          var goz = el("circle", { cx: 82, cy: -98, r: 4, fill: "#F4F1E8", style: "opacity:0" }, bas);
+          var burun = el("path", { d: "M84 -74 C 88 -72, 90 -72, 92 -76", fill: "none", stroke: "#DAD5CA", "stroke-width": 2.4, "stroke-linecap": "round", style: "opacity:0" }, bas);
+          parts.bas = bas; parts.govde = govdeG; parts.small = [goz, burun];
+          return parts;
+        }
+
+        var koyunlar = [];
+        for (var i = 0; i < N; i++) {
+          var sh = makeSheep(i);
+          var T = T0 + DT * i, ts = T - 2.2;
+          var Rp = dinlen[i];
+          // yaklaşma
+          var sx = P0[0], sy = P0[1], dur = 2.2, st = ts;
+          if (ts < 0) { var f = -ts / 2.2; sx = P0[0] + (G[0] - P0[0]) * f; sy = P0[1] + (G[1] - P0[1]) * f; dur = T; st = 0; }
+          tl.fromTo(sh.div, { x: sx, y: sy, scale: olcek(sy), zIndex: Math.round(sy) }, { x: G[0], y: G[1], scale: olcek(G[1]), zIndex: G[1], duration: dur, ease: "none", snap: "zIndex" }, st);
+          tl.to(sh.div, { x: Rp[0], y: Rp[1], scale: olcek(Rp[1]), zIndex: Rp[1], duration: 1.45, ease: "power1.out", snap: "zIndex" }, T);
+          // kendini çizme
+          var dt0 = Math.max(0, ts + 0.3);
+          sh.strokes.forEach(function (p, k) {
+            tl.set(p, { opacity: 1 }, dt0 + k * 0.04);
+            tl.to(p, { attr: { "stroke-dashoffset": 0 }, duration: 0.45, ease: "power1.inOut" }, dt0 + k * 0.04);
+          });
+          sh.fills.forEach(function (fp) { tl.to(fp[0], { opacity: fp[1], duration: 0.35 }, dt0 + 0.35); });
+          sh.small.forEach(function (sp) { tl.to(sp, { opacity: 1, duration: 0.2 }, dt0 + 0.5); });
+          // yürüyüş: bacaklar ve gövde sallanması
+          var wStart = st, wEnd = T + 1.25, half = 0.16, n = Math.max(1, Math.round((wEnd - wStart) / half));
+          sh.legs.forEach(function (lg) {
+            tl.fromTo(lg.g, { rotation: -15 * lg.ph, svgOrigin: lg.x + " -48" }, { rotation: 15 * lg.ph, svgOrigin: lg.x + " -48", duration: half, ease: "sine.inOut", repeat: n - 1, yoyo: true }, wStart);
+            tl.to(lg.g, { rotation: 0, svgOrigin: lg.x + " -48", duration: 0.25, ease: "sine.out" }, wStart + n * half);
+          });
+          tl.fromTo(sh.govde, { y: 0 }, { y: -4, duration: half / 2, ease: "sine.inOut", repeat: n * 2 - 1, yoyo: true }, wStart);
+          // dinlenirken otlanma (bazıları)
+          if (i % 2 === 0 || i === 7) {
+            var tb = T + 1.7 + (i % 3) * 0.3;
+            tl.to(sh.bas, { rotation: 22, svgOrigin: "62 -96", duration: 0.45, ease: "sine.inOut" }, tb);
+            tl.to(sh.bas, { rotation: 0, svgOrigin: "62 -96", duration: 0.5, ease: "sine.inOut" }, tb + 1.1);
+          }
+          koyunlar.push(sh);
+        }
+
+        // ---------- taşlar uçar, diziye dizilir ----------
+        sira.forEach(function (ci, k) {
+          var c = cakil[ci], T = T0 + DT * k + 0.05;
+          var tx = SX + (k - 3.5) * 62, ty = SY - 12;
+          var lift = c.y - 46, peak = Math.min(lift, ty) - 120;
+          tl.set(c.el, { zIndex: 950 }, T);
+          tl.to(c.el, { y: lift, scale: 0.7, duration: 0.2, ease: "power2.out" }, T);
+          tl.to(c.el, { x: tx, duration: 0.5, ease: "power1.inOut" }, T + 0.2);
+          tl.to(c.el, { keyframes: [{ y: peak, duration: 0.2, ease: "power2.out" }, { y: ty, duration: 0.3, ease: "power2.in" }] }, T + 0.2);
+          tl.to(c.el, { scale: 1, rotation: (k % 2 ? 1 : -1) * rr(160, 220), duration: 0.5, ease: "power1.inOut" }, T + 0.2);
+          tl.set(c.el, { zIndex: 890 }, T + 0.7);
+          tl.fromTo(c.el, { scaleY: 0.78, scaleX: 1.12 }, { scaleY: 1, scaleX: 1, duration: 0.25, ease: "back.out(3)", immediateRender: false }, T + 0.7);
+          // tebeşir tozu pufu
+          for (var j = 0; j < 7; j++) {
+            var a = Math.PI + (j / 6) * Math.PI, dx = Math.cos(a) * rr(22, 40), dy = Math.sin(a) * rr(10, 22);
+            var dot = el("circle", { cx: tx, cy: ty + 10, r: rr(1.6, 3.2), fill: "#F1EEE6", style: "opacity:0" }, tasAlan);
+            tl.fromTo(dot, { opacity: 0.9, attr: { cx: tx, cy: ty + 10 } }, { opacity: 0, attr: { cx: tx + dx, cy: ty + 10 + dy }, duration: 0.5, ease: "power2.out", immediateRender: false }, T + 0.7);
+          }
+        });
+
+        // son çakıl kesenin ağzında biraz yükselip yerleşir (görünür kalsın)
+        tl.to(cakil[7].el, { y: M[1] - 7, scale: 0.72, rotation: 0, duration: 0.45, ease: "back.out(2)" }, 6.95);
+        // ---------- son: yavaş yaklaşma + parıltı ----------
+        var FX = 880, FY = 655, S2 = 2.3;
+        tl.fromTo(dunya, { x: 0, y: 0, scale: 1 }, { x: 960 - S2 * FX, y: 540 - S2 * FY, scale: S2, duration: 2.9, ease: "sine.inOut" }, 7.1);
+        tl.fromTo("#hale", { opacity: 0, scale: 0.5 }, { opacity: 0.7, scale: 1, duration: 0.9, ease: "sine.out" }, 8.15);
+        tl.fromTo("#yildiz", { opacity: 0, scale: 0.2, rotation: -20 }, { opacity: 1, scale: 0.46, rotation: 0, duration: 0.6, ease: "back.out(1.6)" }, 8.3);
+        tl.to("#yildiz", { scale: 0.36, duration: 0.55, ease: "sine.inOut", repeat: 1, yoyo: true }, 8.95);
+        tl.to("#hale", { scale: 1.12, opacity: 0.58, duration: 0.7, ease: "sine.inOut", repeat: 1, yoyo: true }, 9.1);
+        tl.to({}, { duration: 0.01 }, 9.99);
+
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

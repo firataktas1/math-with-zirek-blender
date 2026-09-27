@@ -1,0 +1,104 @@
+# Math with Zirek · HyperFrames tarz denemeleri, grup C (tebesir, foto25d, kinetik, threejs)
+# Elle başlatılır:  gh workflow run hf-c.yml -f stiller=tebesir,kinetik
+# Her stil ayrı paralel işte render edilir; çıktı (mp4 + kareler.png + süre) artifact olarak 3 gün saklanır.
+
+name: HF tarzlar C
+
+on:
+  workflow_dispatch:
+    inputs:
+      stiller:
+        description: "Virgülle ayrılmış stil klasörleri (videolar/hf-tarzlar/ altında)"
+        required: true
+        default: "tebesir,foto25d,kinetik,threejs"
+      crf:
+        description: "H.264 CRF (18 ve altı)"
+        required: true
+        default: "16"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf-c-${{ github.ref }}-${{ inputs.stiller }}
+  cancel-in-progress: false
+
+jobs:
+  liste:
+    runs-on: ubuntu-latest
+    outputs:
+      matris: ${{ steps.m.outputs.matris }}
+    steps:
+      - id: m
+        env:
+          STILLER: ${{ inputs.stiller }}
+        run: |
+          python3 -c "import json,os; s=[x.strip() for x in os.environ['STILLER'].split(',') if x.strip()]; print('matris='+json.dumps(s))" >> "$GITHUB_OUTPUT"
+
+  render:
+    needs: liste
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        stil: ${{ fromJSON(needs.liste.outputs.matris) }}
+    env:
+      HYPERFRAMES_VERSION: "0.8.75"
+      HYPERFRAMES_NO_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
+      PROJE: videolar/hf-tarzlar/${{ matrix.stil }}
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            videolar/hf-tarzlar/${{ matrix.stil }}
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ffmpeg
+          ffmpeg -version | head -n 1
+          nproc; free -h
+
+      - name: Tarayıcı
+        working-directory: ${{ env.PROJE }}
+        run: |
+          npx --yes hyperframes@${HYPERFRAMES_VERSION} browser ensure
+          npx --yes hyperframes@${HYPERFRAMES_VERSION} check || true
+
+      - name: Render
+        working-directory: ${{ env.PROJE }}
+        shell: bash
+        run: |
+          start=$(date +%s)
+          npx --yes hyperframes@${HYPERFRAMES_VERSION} render . -o "${{ matrix.stil }}.mp4" --fps 30 --resolution landscape \
+            --crf "${{ inputs.crf }}" --no-browser-gpu --workers auto 2>&1 | tail -n 40
+          sure=$(( $(date +%s) - start ))
+          echo "${{ matrix.stil }} render süresi: $((sure / 60)) dk $((sure % 60)) sn ($(nproc) çekirdek)" | tee sure.txt | tee -a "$GITHUB_STEP_SUMMARY"
+          ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -show_entries format=duration,size -of default=nw=1 "${{ matrix.stil }}.mp4" | tee -a sure.txt
+
+      - name: Kareler (68, 180, 290)
+        working-directory: ${{ env.PROJE }}
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -i "${{ matrix.stil }}.mp4" \
+            -vf "select='eq(n\,68)+eq(n\,180)+eq(n\,290)',scale=1280:720:flags=lanczos,tile=3x1" -frames:v 1 -fps_mode vfr kareler.png
+          ls -lh kareler.png
+
+      - name: Çıktıyı sakla (3 gün)
+        uses: actions/upload-artifact@v4
+        with:
+          name: hf-c-${{ matrix.stil }}-${{ github.run_number }}
+          path: |
+            ${{ env.PROJE }}/${{ matrix.stil }}.mp4
+            ${{ env.PROJE }}/kareler.png
+            ${{ env.PROJE }}/sure.txt
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
