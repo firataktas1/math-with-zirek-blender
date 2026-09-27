@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Kinetik yazı · ağıl ve taşlar</title>
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Baloo"; src: url("assets/Baloo2.ttf") format("truetype"); font-weight: 400 800; font-display: block; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #3E3552; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #3E3552; font-family: "Baloo", sans-serif; }
+      #sahne { position: absolute; inset: 0; overflow: hidden; }
+      #dunya { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+      #gok { position: absolute; left: -300px; top: -200px; width: 2520px; height: 1480px;
+        background: linear-gradient(180deg, #4A3D63 0%, #7A5877 24%, #C77E6E 40%, #F0A874 50%, #F6C58C 56%, #F6C58C 100%); }
+      .katman { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+      .kelime { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: "Baloo", sans-serif; font-weight: 800; line-height: 1; }
+      #aksam { left: 330px; top: 318px; font-size: 170px; color: #FFB866; letter-spacing: 0.02em; opacity: 0.95;
+        text-shadow: 0 0 40px rgba(255, 170, 90, 0.55), 0 0 90px rgba(255, 150, 80, 0.35); }
+      #aksam-kap { position: absolute; left: 0; top: 0; width: 1920px; height: 376px; overflow: hidden; z-index: 2; }
+      .bulut { font-weight: 700; color: rgba(255, 238, 226, 0.5); }
+      .koyun { position: absolute; left: -130px; top: -150px; width: 260px; height: 160px; transform-origin: 130px 150px; }
+      .koyun svg { position: absolute; left: 0; top: 0; width: 260px; height: 160px; overflow: visible; }
+      .koyun .yazi { position: absolute; left: 0; top: 34px; width: 244px; text-align: center; font-weight: 800; font-size: 52px; line-height: 1; color: #4A3326; letter-spacing: 0.01em; }
+      .koyun .yazi span { display: inline-block; }
+      .cakil { position: absolute; left: -40px; top: -20px; width: 80px; height: 40px; transform-origin: 40px 22px; text-align: center; font-weight: 800; font-size: 30px; line-height: 40px; color: #F6B940;
+        text-shadow: 0 2px 0 #9A5E1C, 0 3px 6px rgba(60, 30, 10, 0.35); }
+      #yildiz { position: absolute; left: 0; top: 0; width: 120px; height: 120px; z-index: 995; opacity: 0; transform-origin: 60px 60px; }
+      #yildiz svg { width: 120px; height: 120px; overflow: visible; display: block; }
+      #hale { position: absolute; left: 0; top: 0; width: 200px; height: 200px; border-radius: 50%; opacity: 0; z-index: 990;
+        background: radial-gradient(circle at 50% 50%, rgba(255, 228, 160, 0.6) 0%, rgba(255, 200, 110, 0.25) 30%, rgba(255, 190, 100, 0) 68%); }
+      #vinyet { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 80% 75% at 50% 48%, rgba(0,0,0,0) 58%, rgba(40, 20, 30, 0.35) 100%); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+      <div id="sahne" class="clip" data-start="0" data-duration="10" data-track-index="0">
+        <div id="dunya">
+          <div id="gok"></div>
+          <div class="kelime bulut" id="bulut1" style="left: 1120px; top: 120px; font-size: 64px">bulut</div>
+          <div class="kelime bulut" id="bulut2" style="left: 640px; top: 70px; font-size: 44px; color: rgba(255,238,226,0.38)">bulut</div>
+          <div id="aksam-kap"><div class="kelime" id="aksam">akşam</div></div>
+          <svg id="arka" class="katman" style="z-index: 3" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"><defs id="tanim"></defs></svg>
+          <svg id="onduvar" class="katman" style="z-index: 660" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="kese-arka" class="katman" style="z-index: 740" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="kese-on" class="katman" style="z-index: 760" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="tas-alan" class="katman" style="z-index: 880" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="hale"></div>
+          <div id="yildiz"><svg viewBox="-60 -60 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 -56 C 4 -12, 12 -4, 56 0 C 12 4, 4 12, 0 56 C -4 12, -12 4, -56 0 C -12 -4, -4 -12, 0 -56 Z" fill="#FFF6DC" />
+            <circle cx="0" cy="0" r="8" fill="#FFFFFF" />
+          </svg></div>
+        </div>
+        <div id="vinyet"></div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var NS = "http://www.w3.org/2000/svg";
+        var tl = gsap.timeline({ paused: true });
+        function mulberry(a) { return function () { a |= 0; a = (a + 0x6d2b79f5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+        var R = mulberry(777);
+        function rr(a, b) { return a + (b - a) * R(); }
+        function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+        function f1(v) { return Math.round(v * 10) / 10; }
+        var dunya = document.getElementById("dunya"), arka = document.getElementById("arka"), onduvar = document.getElementById("onduvar");
+        var keseArka = document.getElementById("kese-arka"), keseOn = document.getElementById("kese-on"), tasAlan = document.getElementById("tas-alan"), tanim = document.getElementById("tanim");
+        function tekrar(w, n) { var a = []; for (var i = 0; i < n; i++) a.push(w); return a.join(" · "); }
+
+        // ---------- tepe ve çimen ----------
+        var tepeD = "M-300 356 C 220 318, 420 300, 640 318 S 1010 346, 1230 322 S 1620 282, 2220 300 L 2220 1300 L -300 1300 Z";
+        el("path", { d: tepeD, fill: "#6E8C4E" }, arka);
+        el("path", { d: "M-300 420 C 300 392, 700 380, 1000 396 S 1600 392, 2220 372 L 2220 1300 L -300 1300 Z", fill: "#7E9C58" }, arka);
+        el("path", { d: "M-300 760 C 300 730, 900 740, 1300 760 S 1900 740, 2220 730 L 2220 1300 L -300 1300 Z", fill: "#86A25E" }, arka);
+        el("path", { id: "sirt", d: "M-40 350 C 220 312, 420 294, 640 312 S 1010 340, 1230 316 S 1620 276, 1960 294", fill: "none" }, tanim);
+        var sirt = el("text", { "font-family": "Baloo", "font-weight": 700, "font-size": 22, fill: "#A9C27F", "letter-spacing": "2" }, arka);
+        var sp = el("textPath", { href: "#sirt", startOffset: "0" }, sirt);
+        sp.textContent = tekrar("çimen", 40);
+        tl.fromTo(sirt, { opacity: 0 }, { opacity: 0.9, duration: 0.8, ease: "sine.out" }, 0.1);
+        // dağınık "ot" kelimeleri (sağ alt boş)
+        var otlar = [[110, 500], [300, 470], [880, 470], [1690, 430], [1850, 480], [70, 660], [60, 850], [210, 1010], [420, 1020], [770, 990], [1010, 820], [1120, 770], [960, 960], [1500, 425]];
+        otlar.forEach(function (p, i) {
+          var s = 16 + (p[1] - 400) * 0.03;
+          var t = el("text", { x: p[0], y: p[1], "font-family": "Baloo", "font-weight": 700, "font-size": f1(s), fill: "#4F6E3A", opacity: 0 }, arka);
+          t.textContent = "ot";
+          tl.fromTo(t, { opacity: 0, y: 8 }, { opacity: 0.85, y: 0, duration: 0.4, ease: "back.out(2)" }, 0.3 + (i % 7) * 0.08);
+        });
+
+        // ---------- ağıl: "taş" kelimelerinden duvar ----------
+        var CX = 1230, CY = 560, RX = 520, RY = 135, WH = 76;
+        function ep(th) { var t = th * Math.PI / 180; return [CX + RX * Math.cos(t), CY + RY * Math.sin(t)]; }
+        var pid = 0;
+        function wallWords(parent, th0, th1, courses, baseFont, color, shade, t0) {
+          var hs = WH / courses;
+          for (var c = 0; c < courses; c++) {
+            var pts = [];
+            for (var th = th0; th <= th1 + 0.01; th += 2) { var q = ep(th), sc = 0.72 + (q[1] - 420) / 900; pts.push([q[0], q[1] - hs * c * sc - 3]); }
+            var d = "M" + pts.map(function (p) { return f1(p[0]) + " " + f1(p[1]); }).join(" L");
+            var id = "yol" + (pid++);
+            el("path", { id: id, d: d, fill: "none" }, tanim);
+            // bant: duvar gövdesi
+            var t = el("text", { "font-family": "Baloo", "font-weight": 800, "font-size": baseFont, fill: color, "letter-spacing": "1", "dominant-baseline": "alphabetic" }, parent);
+            var tp = el("textPath", { href: "#" + id, startOffset: (c % 2 ? 14 : 0) }, t);
+            tp.textContent = tekrar("taş", 90);
+            var sh = el("text", { "font-family": "Baloo", "font-weight": 800, "font-size": baseFont, fill: shade, "letter-spacing": "1", transform: "translate(0 2.5)" }, parent);
+            parent.insertBefore(sh, t);
+            var tp2 = el("textPath", { href: "#" + id, startOffset: (c % 2 ? 14 : 0) }, sh);
+            tp2.textContent = tp.textContent;
+            [t, sh].forEach(function (x) { tl.fromTo(x, { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: 0.45, ease: "back.out(1.6)" }, t0 + c * 0.12); });
+          }
+        }
+        function postWords(parent, th, n, t0) {
+          var p = ep(th), sc = 0.72 + (p[1] - 420) / 900;
+          for (var i = 0; i < n; i++) {
+            var y = p[1] - 4 - i * 21 * sc;
+            var sh = el("text", { x: p[0], y: y + 2.5, "text-anchor": "middle", "font-family": "Baloo", "font-weight": 800, "font-size": f1(30 * sc), fill: "#6F665A" }, parent);
+            var t = el("text", { x: p[0], y: y, "text-anchor": "middle", "font-family": "Baloo", "font-weight": 800, "font-size": f1(30 * sc), fill: "#E4DACA" }, parent);
+            t.textContent = sh.textContent = "taş";
+            [t, sh].forEach(function (x) { tl.fromTo(x, { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.35, ease: "back.out(2)" }, t0 + i * 0.07); });
+          }
+        }
+        // ağıl içi zemin
+        var ic = [];
+        for (var th = 0; th < 360; th += 8) { var q = ep(th); ic.push([q[0], q[1] - 4]); }
+        var icD = "M" + ic.map(function (p) { return f1(p[0]) + " " + f1(p[1]); }).join(" L") + " Z";
+        var icP = el("path", { d: icD, fill: "#7C9A57", opacity: 0 }, arka);
+        tl.to(icP, { opacity: 1, duration: 0.5 }, 0.2);
+        wallWords(arka, 165, 345, 3, 20, "#D8CDBB", "#7C7266", 0.15);
+        postWords(arka, 165, 6, 0.45);
+        wallWords(onduvar, 345, 495, 3, 26, "#E4DACA", "#6F665A", 0.3);
+        postWords(onduvar, 135, 6, 0.55);
+        // çivi
+        var civi = el("rect", { x: 858, y: 560, width: 32, height: 8, rx: 3, fill: "#8A5A36", opacity: 0 }, onduvar);
+        tl.to(civi, { opacity: 1, duration: 0.2 }, 0.8);
+
+        // ---------- kese ("kese" yazılı çuval) ----------
+        var M = [885, 636];
+        var keseG = el("g", { opacity: 0 }, keseArka);
+        el("path", { d: "M878 568 C 870 596, 856 620, 848 644 M 882 568 C 892 596, 910 620, 922 644", fill: "none", stroke: "#8A5A36", "stroke-width": 3.5, "stroke-linecap": "round" }, keseG);
+        el("path", { d: "M864 650 C 846 664, 824 690, 824 722 C 824 752, 852 768, 886 768 C 920 768, 948 752, 948 722 C 948 690, 926 664, 906 650 Z", fill: "#B9743E" }, keseG);
+        el("path", { d: "M864 650 C 846 664, 824 690, 824 722 C 824 752, 852 768, 886 768 C 868 750, 852 720, 864 650 Z", fill: "#9E5F31", opacity: 0.6 }, keseG);
+        var kyazi = el("text", { x: 887, y: 734, "text-anchor": "middle", "font-family": "Baloo", "font-weight": 800, "font-size": 40, fill: "#FCE7C8" }, keseG);
+        kyazi.textContent = "kese";
+        el("path", { d: "M846 640 C 848 628, 858 632, 864 622 C 872 630, 880 620, 887 623 C 894 618, 902 630, 908 622 C 914 630, 922 628, 924 640 C 900 648, 870 648, 846 640 Z", fill: "#7A4624" }, keseG);
+        var keseOnG = el("g", { opacity: 0 }, keseOn);
+        el("path", { d: "M842 638 C 858 656, 912 656, 928 638 C 918 652, 906 656, 885 656 C 864 656, 850 652, 842 638 Z", fill: "#C98450" }, keseOnG);
+        el("path", { d: "M856 654 C 872 662, 900 662, 914 654", fill: "none", stroke: "#8A5A36", "stroke-width": 5, "stroke-linecap": "round" }, keseOnG);
+        tl.fromTo([keseG, keseOnG], { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.45, ease: "back.out(1.8)" }, 0.75);
+        tl.fromTo(kyazi, { scale: 0.6, svgOrigin: "887 722" }, { scale: 1, svgOrigin: "887 722", duration: 0.5, ease: "back.out(2.4)" }, 0.8);
+
+        // ---------- düz taş ----------
+        var SX = 470, SY = 884;
+        var tasG = el("g", {}, tasAlan);
+        el("path", { d: "M178 880 C 176 910, 290 940, 470 940 C 650 940, 766 920, 764 882 L 764 876 C 758 846, 640 832, 470 832 C 300 832, 186 846, 178 876 Z", fill: "#6F6A6E" }, tasG);
+        el("path", { d: "M178 876 C 186 846, 300 832, 470 832 C 640 832, 758 846, 764 876 C 768 902, 650 920, 470 920 C 290 920, 172 904, 178 876 Z", fill: "#A9A2A0" }, tasG);
+        el("path", { d: "M220 862 C 300 846, 420 842, 520 844", fill: "none", stroke: "#C9C2BD", "stroke-width": 4, "stroke-linecap": "round", opacity: 0.8 }, tasG);
+        tl.fromTo(tasG, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.6)" }, 0.5);
+
+        // ---------- çakıllar: "taş" kelimeleri ----------
+        var yigin = [[0, -34], [-15, -24], [15, -24], [-30, -12], [0, -13], [30, -12], [-30, 0], [0, 0], [30, 0]];
+        var sira = [0, 1, 2, 3, 4, 5, 6, 8];
+        var cakil = [];
+        yigin.forEach(function (o, i) {
+          var d = document.createElement("div");
+          d.className = "cakil";
+          d.style.zIndex = 750;
+          d.textContent = "taş";
+          dunya.appendChild(d);
+          var x = M[0] + o[0], y = M[1] + o[1] - 4;
+          tl.fromTo(d, { x: x, y: y - 40, scale: 0, rotation: rr(-12, 12) }, { y: y, scale: 0.6, duration: 0.35, ease: "back.out(2.2)" }, 1.0 + i * 0.03);
+          cakil.push({ el: d, x: x, y: y });
+        });
+
+        // ---------- koyunlar: "koyun" kelimesi yürür ----------
+        var N = 8, T0 = 1.5, DT = 0.73;
+        var P0 = [-260, 772], G = [795, 640];
+        var dinlen = [[1580, 548], [1455, 505], [1330, 566], [1205, 500], [1480, 628], [1085, 566], [1250, 632], [985, 625]];
+        function olcek(y) { return 0.6 + (y - 480) * 0.0019; }
+        function scallop(cx, cy, rx, ry, n, bump, r) {
+          var pts = [], d;
+          for (var i = 0; i <= n; i++) { var a = (i / n) * Math.PI * 2; pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+          d = "M" + f1(pts[0][0]) + " " + f1(pts[0][1]);
+          for (var i = 1; i <= n; i++) { var am = ((i - 0.5) / n) * Math.PI * 2, k = bump * (0.92 + 0.16 * r()); d += " Q" + f1(cx + Math.cos(am) * rx * k) + " " + f1(cy + Math.sin(am) * ry * k) + " " + f1(pts[i][0]) + " " + f1(pts[i][1]); }
+          return d + " Z";
+        }
+        for (var i = 0; i < N; i++) {
+          var r = mulberry(300 + i);
+          var div = document.createElement("div");
+          div.className = "koyun";
+          var s = el("svg", { viewBox: "-130 -150 260 160" }, div);
+          var legs = [];
+          [[-66, 1], [-40, -1], [32, -1], [58, 1]].forEach(function (lx) {
+            var g = el("g", {}, s);
+            el("path", { d: "M" + lx[0] + " -36 L " + lx[0] + " -4", stroke: lx[1] > 0 ? "#3A2A20" : "#5A4636", "stroke-width": 10, "stroke-linecap": "round" }, g);
+            legs.push({ g: g, x: lx[0], ph: lx[1] });
+          });
+          var govde = el("g", {}, s);
+          el("path", { d: scallop(-6, -82, 112, 52, 14, 1.12, r), fill: "#FBF4E4", stroke: "#E2D3B8", "stroke-width": 3 }, govde);
+          // küçük koyu baş (yazının önünde değil, sağ uçta)
+          var bas = el("g", {}, govde);
+          el("path", { d: "M104 -108 C 116 -118, 132 -112, 134 -96 C 136 -80, 128 -66, 116 -64 C 104 -64, 96 -76, 96 -90 C 96 -100, 98 -104, 104 -108 Z", fill: "#3A2A20" }, bas);
+          el("path", { d: "M104 -106 C 96 -116, 86 -116, 84 -108 C 90 -102, 98 -102, 104 -104 Z", fill: "#4A382C" }, bas);
+          el("circle", { cx: 121, cy: -94, r: 3.2, fill: "#FFF6E4" }, bas);
+          div.appendChild(s);
+          var yazi = document.createElement("div");
+          yazi.className = "yazi";
+          var harfler = [];
+          "koyun".split("").forEach(function (ch) { var sp = document.createElement("span"); sp.textContent = ch; yazi.appendChild(sp); harfler.push(sp); });
+          div.appendChild(yazi);
+          dunya.appendChild(div);
+
+          var T = T0 + DT * i, ts = T - 2.2, Rp = dinlen[i];
+          var sx = P0[0], sy = P0[1], dur = 2.2, st = ts;
+          if (ts < 0) { var f = -ts / 2.2; sx = P0[0] + (G[0] - P0[0]) * f; sy = P0[1] + (G[1] - P0[1]) * f; dur = T; st = 0; }
+          tl.fromTo(div, { x: sx, y: sy, scale: olcek(sy), zIndex: Math.round(sy) }, { x: G[0], y: G[1], scale: olcek(G[1]), zIndex: G[1], duration: dur, ease: "none", snap: "zIndex" }, st);
+          tl.to(div, { x: Rp[0], y: Rp[1], scale: olcek(Rp[1]), zIndex: Rp[1], duration: 1.45, ease: "power1.out", snap: "zIndex" }, T);
+          var wStart = st, wEnd = T + 1.25, half = 0.17, n = Math.max(1, Math.round((wEnd - wStart) / half));
+          legs.forEach(function (lg) {
+            tl.fromTo(lg.g, { rotation: -16 * lg.ph, svgOrigin: lg.x + " -36" }, { rotation: 16 * lg.ph, svgOrigin: lg.x + " -36", duration: half, ease: "sine.inOut", repeat: n - 1, yoyo: true }, wStart);
+            tl.to(lg.g, { rotation: 0, svgOrigin: lg.x + " -36", duration: 0.25 }, wStart + n * half);
+          });
+          // harfler sırayla zıplar (yürüyüş)
+          harfler.forEach(function (h, k) {
+            tl.fromTo(h, { y: k % 2 ? 0 : -7 }, { y: k % 2 ? -7 : 0, duration: half, ease: "sine.inOut", repeat: n - 1, yoyo: true }, wStart);
+            tl.to(h, { y: 0, duration: 0.25 }, wStart + n * half);
+          });
+          tl.fromTo(govde, { y: 0 }, { y: -3, duration: half / 2, ease: "sine.inOut", repeat: n * 2 - 1, yoyo: true }, wStart);
+          // içeri girince harfler bir kez "dalga" yapar
+          tl.to(harfler, { y: -12, duration: 0.14, ease: "power2.out", stagger: 0.05, yoyo: true, repeat: 1 }, T + 1.5);
+          if (i % 2 === 0 || i === 7) {
+            tl.to(bas, { rotation: 18, svgOrigin: "100 -90", duration: 0.45, ease: "sine.inOut" }, T + 2.2);
+            tl.to(bas, { rotation: 0, svgOrigin: "100 -90", duration: 0.5, ease: "sine.inOut" }, T + 3.2);
+          }
+        }
+
+        // ---------- "taş" keseden çıkar, düz taşa dizilir ----------
+        sira.forEach(function (ci, k) {
+          var c = cakil[ci], T = T0 + DT * k + 0.05;
+          var tx = SX + (k - 3.5) * 64, ty = SY - 22;
+          var lift = c.y - 46, peak = Math.min(lift, ty) - 120;
+          tl.set(c.el, { zIndex: 950 }, T);
+          tl.to(c.el, { y: lift, scale: 0.8, duration: 0.2, ease: "power2.out" }, T);
+          tl.to(c.el, { x: tx, duration: 0.5, ease: "power1.inOut" }, T + 0.2);
+          tl.to(c.el, { keyframes: [{ y: peak, duration: 0.2, ease: "power2.out" }, { y: ty, duration: 0.3, ease: "power2.in" }] }, T + 0.2);
+          tl.to(c.el, { scale: 1, rotation: 0, duration: 0.5, ease: "power1.inOut" }, T + 0.2);
+          tl.set(c.el, { zIndex: 890 }, T + 0.7);
+          tl.fromTo(c.el, { scaleY: 0.7, scaleX: 1.2 }, { scaleY: 1, scaleX: 1, duration: 0.3, ease: "back.out(3)", immediateRender: false }, T + 0.7);
+        });
+        tl.to(cakil[7].el, { y: M[1] - 12, scale: 0.8, rotation: 0, duration: 0.45, ease: "back.out(2)" }, 6.95);
+
+        // ---------- akşam güneşi, bulutlar ----------
+        tl.fromTo("#aksam", { y: 90 }, { y: 0, duration: 1.4, ease: "power2.out" }, 0);
+        tl.to("#aksam", { y: 26, duration: 8.6, ease: "none" }, 1.4);
+        tl.fromTo("#bulut1", { x: 0, opacity: 0 }, { x: -70, opacity: 1, duration: 10, ease: "none" }, 0);
+        tl.fromTo("#bulut2", { x: 0, opacity: 0 }, { x: -40, opacity: 1, duration: 10, ease: "none" }, 0);
+
+        // ---------- yaklaşma + parıltı ----------
+        var FX = 880, FY = 655, S2 = 2.3;
+        tl.fromTo(dunya, { x: 0, y: 0, scale: 1 }, { x: 960 - S2 * FX, y: 540 - S2 * FY, scale: S2, duration: 2.9, ease: "sine.inOut" }, 7.1);
+        var GX = M[0] + 20, GY = M[1] - 24;
+        gsap.set("#yildiz", { left: GX - 60, top: GY - 60 });
+        gsap.set("#hale", { left: M[0] - 100, top: M[1] - 112 });
+        tl.fromTo("#hale", { opacity: 0, scale: 0.5 }, { opacity: 0.75, scale: 1, duration: 0.9, ease: "sine.out" }, 8.15);
+        tl.fromTo("#yildiz", { opacity: 0, scale: 0.2, rotation: -25 }, { opacity: 1, scale: 0.36, rotation: 0, duration: 0.6, ease: "back.out(1.6)" }, 8.3);
+        tl.to("#yildiz", { scale: 0.28, duration: 0.55, ease: "sine.inOut", repeat: 1, yoyo: true }, 8.95);
+        tl.to("#hale", { scale: 1.1, opacity: 0.6, duration: 0.6, ease: "sine.inOut", repeat: 1, yoyo: true }, 9.1);
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

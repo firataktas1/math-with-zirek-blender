@@ -142,7 +142,7 @@
         }
         function solid(parent, d, fill, t0) {
           var s = el("path", { d: d, fill: fill, stroke: "none", style: "opacity:0" }, parent);
-          tl.set(s, { opacity: 1 }, t0);
+          tl.to(s, { opacity: 1, duration: 0.3, ease: "power1.in" }, t0 + 0.12);
           return s;
         }
 
@@ -325,7 +325,7 @@
           });
           var govdeG = el("g", {}, s);
           var bodyD = scallop(-6, -82, 70, 40, 12, 1.2);
-          el("path", { d: bodyD, fill: TAHTA }, govdeG);
+          var koyuFill = [el("path", { d: bodyD, fill: TAHTA, style: "opacity:0" }, govdeG)];
           var hf = el("path", { d: bodyD, fill: "url(#h-beyaz)", style: "opacity:0" }, govdeG);
           var hf2 = el("path", { d: scallop(-16, -94, 40, 20, 7, 1.15), fill: "url(#h-beyaz2)", style: "opacity:0" }, govdeG);
           parts.fills = [[hf, 0.62], [hf2, 0.5]];
@@ -336,18 +336,18 @@
           var bas = el("g", {}, govdeG);
           var kulak1 = "M64 -118 C 52 -128, 40 -126, 38 -118 C 46 -112, 56 -112, 64 -114 Z";
           var kulak2 = "M80 -118 C 90 -130, 102 -128, 104 -120 C 98 -112, 88 -112, 82 -114 Z";
-          el("path", { d: kulak1, fill: TAHTA }, bas);
+          koyuFill.push(el("path", { d: kulak1, fill: TAHTA, style: "opacity:0" }, bas));
           parts.strokes.push(el("path", { d: kulak1, fill: "none", stroke: "#DAD5CA", "stroke-width": 3, pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, bas));
           var basD = "M60 -118 C 76 -126, 92 -118, 94 -100 C 96 -84, 92 -70, 82 -66 C 72 -64, 62 -72, 58 -86 C 55 -98, 54 -112, 60 -118 Z";
-          el("path", { d: basD, fill: "#1B2521" }, bas);
+          koyuFill.push(el("path", { d: basD, fill: "#1B2521", style: "opacity:0" }, bas));
           parts.strokes.push(el("path", { d: basD, fill: "none", stroke: "#F1EEE6", "stroke-width": 3.8, "stroke-linejoin": "round", pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, bas));
-          el("path", { d: kulak2, fill: TAHTA }, bas);
+          koyuFill.push(el("path", { d: kulak2, fill: TAHTA, style: "opacity:0" }, bas));
           parts.strokes.push(el("path", { d: kulak2, fill: "none", stroke: "#F1EEE6", "stroke-width": 3.2, pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, bas));
           // yün perçemi
           parts.strokes.push(el("path", { d: "M58 -112 C 62 -126, 78 -130, 88 -120", fill: "none", stroke: "#F1EEE6", "stroke-width": 5, "stroke-linecap": "round", pathLength: 1, "stroke-dasharray": "1 2", "stroke-dashoffset": 1, style: "opacity:0" }, bas));
           var goz = el("circle", { cx: 82, cy: -98, r: 4, fill: "#F4F1E8", style: "opacity:0" }, bas);
           var burun = el("path", { d: "M84 -74 C 88 -72, 90 -72, 92 -76", fill: "none", stroke: "#DAD5CA", "stroke-width": 2.4, "stroke-linecap": "round", style: "opacity:0" }, bas);
-          parts.bas = bas; parts.govde = govdeG; parts.small = [goz, burun];
+          parts.bas = bas; parts.govde = govdeG; parts.small = [goz, burun]; parts.koyu = koyuFill;
           return parts;
         }
 
@@ -369,6 +369,7 @@
           });
           sh.fills.forEach(function (fp) { tl.to(fp[0], { opacity: fp[1], duration: 0.35 }, dt0 + 0.35); });
           sh.small.forEach(function (sp) { tl.to(sp, { opacity: 1, duration: 0.2 }, dt0 + 0.5); });
+          tl.to(sh.koyu, { opacity: 1, duration: 0.35, ease: "power1.in" }, dt0 + 0.15);
           // yürüyüş: bacaklar ve gövde sallanması
           var wStart = st, wEnd = T + 1.25, half = 0.16, n = Math.max(1, Math.round((wEnd - wStart) / half));
           sh.legs.forEach(function (lg) {

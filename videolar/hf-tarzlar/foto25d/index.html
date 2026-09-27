@@ -37,8 +37,8 @@
             <pattern id="p-kese" patternUnits="userSpaceOnUse" width="120" height="120"><image href="assets/kese.jpg" width="120" height="120" /></pattern>
             <pattern id="p-yun" patternUnits="userSpaceOnUse" width="170" height="170"><image href="assets/yun.jpg" width="170" height="170" /></pattern>
             <pattern id="p-tas" patternUnits="userSpaceOnUse" width="420" height="420"><image href="assets/tas.jpg" width="420" height="420" /></pattern>
-            <pattern id="p-tasc" patternUnits="userSpaceOnUse" width="120" height="120" x="-60" y="-60"><image href="assets/tas.jpg" width="120" height="120" /></pattern>
-            <pattern id="p-cakil" patternUnits="userSpaceOnUse" width="90" height="90" x="-45" y="-45"><image href="assets/cakil.jpg" width="90" height="90" /></pattern>
+            
+            <pattern id="p-cakil" patternUnits="userSpaceOnUse" width="70" height="70" x="-35" y="-35"><image href="assets/cakil.jpg" width="70" height="70" /></pattern>
             <radialGradient id="g-yun" cx="-40" cy="-150" r="190" gradientUnits="userSpaceOnUse">
               <stop offset="0" stop-color="#FFE9C2" stop-opacity="0.45" />
               <stop offset="0.45" stop-color="#FFE9C2" stop-opacity="0" />
@@ -79,7 +79,7 @@
               <stop offset="1" stop-color="#2A1606" stop-opacity="0.6" />
             </radialGradient>
             <linearGradient id="g-tasust" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#FFE7C0" stop-opacity="0.35" />
+              <stop offset="0" stop-color="#FFE7C0" stop-opacity="0.22" />
               <stop offset="0.6" stop-color="#FFE7C0" stop-opacity="0" />
               <stop offset="1" stop-color="#1A1410" stop-opacity="0.3" />
             </linearGradient>
@@ -237,9 +237,8 @@
         el("path", { d: yan, fill: "#5E564A" }, tasAlan);
         el("path", { d: yan, fill: "url(#p-duvar)", opacity: 0.6 }, tasAlan);
         el("path", { d: yan, fill: "#1E1812", opacity: 0.35 }, tasAlan);
-        el("path", { d: ust, fill: "#948A78" }, tasAlan);
-        el("path", { d: ust, fill: "url(#p-tas)", opacity: 0.55 }, tasAlan);
-        el("path", { d: ust, fill: "url(#p-duvar)", opacity: 0.18 }, tasAlan);
+        el("path", { d: ust, fill: "url(#p-tas)" }, tasAlan);
+        el("path", { d: ust, fill: "#3A342C", opacity: 0.18 }, tasAlan);
         el("path", { d: ust, fill: "url(#g-tasust)" }, tasAlan);
         el("path", { d: "M" + (SX - 200) + " " + (SY - 20) + " C " + (SX - 120) + " " + (SY - 10) + ", " + (SX - 60) + " " + (SY - 30) + ", " + (SX + 10) + " " + (SY - 24) + " M " + (SX + 120) + " " + (SY + 20) + " C " + (SX + 170) + " " + (SY + 10) + ", " + (SX + 220) + " " + (SY + 24) + ", " + (SX + 260) + " " + (SY + 8), fill: "none", stroke: "#3B342A", "stroke-width": 1.6, opacity: 0.45 }, tasAlan);
         el("path", { d: ust, fill: "none", stroke: "#FFE6BE", "stroke-width": 1.6, opacity: 0.4 }, tasAlan);
@@ -256,11 +255,10 @@
           for (var i = 0; i < 10; i++) { var t = (i / 10) * Math.PI * 2, k = 1 + (r() - 0.5) * 0.16; pts.push([Math.cos(t) * a * k, Math.sin(t) * b * k]); }
           var d = "M" + pts.map(function (p) { return f1(p[0]) + " " + f1(p[1]); }).join(" L") + " Z";
           d = (function (p) { var n = p.length, dd = "M" + f1((p[0][0] + p[1][0]) / 2) + " " + f1((p[0][1] + p[1][1]) / 2); for (var i = 1; i <= n; i++) { var c = p[i % n], nx = p[(i + 1) % n]; dd += " Q" + f1(c[0]) + " " + f1(c[1]) + " " + f1((c[0] + nx[0]) / 2) + " " + f1((c[1] + nx[1]) / 2); } return dd + " Z"; })(pts);
-          el("path", { d: d, fill: "#B89B78" }, s);
-          el("path", { d: d, fill: "url(#p-cakil)", opacity: 0.35 }, s);
-          el("path", { d: d, fill: "url(#p-tasc)", opacity: 0.55 }, s);
+          el("path", { d: d, fill: "#B07E45" }, s);
+          el("path", { d: d, fill: "url(#p-cakil)" }, s);
           el("path", { d: d, fill: "url(#g-cakil)" }, s);
-          el("ellipse", { cx: -9, cy: -7, rx: 9, ry: 3.2, fill: "#FFF6E6", opacity: 0.35, transform: "rotate(-12 -9 -7)" }, s);
+          el("ellipse", { cx: -9, cy: -6, rx: 8, ry: 2.6, fill: "#FFF1D6", opacity: 0.28, transform: "rotate(-12 -9 -6)" }, s);
           el("path", { d: d, fill: "none", stroke: "#4A3622", "stroke-width": 0.8, opacity: 0.45 }, s);
           return s;
         }
@@ -312,7 +310,7 @@
           el("path", { d: bodyD, fill: "url(#p-yun)" }, govde);
           el("path", { d: bodyD, fill: "url(#g-yun)" }, govde);
           el("path", { d: bodyD, fill: "url(#g-alt)" }, govde);
-          el("path", { d: bodyD, fill: "none", stroke: "url(#g-kenar)", "stroke-width": 5 }, govde);
+          el("path", { d: bodyD, fill: "none", stroke: "url(#g-kenar)", "stroke-width": 2.6, opacity: 0.8 }, govde);
           // baş
           var bas = el("g", {}, govde);
           el("path", { d: "M58 -140 C 44 -150, 30 -148, 26 -138 C 36 -130, 48 -130, 58 -134 Z", fill: "#241C18" }, bas);

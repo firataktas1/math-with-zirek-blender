@@ -2,7 +2,7 @@
 # Gerekli ham dosyalar (indirme adresleri KAYNAKLAR.txt'de):
 #   ham/drackenstein_quarry.jpg (8192x4096 tonemapped JPG)
 #   ham/stacked_stone_wall.jpg, ham/hessian_230.jpg, ham/curly_teddy_natural.jpg,
-#   ham/slab_tiles.jpg, ham/rustic_stone_wall.jpg (2k diffuse JPG)
+#   ham/rock_boulder_dry.jpg, ham/rock_surface.jpg (2k diffuse JPG)
 # Çıktı: assets/*.jpg
 import sys
 import numpy as np
@@ -93,6 +93,6 @@ def tex(name, size, sat, mul, lift=0.0, gamma=1.0, contrast=1.0, blur=0):
 tex("stacked_stone_wall", 512, 0.28, [1.02, 1.0, 0.95], 0.02, 1.05, 1.1).save("assets/duvar.jpg", quality=88)
 tex("hessian_230", 384, 0.9, [1.08, 0.98, 0.84], 0.0, 1.0, 1.05).save("assets/kese.jpg", quality=88)
 tex("curly_teddy_natural", 384, 0.55, [1.02, 0.99, 0.93], 0.0, 1.05, 1.25).save("assets/yun.jpg", quality=88)
-tex("slab_tiles", 512, 0.15, [1.0, 1.0, 1.02], 0.30, 0.8, 0.85).save("assets/tas.jpg", quality=88)
-tex("rustic_stone_wall", 256, 1.25, [1.18, 0.98, 0.72], 0.05, 0.9, 1.0).save("assets/cakil.jpg", quality=88)
+tex("rock_boulder_dry", 512, 0.7, [0.86, 0.84, 0.8], 0.0, 1.1, 1.15).save("assets/tas.jpg", quality=88)
+tex("rock_surface", 256, 1.3, [1.55, 1.22, 0.86], 0.04, 0.85, 1.35).save("assets/cakil.jpg", quality=88)
 print("tamam")
