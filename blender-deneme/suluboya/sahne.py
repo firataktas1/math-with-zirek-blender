@@ -1233,7 +1233,7 @@ else:
 
 # 3) hava perspektifi: uzak yerler açık, sıcak pus
 HAZE = lin((0.96, 0.88, 0.74)) if SU else lin((0.98, 0.80, 0.60))
-hz = mix(base, HAZE, 'MIX', fac=math_('MULTIPLY', P_MI, 0.55 if SU else 0.45, clamp=True))
+hz = mix(base, HAZE, 'MIX', fac=math_('MULTIPLY', P_MI, 0.4 if SU else 0.45, clamp=True))
 
 # 4) gökyüzü: boyanmış yıkama (üst krem, ufukta şeftali), birkaç yumuşak bulut lekesi
 sky = cramp(NY, [(0.3, lin((0.99, 0.80, 0.60))), (0.75, lin((0.98, 0.90, 0.76))), (1.0, lin((0.96, 0.93, 0.84)))], 'EASE')
@@ -1245,7 +1245,7 @@ img = mix(sky, hz, 'MIX', fac=P_AL)
 # 5) boya: Kuwahara (fırça/leke), ardından tarza göre
 kw = NN.new('CompositorNodeKuwahara'); put(kw.inputs['Image'], img)
 menu(kw, 'Type', 'Anisotropic')
-kw.inputs['Size'].default_value = (6.0 if SU else 4.5) * PX
+kw.inputs['Size'].default_value = (6.0 if SU else 5.5) * PX
 kw.inputs['Uniformity'].default_value = 4
 kw.inputs['Sharpness'].default_value = 0.35 if SU else 0.7
 kw.inputs['Eccentricity'].default_value = 1.0
@@ -1273,7 +1273,7 @@ if SU:
     g1, _ = tnoise(UV, 240.0, 3.0, 0.6, 0.0, w=5.0)            # kâğıt greni
     g2, _ = tnoise(UV, 30.0, 4.0, 0.6, 0.2, w=7.0)             # granülasyon (boya çökmesi)
     wm, _ = tnoise(UV, 1.5, 3.0, 0.5, 0.3, w=9.0)             # ıslak leke
-    dens = math_('MULTIPLY_ADD', edge, 2.6, 1.0)
+    dens = math_('MULTIPLY_ADD', edge, 3.2, 1.0)
     dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g1, 0.5), 0.22, dens)
     dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g2, 0.5), 0.3, dens)
     dens = math_('MULTIPLY_ADD', math_('SUBTRACT', wm, 0.5), 0.5, dens)
@@ -1293,7 +1293,7 @@ if SU:
     ln = NN.new('ShaderNodeVectorMath'); ln.operation = 'LENGTH'; put(ln.inputs[0], scl.outputs[0])
     vv = math_('MULTIPLY_ADD', vn, 0.10, osock(ln, 'Value'))
     vig = math_('MULTIPLY', math_('SUBTRACT', vv, 0.5), 3.4, clamp=True)
-    col = mix(col, PAPER, 'MIX', fac=math_('MULTIPLY', vig, 0.72))
+    col = mix(col, PAPER, 'MIX', fac=math_('MULTIPLY', vig, 0.6))
     OUTC = col
 else:
     # resimli3d: hafif keskinleştirme (boya kenarı) + koyu sıcak kontur
@@ -1304,13 +1304,18 @@ else:
     # boyalı gren (ekrana sabit ince tuval dokusu, çok hafif)
     g1, _ = tnoise(UV, 160.0, 4.0, 0.6, 0.0, w=5.0)
     col = mix(col, math_('MULTIPLY_ADD', g1, 0.04, 0.98), 'MULTIPLY')
+    # sinematik sıcak ışık sızması: sol üstten (güneşin geldiği yan) yumuşak turuncu, sağ alta doğru söner
+    lk = NN.new('ShaderNodeVectorMath'); lk.operation = 'DISTANCE'
+    put(lk.inputs[0], osock(ic, 'Normalized')); lk.inputs[1].default_value = (-0.1, 1.15, 0.0)
+    leak = math_('MULTIPLY', math_('SUBTRACT', 1.0, math_('MULTIPLY', osock(lk, 'Value'), 0.95), clamp=True), 0.22)
+    col = mix(col, lin((1.0, 0.62, 0.32)), 'SCREEN', fac=leak)
     OUTC = col
 
 # 6) ışıma (gözdeki ışık, parıltı, toz) boyadan sonra eklenir: net kalır
 OUTC = mix(OUTC, P_E, 'ADD')
 fg = NN.new('CompositorNodeGlare')
-for nm, val in (('Type', 'Fog Glow'), ('Quality', 'High'), ('Threshold', 0.9 if not SU else 3.0), ('Strength', 0.22 if not SU else 0.25),
-                ('Size', 0.5), ('Tint', (1.0, 0.82, 0.6, 1.0))):
+for nm, val in (('Type', 'Fog Glow'), ('Quality', 'High'), ('Threshold', 1.4 if not SU else 3.0), ('Strength', 0.14 if not SU else 0.1),
+                ('Size', 0.3), ('Tint', (1.0, 0.82, 0.6, 1.0))):
     if nm in fg.inputs:
         try:
             fg.inputs[nm].default_value = val
