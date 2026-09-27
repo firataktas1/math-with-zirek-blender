@@ -629,7 +629,10 @@ sheep = [build_sheep(i) for i in range(N_SHEEP)]
 def sheep_s(i, f):
     P = paths[i]
     sg = P.closest_s(GATE)
-    u = sg + SPEED * (f - (T_GATE0 + T_GAP * i))
+    dt = f - (T_GATE0 + T_GAP * i)
+    u = sg + SPEED * dt
+    if dt < 0:                      # uzaktayken daha hızlı yürür, kapıya yaklaşınca yavaşlar: sıra seyrek, kapı zamanı aynı
+        u -= SPEED * 0.45 / 80.0 * dt * dt
     ease = 0.35
     x = (u - (P.total - ease)) / (2 * ease)
     if x <= 0:
