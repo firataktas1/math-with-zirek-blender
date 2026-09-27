@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Three.js · ağıl ve taşlar</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #E9B98A; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #E9B98A; }
+      #sahne { position: absolute; inset: 0; }
+      #uc-boyut { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; display: block; }
+      #vinyet { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 80% 75% at 50% 46%, rgba(0,0,0,0) 60%, rgba(40, 22, 10, 0.32) 100%); }
+    </style>
+    <script src="assets/gsap.min.js"></script>
+    <script>
+      // sahne kurulumu bitene kadar render beklesin (modül betiği aşağıda)
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady["agil-3b"] = new Promise(function (res) { window.__agilHazir = res; });
+    </script>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+      <div id="sahne" class="clip" data-start="0" data-duration="10" data-track-index="0">
+        <canvas id="uc-boyut" width="1920" height="1080"></canvas>
+        <div id="vinyet"></div>
+      </div>
+    </div>
+    <script>
+      // süre kaynağı: 10 sn'lik boş GSAP zaman çizelgesi (3B sahne hf-seek ile çizilir)
+      window.__timelines["main"] = gsap.timeline({ paused: true }).to({}, { duration: 10 });
+    </script>
+    <script type="module">
+      import * as THREE from "./assets/three.module.min.js";
+      window.THREE = THREE;
+
+      // ---------- yardımcılar ----------
+      function mulberry(a) { return function () { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+      const R = mulberry(515);
+      const rr = (a, b) => a + (b - a) * R();
+      const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const sine = (t) => 0.5 - 0.5 * Math.cos(Math.PI * clamp(t, 0, 1));
+      const outQuad = (t) => { t = clamp(t, 0, 1); return 1 - (1 - t) * (1 - t); };
+      const outBack = (t, s = 1.8) => { t = clamp(t, 0, 1) - 1; return t * t * ((s + 1) * t + s) + 1; };
+      const inQuad = (t) => { t = clamp(t, 0, 1); return t * t; };
+
+      // ---------- renderer ----------
+      const canvas = document.getElementById("uc-boyut");
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+      renderer.setPixelRatio(1);
+      renderer.setSize(1920, 1080, false);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      const scene = new THREE.Scene();
+      // gökyüzü: akşam degradesi (tuvalden)
+      const gc = document.createElement("canvas"); gc.width = 4; gc.height = 256;
+      const gx = gc.getContext("2d");
+      const grad = gx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0, "#5E6E9E"); grad.addColorStop(0.45, "#C9A0A0"); grad.addColorStop(0.72, "#F5B784"); grad.addColorStop(1, "#FAD7A6");
+      gx.fillStyle = grad; gx.fillRect(0, 0, 4, 256);
+      const skyTex = new THREE.CanvasTexture(gc); skyTex.colorSpace = THREE.SRGBColorSpace;
+      scene.background = skyTex;
+      scene.fog = new THREE.Fog(0xF0BE92, 22, 75);
+
+      const camera = new THREE.PerspectiveCamera(34, 1920 / 1080, 0.1, 200);
+
+      // ışıklar: alçak sıcak güneş (sol arka), gökyüzü dolgusu, yumuşak karşı ışık
+      const hemi = new THREE.HemisphereLight(0xFFE2C0, 0x4E6B3A, 1.25);
+      scene.add(hemi);
+      const sun = new THREE.DirectionalLight(0xFFC98A, 2.6);
+      sun.position.set(-14, 7.5, -8);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.left = -12; sun.shadow.camera.right = 12; sun.shadow.camera.top = 10; sun.shadow.camera.bottom = -10;
+      sun.shadow.camera.near = 1; sun.shadow.camera.far = 50;
+      sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3;
+      scene.add(sun); scene.add(sun.target);
+      const fill = new THREE.DirectionalLight(0xB8C8FF, 0.45);
+      fill.position.set(8, 6, 10);
+      scene.add(fill);
+
+      const mat = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, flatShading: true, roughness: 0.92, metalness: 0 }, o));
+
+      // ---------- zemin: yumuşak tepe ----------
+      function hillY(x, z) { return 0.35 * Math.sin(x * 0.13 + 0.5) * Math.cos(z * 0.11) + (z < -6 ? (-6 - z) * 0.09 : 0) - (x > 6 ? (x - 6) * 0.04 : 0); }
+      const gGeo = new THREE.PlaneGeometry(90, 70, 90, 70);
+      gGeo.rotateX(-Math.PI / 2);
+      const gp = gGeo.attributes.position, gcol = [];
+      const cA = new THREE.Color("#7FA24E"), cB = new THREE.Color("#94B058"), cC = new THREE.Color("#6D9244");
+      for (let i = 0; i < gp.count; i++) {
+        const x = gp.getX(i), z = gp.getZ(i);
+        gp.setY(i, hillY(x, z) + rr(-0.03, 0.03));
+        const c = cA.clone().lerp(R() < 0.5 ? cB : cC, R() * 0.6);
+        gcol.push(c.r, c.g, c.b);
+      }
+      gGeo.setAttribute("color", new THREE.Float32BufferAttribute(gcol, 3));
+      gGeo.computeVertexNormals();
+      const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 }));
+      ground.receiveShadow = true;
+      scene.add(ground);
+      // uzak tepeler
+      const farMat = mat("#8C9A74"), farMat2 = mat("#A3A086");
+      [[-30, -44, 16, 5.5, farMat], [-6, -52, 20, 7, farMat2], [22, -46, 18, 5, farMat], [40, -56, 22, 8, farMat2]].forEach(([x, z, r, h, m]) => {
+        const g = new THREE.SphereGeometry(r, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2);
+        g.scale(1, h / r, 0.6);
+        const me = new THREE.Mesh(g, m); me.position.set(x, -0.5, z); scene.add(me);
+      });
+      // ağaçlar (arka sol)
+      function tree(x, z, s) {
+        const t = new THREE.Group();
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.09 * s, 0.13 * s, 1.1 * s, 6), mat("#6B4A30"));
+        trunk.position.y = 0.55 * s; trunk.castShadow = true; t.add(trunk);
+        const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(0.85 * s, 0), mat("#5E8440"));
+        crown.position.y = 1.55 * s; crown.scale.set(1, 1.05, 1); crown.castShadow = true; t.add(crown);
+        const crown2 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55 * s, 0), mat("#6E9648"));
+        crown2.position.set(0.45 * s, 1.25 * s, 0.2 * s); crown2.castShadow = true; t.add(crown2);
+        t.position.set(x, hillY(x, z), z); scene.add(t);
+      }
+      tree(-7.5, -9, 1.5); tree(-10.5, -12, 1.2); tree(9.5, -13, 1.4);
+
+      // ---------- ağıl ----------
+      const C = new THREE.Vector3(1.4, 0, -1.2), RAD = 3.0;
+      const GATE = 139 * Math.PI / 180, GHALF = 14 * Math.PI / 180;
+      const stoneGeo = new THREE.DodecahedronGeometry(0.2, 0);
+      const stoneMat = new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.95, color: 0xffffff });
+      const stones = [];
+      const courses = 4;
+      for (let c = 0; c < courses; c++) {
+        const n = 46;
+        for (let i = 0; i < n; i++) {
+          const a = (i + (c % 2) * 0.5) / n * Math.PI * 2 + rr(-0.01, 0.01);
+          let d = Math.atan2(Math.sin(a - GATE), Math.cos(a - GATE));
+          if (Math.abs(d) < GHALF + 0.06) continue;
+          stones.push({ a, y: 0.13 + c * 0.17, sx: rr(1.25, 1.55), sy: rr(0.55, 0.72), sz: rr(0.85, 1.05), rot: rr(0, 6.28) });
+        }
+      }
+      const wall = new THREE.InstancedMesh(stoneGeo, stoneMat, stones.length);
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), s3 = new THREE.Vector3();
+      const stoneCols = ["#9A958C", "#8A857C", "#A8A298", "#7F7B74", "#B0AA9E"];
+      stones.forEach((st, i) => {
+        v.set(C.x + Math.cos(st.a) * RAD, st.y, C.z + Math.sin(st.a) * RAD);
+        e.set(rr(-0.15, 0.15), -st.a + Math.PI / 2 + rr(-0.1, 0.1), rr(-0.12, 0.12)); q.setFromEuler(e);
+        s3.set(st.sx, st.sy, st.sz);
+        m4.compose(v, q, s3); wall.setMatrixAt(i, m4);
+        wall.setColorAt(i, new THREE.Color(stoneCols[i % stoneCols.length]).multiplyScalar(rr(0.9, 1.05)));
+      });
+      wall.castShadow = true; wall.receiveShadow = true;
+      scene.add(wall);
+      // direkler
+      function post(a) {
+        const g = new THREE.Group();
+        const px = C.x + Math.cos(a) * RAD, pz = C.z + Math.sin(a) * RAD;
+        for (let i = 0; i < 6; i++) {
+          const m = new THREE.Mesh(new THREE.DodecahedronGeometry(0.26, 0), mat(stoneCols[(i * 2) % 5]));
+          m.scale.set(1.25, 0.62, 1.2); m.position.set(rr(-0.03, 0.03), 0.16 + i * 0.2, rr(-0.03, 0.03)); m.rotation.y = rr(0, 6.28);
+          m.castShadow = true; m.receiveShadow = true; g.add(m);
+        }
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.38, 0.12, 7), mat("#B4AEA2"));
+        cap.position.y = 1.32; cap.castShadow = true; g.add(cap);
+        g.position.set(px, 0, pz); scene.add(g);
+        return new THREE.Vector3(px, 0, pz);
+      }
+      const postR = post(GATE - GHALF - 0.02), postL = post(GATE + GHALF + 0.02);
+      // ağıl içi zemin hafif koyu
+      const floor = new THREE.Mesh(new THREE.CircleGeometry(RAD - 0.15, 32), new THREE.MeshStandardMaterial({ color: "#6F8E44", flatShading: true, roughness: 1, transparent: true, opacity: 0.55 }));
+      floor.rotation.x = -Math.PI / 2; floor.position.set(C.x, 0.012, C.z); floor.receiveShadow = true; scene.add(floor);
+
+      // ---------- kese (direğin kameraya bakan yüzünde) ----------
+      const out = new THREE.Vector3(Math.cos(GATE - GHALF), 0, Math.sin(GATE - GHALF)); // ağıldan dışarı
+      const toCam = new THREE.Vector3(0.1, 0, 1).normalize();
+      const pegBase = postR.clone().add(new THREE.Vector3(0, 0.92, 0)).addScaledVector(toCam, 0.3);
+      const peg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.34, 6), mat("#7A5534"));
+      peg.rotation.x = Math.PI / 2; peg.position.copy(pegBase).addScaledVector(toCam, 0.1); peg.castShadow = true; scene.add(peg);
+      const pouchTop = pegBase.clone().addScaledVector(toCam, 0.2).add(new THREE.Vector3(0, -0.2, 0));
+      const prof = [];
+      [[0.0, -0.62], [0.2, -0.6], [0.32, -0.5], [0.37, -0.36], [0.35, -0.2], [0.27, -0.08], [0.16, 0.0], [0.13, 0.04], [0.19, 0.1], [0.22, 0.14]].forEach(([r, y]) => prof.push(new THREE.Vector2(r, y)));
+      const pouchMat = mat("#B7824C", { side: THREE.DoubleSide });
+      const pouch = new THREE.Mesh(new THREE.LatheGeometry(prof, 9), pouchMat);
+      pouch.position.copy(pouchTop); pouch.castShadow = true; pouch.receiveShadow = true; scene.add(pouch);
+      const tie = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.025, 5, 12), mat("#6B4A2C"));
+      tie.rotation.x = Math.PI / 2; tie.position.copy(pouchTop).add(new THREE.Vector3(0, 0.02, 0)); scene.add(tie);
+      const inner = new THREE.Mesh(new THREE.CircleGeometry(0.2, 12), mat("#3E2814"));
+      inner.rotation.x = -Math.PI / 2; inner.position.copy(pouchTop).add(new THREE.Vector3(0, 0.1, 0)); scene.add(inner);
+      // ip
+      function rod(a, b, r, m) {
+        const d = b.clone().sub(a), len = d.length();
+        const me = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 5), m);
+        me.position.copy(a).add(b).multiplyScalar(0.5);
+        me.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+        scene.add(me); return me;
+      }
+      const cordMat = mat("#8A6A44");
+      const pegTip = peg.position.clone().addScaledVector(toCam, 0.14);
+      rod(pegTip, pouchTop.clone().add(new THREE.Vector3(-0.15, 0.02, 0)), 0.014, cordMat);
+      rod(pegTip, pouchTop.clone().add(new THREE.Vector3(0.15, 0.02, 0)), 0.014, cordMat);
+      const MOUTH = pouchTop.clone().add(new THREE.Vector3(0, 0.12, 0));
+
+      // ---------- düz taş ----------
+      const SLAB = new THREE.Vector3(-3.0, 0, 2.7);
+      const slabGeo = new THREE.CylinderGeometry(1.9, 2.0, 0.16, 9);
+      slabGeo.scale(1, 1, 0.42);
+      const slab = new THREE.Mesh(slabGeo, mat("#8E8C88"));
+      slab.position.set(SLAB.x, 0.08, SLAB.z); slab.rotation.y = 0.04; slab.castShadow = true; slab.receiveShadow = true; scene.add(slab);
+
+      // ---------- çakıllar ----------
+      const pebGeo = new THREE.IcosahedronGeometry(0.1, 1);
+      const pebMat = mat("#D9A04E", { roughness: 0.9 });
+      const heapOff = [[0, 0.1, 0], [-0.06, 0.07, 0], [0.06, 0.07, 0], [-0.1, 0.035, 0.03], [0, 0.035, 0.05], [0.1, 0.035, 0.03], [-0.1, 0.0, -0.04], [0, 0.0, 0], [0.1, 0.0, -0.04]];
+      const order = [0, 1, 2, 3, 4, 5, 6, 8];
+      const pebbles = heapOff.map((o, i) => {
+        const m = new THREE.Mesh(pebGeo, pebMat);
+        m.scale.set(1.25, 0.62, 1.0);
+        m.castShadow = true; m.receiveShadow = true;
+        m.userData.home = MOUTH.clone().add(new THREE.Vector3(o[0], o[1], o[2]));
+        m.userData.rot = rr(0, 6.28);
+        scene.add(m); return m;
+      });
+      const slotOf = (k) => new THREE.Vector3(SLAB.x + (k - 3.5) * 0.4, 0.2, SLAB.z + 0.05);
+
+      // ---------- koyunlar ----------
+      const woolMat = mat("#F2ECDF", { roughness: 1 }), faceMat = mat("#2E2622"), legMat = mat("#2B221D"), earMat = mat("#3A2E27");
+      function makeSheep(seed) {
+        const r = mulberry(seed);
+        const root = new THREE.Group(), body = new THREE.Group();
+        root.add(body);
+        const blobs = [[0, 0.62, 0, 0.36], [0.26, 0.64, 0.05, 0.28], [-0.26, 0.62, -0.03, 0.29], [0.05, 0.8, 0.08, 0.26], [-0.12, 0.78, -0.12, 0.25], [0.2, 0.55, -0.15, 0.24], [-0.2, 0.52, 0.16, 0.23], [0.34, 0.74, -0.06, 0.2]];
+        blobs.forEach(([x, y, z, s]) => {
+          const m = new THREE.Mesh(new THREE.IcosahedronGeometry(s * (0.95 + r() * 0.1), 1), woolMat);
+          m.position.set(x * 1.25, y, z * 1.1); m.castShadow = true; m.receiveShadow = true; body.add(m);
+        });
+        const head = new THREE.Group();
+        const hm = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 1), faceMat);
+        hm.scale.set(1.25, 1.0, 0.9); hm.castShadow = true; head.add(hm);
+        const cap = new THREE.Mesh(new THREE.IcosahedronGeometry(0.13, 1), woolMat);
+        cap.position.set(-0.06, 0.1, 0); head.add(cap);
+        [-1, 1].forEach((sd) => {
+          const ear = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 4), earMat);
+          ear.position.set(-0.02, 0.06, sd * 0.14); ear.rotation.set(sd * -1.2, 0, 0); head.add(ear);
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 5, 4), mat("#F4EBDD"));
+          eye.position.set(0.12, 0.05, sd * 0.09); head.add(eye);
+        });
+        head.position.set(0.58, 0.78, 0);
+        body.add(head);
+        const legs = [];
+        [[0.28, 0.13], [0.28, -0.13], [-0.28, 0.13], [-0.28, -0.13]].forEach(([x, z], k) => {
+          const piv = new THREE.Group(); piv.position.set(x, 0.46, z);
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.46, 0.07), legMat);
+          leg.position.y = -0.23; leg.castShadow = true; piv.add(leg);
+          root.add(piv); legs.push({ g: piv, ph: (k === 0 || k === 3) ? 1 : -1 });
+        });
+        root.scale.setScalar(0.95);
+        scene.add(root);
+        return { root, body, head, legs };
+      }
+      const N = 8, T0 = 1.5, DT = 0.73, AP = 2.2;
+      const G = new THREE.Vector3(C.x + Math.cos(GATE) * RAD, 0, C.z + Math.sin(GATE) * RAD);
+      const P0 = G.clone().add(new THREE.Vector3(-9.5, 0, 3.2));
+      const rest = [[3.4, -2.2], [2.2, -3.1], [1.1, -2.4], [3.2, -0.6], [0.2, -3.0], [1.9, -1.1], [0.1, -1.6], [2.9, 0.6]].map(([x, z]) => new THREE.Vector3(x + 0.4, 0, z - 0.2));
+      const sheep = [];
+      for (let i = 0; i < N; i++) sheep.push(makeSheep(40 + i));
+
+      // ---------- parıltı ----------
+      const sc = document.createElement("canvas"); sc.width = sc.height = 256;
+      const sx = sc.getContext("2d");
+      const rg = sx.createRadialGradient(128, 128, 0, 128, 128, 128);
+      rg.addColorStop(0, "rgba(255,244,215,1)"); rg.addColorStop(0.18, "rgba(255,220,150,0.55)"); rg.addColorStop(0.55, "rgba(255,190,110,0.12)"); rg.addColorStop(1, "rgba(255,180,100,0)");
+      sx.fillStyle = rg; sx.fillRect(0, 0, 256, 256);
+      sx.fillStyle = "rgba(255,250,235,0.95)";
+      sx.beginPath(); sx.moveTo(128, 8); sx.quadraticCurveTo(134, 122, 248, 128); sx.quadraticCurveTo(134, 134, 128, 248); sx.quadraticCurveTo(122, 134, 8, 128); sx.quadraticCurveTo(122, 122, 128, 8); sx.fill();
+      const glintTex = new THREE.CanvasTexture(sc); glintTex.colorSpace = THREE.SRGBColorSpace;
+      const glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTex, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+      glint.renderOrder = 10; scene.add(glint);
+      const glintLight = new THREE.PointLight(0xFFD08A, 0, 1.2, 2);
+      scene.add(glintLight);
+
+      // ---------- kamera yolu ----------
+      const CAM0 = new THREE.Vector3(-1.2, 5.6, 11.2), TGT0 = new THREE.Vector3(-0.2, 0.2, 0.3);
+      const CAM1 = new THREE.Vector3(-1.1, 5.55, 11.0), TGT1 = new THREE.Vector3(-0.1, 0.2, 0.25);
+      function camAt(t) {
+        const d = sine(t / 7.1);
+        const p = CAM0.clone().lerp(CAM1, d), tg = TGT0.clone().lerp(TGT1, d);
+        if (t > 7.1) {
+          const k = sine((t - 7.1) / 2.9);
+          const fp = MOUTH.clone().add(new THREE.Vector3(-0.35, 1.05, 2.9)), ft = MOUTH.clone().add(new THREE.Vector3(0.05, -0.12, 0));
+          p.lerp(fp, k); tg.lerp(ft, k);
+        }
+        camera.position.copy(p); camera.lookAt(tg);
+      }
+
+      // ---------- zamana göre sahne ----------
+      function sheepAt(i, t) {
+        const sh = sheep[i], T = T0 + DT * i, ts = T - AP;
+        let pos, dir, walking = true;
+        if (t <= T) {
+          const f = (t - ts) / AP;
+          pos = P0.clone().lerp(G, f); dir = G.clone().sub(P0);
+        } else {
+          const f = (t - T) / 1.45, e2 = outQuad(f);
+          pos = G.clone().lerp(rest[i], e2);
+          dir = rest[i].clone().sub(G);
+          if (f >= 1) walking = t < T + 1.6;
+          if (f > 0.75) { const turn = sine((f - 0.75) / 0.9); dir = dir.clone().lerp(new THREE.Vector3(-0.3, 0, 1), turn * 0.7); }
+        }
+        pos.y = hillY(pos.x, pos.z) * 0.6;
+        sh.root.position.copy(pos);
+        sh.root.rotation.y = -Math.atan2(dir.z, dir.x);
+        const w = Math.max(0, Math.min(1, (T + 1.35 - t) / 0.2));
+        const ph = (t - ts) * Math.PI * 2 / 0.36;
+        sh.legs.forEach((lg) => { lg.g.rotation.z = Math.sin(ph) * 0.42 * lg.ph * w; });
+        sh.body.position.y = Math.abs(Math.sin(ph)) * 0.035 * w;
+        // otlanma
+        let nib = 0;
+        if (i % 2 === 0 || i === 7) { const tb = T + 1.9 + (i % 3) * 0.3; nib = sine((t - tb) / 0.45) - sine((t - tb - 1.1) / 0.5); }
+        sh.head.rotation.z = -0.55 * nib;
+        sh.head.position.y = 0.78 - 0.1 * nib;
+      }
+      function pebblesAt(t) {
+        pebbles.forEach((p, i) => {
+          const k = order.indexOf(i);
+          const home = p.userData.home;
+          if (k < 0) {
+            // son kalan: diğerleri gidince biraz yükselir
+            const u = outBack((t - 6.95) / 0.45);
+            p.position.copy(home).add(new THREE.Vector3(0, 0.045 * u, 0));
+            p.rotation.set(0, p.userData.rot, 0); p.scale.set(1.25 + 0.15 * u, 0.62 + 0.08 * u, 1 + 0.12 * u);
+            return;
+          }
+          const T = T0 + DT * k + 0.05, slot = slotOf(k);
+          if (t < T) { p.position.copy(home); p.rotation.set(0, p.userData.rot, 0); p.scale.set(1.25, 0.62, 1.0); return; }
+          const lift = home.clone().add(new THREE.Vector3(0, 0.22, 0));
+          let pos;
+          if (t < T + 0.2) pos = home.clone().lerp(lift, outQuad((t - T) / 0.2));
+          else if (t < T + 0.7) {
+            const f = (t - T - 0.2) / 0.5, fx = sine(f);
+            pos = lift.clone().lerp(slot, fx);
+            const peak = 0.9;
+            pos.y = lerp(lift.y, slot.y, fx) + 4 * peak * fx * (1 - fx);
+          } else pos = slot.clone();
+          p.position.copy(pos);
+          const spin = clamp((t - T - 0.2) / 0.5, 0, 1);
+          p.rotation.set(spin * 3.2, p.userData.rot + spin * 1.3, spin * 1.6);
+          if (spin >= 1) p.rotation.set(0, p.userData.rot + 1.3, 0);
+          const sq = t > T + 0.7 ? 1 - 0.25 * Math.exp(-(t - T - 0.7) * 14) * Math.cos((t - T - 0.7) * 30) : 1;
+          const grow = 1 + 0.35 * clamp((t - T - 0.2) / 0.5, 0, 1);
+          p.scale.set(1.25 * grow, 0.62 * grow * sq, 1.0 * grow);
+        });
+        const last = pebbles[7];
+        const gk = sine((t - 8.2) / 0.7);
+        const pulse = t > 8.9 ? 1 - 0.16 * Math.sin((t - 8.9) * Math.PI / 0.55) ** 2 : 1;
+        glint.material.opacity = gk * 0.95;
+        glint.position.copy(last.position).add(new THREE.Vector3(0.05, 0.06, 0.08));
+        glint.scale.setScalar(0.34 * gk * pulse + 0.001);
+        glintLight.position.copy(last.position).add(new THREE.Vector3(0, 0.25, 0.25));
+        glintLight.intensity = 1.6 * gk;
+      }
+      function renderAt(time) {
+        const t = clamp(time, 0, 10);
+        for (let i = 0; i < N; i++) sheepAt(i, t);
+        pebblesAt(t);
+        camAt(t);
+        renderer.render(scene, camera);
+      }
+      window.addEventListener("hf-seek", (ev) => renderAt(ev.detail.time));
+      renderAt(window.__hfThreeTime || 0);
+      if (window.__agilHazir) window.__agilHazir();
+    </script>
+  </body>
+</html>
