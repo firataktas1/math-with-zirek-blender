@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Suluboya · akşam taşları</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/sahne.js"></script>
+    <style>
+      body { margin: 0; background: #f8f3e9; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #f8f3e9; }
+      #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      .doku { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="10">
+      <canvas id="cv" width="1920" height="1080"></canvas>
+      <img class="doku" id="d-kagit" src="assets/kagit.jpg" alt="" />
+      <img class="doku" id="d-yikama" src="assets/yikama.jpg" alt="" />
+      <img class="doku" id="d-granul" src="assets/granul.png" alt="" />
+    </div>
+    <script>
+      (function () {
+        const S = window.SAHNE;
+        const W = 1920, H = 1080;
+        const cv = document.getElementById('cv');
+        const ctx = cv.getContext('2d');
+        const $ = (id) => document.getElementById(id);
+        const SEPIA = '#5d4a3e';
+        let P = null;
+        function pats() {
+          if (P) return P;
+          if (!['d-kagit', 'd-yikama', 'd-granul'].every((id) => $(id).complete && $(id).naturalWidth > 0)) return null;
+          P = { kagit: ctx.createPattern($('d-kagit'), 'no-repeat'), yik: ctx.createPattern($('d-yikama'), 'repeat'), gran: ctx.createPattern($('d-granul'), 'repeat') };
+          return P;
+        }
+        // screen-locked pattern (paper) and world-locked pattern (pigment texture moves with the painting)
+        function scrP(pat) { pat.setTransform(ctx.getTransform().invertSelf()); return pat; }
+        function worldP(pat, sc, ox, oy) {
+          // pattern fixed to the world: undo only the local (object) part of the transform
+          const m = ctx.getTransform().invertSelf().multiply(WORLD).multiply(new DOMMatrix([sc || 1, 0, 0, sc || 1, ox || 0, oy || 0]));
+          pat.setTransform(m); return pat;
+        }
+        let WORLD = new DOMMatrix();
+        const unit = () => { const m = ctx.getTransform(); return Math.hypot(m.a, m.b); };
+        function path(pts, closed, smooth) { ctx.beginPath(); if (smooth === false) S.poly(ctx, pts, closed); else S.smooth(ctx, pts, closed); }
+        function paper(pts, smooth) { path(pts, true, smooth); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.fillStyle = scrP(P.kagit); ctx.fill(); }
+        // one watercolour wash: two uneven passes, pigment texture, darker drying edge
+        function wash(pts, col, a, seed, o) {
+          o = o || {};
+          const u = unit(), amp = (o.bleed == null ? 2.6 : o.bleed) / u;
+          if (!o.glaze) paper(pts, o.smooth);
+          ctx.globalCompositeOperation = 'multiply';
+          for (let p = 0; p < 2; p++) {
+            const q = S.wobble(pts, amp * (p ? 1.4 : 0.8), seed * 7 + p * 13, 0.3);
+            path(q, true, o.smooth); ctx.fillStyle = col; ctx.globalAlpha = a * (p ? 0.45 : 0.62); ctx.fill();
+          }
+          path(pts, true, o.smooth);
+          ctx.globalAlpha = (o.tex == null ? 0.6 : o.tex); ctx.fillStyle = worldP(P.yik, 0.6, seed * 37 % 700, seed * 53 % 400); ctx.fill();
+          ctx.globalAlpha = 0.14 * a; ctx.fillStyle = worldP(P.gran, 1, seed % 300, 0); ctx.fill();
+          if (o.edge !== 0) {
+            const q = S.wobble(pts, amp, seed * 7 + 5, 0.3);
+            path(q, true, o.smooth); ctx.strokeStyle = col; ctx.globalAlpha = a * (o.edge || 0.75); ctx.lineWidth = 3.0 / Math.pow(u, 0.6); ctx.lineJoin = 'round'; ctx.stroke();
+            ctx.globalAlpha = a * (o.edge || 0.75) * 0.5; ctx.lineWidth = 1.2 / Math.pow(u, 0.6); ctx.stroke();
+          }
+          ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+        }
+        function glaze(pts, col, a, seed, o) { wash(pts, col, a, seed, Object.assign({ glaze: true, edge: 0.35 }, o || {})); }
+        function shadeIn(clipPts, pts, col, a, seed) {
+          ctx.save(); path(clipPts, true); ctx.clip();
+          glaze(pts, col, a, seed, { tex: 0.2 });
+          ctx.restore();
+        }
+        function ink(pts, closed, w, a, seed, smooth) {
+          const u = unit();
+          const q = S.wobble(pts, 0.8 / u, seed, 0.4);
+          path(q, closed, smooth);
+          ctx.globalCompositeOperation = 'multiply';
+          ctx.strokeStyle = SEPIA; ctx.globalAlpha = a; ctx.lineWidth = w / Math.pow(u, 0.5); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+          ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+        }
+
+        function drawStone(st) {
+          const warm = ['#ddd3c4', '#d3cbc0', '#e3d9c8', '#cdc5ba'][Math.floor(st.tone * 4)];
+          wash(st.pts, warm, 0.75, st.seed, { bleed: 1.6, tex: 0.4 });
+          shadeIn(st.pts, S.ellipsePts(st.x + st.w * 0.25, st.y + st.h * 0.36, st.w * 0.56, st.h * 0.5, 14, 0), '#a4a7c4', 0.55, st.seed + 3);
+          ink(st.pts, true, 1.1, 0.45, st.seed);
+        }
+        function drawTuft(tf) {
+          for (const b of S.tuftPts(tf)) {
+            path(b, false, false); ctx.globalCompositeOperation = 'multiply'; ctx.strokeStyle = '#6f914c'; ctx.globalAlpha = 0.7;
+            ctx.lineWidth = 2.6 / Math.pow(unit(), 0.5); ctx.lineCap = 'round'; ctx.stroke(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+          }
+        }
+        function drawSheep(st) {
+          const sp = S.sheepParts(st);
+          ctx.save(); ctx.translate(st.x, st.y); ctx.scale(st.sc, st.sc);
+          const legQuad = (L) => { const [hx, hy] = L.hip, [fx, fy] = L.foot, dx = fx - hx, dy = fy - hy, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len; return [[hx + nx * 3.5, hy + ny * 3.5], [fx + nx * 2.5, fy + ny * 2.5], [fx - nx * 2.5, fy - ny * 2.5], [hx - nx * 3.5, hy - ny * 3.5]]; };
+          for (const L of sp.legs.filter((l) => !l.near)) wash(legQuad(L), '#7b6a62', 0.8, st.seed + 1, { smooth: false, bleed: 0.8, edge: 0.3 });
+          wash(sp.body, '#f2e6d6', 0.55, st.seed, { bleed: 1.4, tex: 0.35 });
+          shadeIn(sp.body, S.ellipsePts(10, -22 + sp.bob, 60, 20, 20, 0), '#b1abcb', 0.75, st.seed + 2);
+          shadeIn(sp.body, S.ellipsePts(-18, -68 + sp.bob, 30, 10, 20, -0.2), '#f7dcb0', 0.28, st.seed + 4);
+          for (let c = 0; c < 6; c++) {
+            const cx = -28 + c * 10 + S.h2(st.seed, c) * 6, cy = -58 + ((c * 37) % 5) * 6 + S.h2(st.seed, c + 20) * 6 + sp.bob;
+            const arc = []; for (let j = 0; j <= 6; j++) { const a = Math.PI * (1.1 + j / 6 * 0.9); arc.push([cx + Math.cos(a) * 5, cy + Math.sin(a) * 4]); }
+            ink(arc, false, 0.9, 0.3, st.seed + c);
+          }
+          ink(sp.body, true, 1.4, 0.6, st.seed);
+          wash(sp.tail, '#f2e6d6', 0.5, st.seed + 6, { bleed: 1 }); ink(sp.tail, true, 1.2, 0.55, st.seed + 6);
+          for (const L of sp.legs.filter((l) => l.near)) { wash(legQuad(L), '#5b4841', 0.95, st.seed + 3, { smooth: false, bleed: 0.8, edge: 0.4 }); glaze(S.ellipsePts(L.foot[0] + 0.5, L.foot[1] - 2.5, 3.8, 3, 10, 0), '#2f2522', 0.9, st.seed + 4, { bleed: 0.3 }); }
+          wash(sp.earFar, '#6a5249', 0.9, st.seed + 8, { bleed: 1 });
+          wash(sp.head, '#5b453e', 0.95, st.seed + 9, { bleed: 1.2 });
+          shadeIn(sp.head, S.ellipsePts(sp.head[0][0] - 10, sp.head[0][1] - 10, 10, 6, 12, 0), '#c98f6a', 0.5, st.seed + 10);
+          wash(sp.tuft, '#f2e6d6', 0.5, st.seed + 11, { bleed: 0.8 }); ink(sp.tuft, true, 1.0, 0.5, st.seed + 11);
+          wash(sp.ear, '#5b453e', 0.95, st.seed + 12, { bleed: 0.8 });
+          path(S.ellipsePts(sp.eye[0], sp.eye[1], 2.3, 2.3, 10, 0), true); ctx.fillStyle = '#f8f1e4'; ctx.fill();
+          ctx.restore();
+        }
+        function drawPebble(ps, seed) {
+          const pts = S.pebblePts(ps, seed);
+          wash(pts, '#efa252', 0.95, seed, { bleed: 1.1, edge: 0.7 });
+          shadeIn(pts, S.ellipsePts(ps.x + 5 * ps.sc, ps.y + 2 * ps.sc, 14 * ps.sc, 8 * ps.sc, 12, 0), '#c8662e', 0.6, seed + 1);
+          ink(pts, true, 1.1, 0.5, seed);
+        }
+        function drawPouch(t) {
+          const pp = S.pouchParts(t);
+          ink(pp.rope, false, 3.0, 0.8, 71);
+          wash(pp.peg, '#9a7452', 0.9, 72, { smooth: false, bleed: 0.8 }); ink(pp.peg, true, 1.1, 0.6, 72, false);
+          wash(pp.rim, '#6f3326', 0.95, 73, { bleed: 1.2 });
+          const inP = []; for (let k = 0; k < 9; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'pouch') inP.push([k, ps]); }
+          inP.sort((a, b) => b[1].y - a[1].y);
+          for (const [k, ps] of inP) drawPebble(ps, 500 + k);
+          wash(pp.body, '#cd6a42', 0.95, 74, { bleed: 1.8, edge: 0.6 });
+          shadeIn(pp.body, pp.shade, '#8d3f30', 0.65, 75);
+          shadeIn(pp.body, S.blob(pp.mouth[0] - 34, pp.mouth[1] + 58, 30, 34, 14, 0.3, 76, 0.8, 1.1), '#f6c08a', 0.22, 76);
+          pp.folds.forEach((f, i) => ink(f, false, 1.0, 0.35, 77 + i));
+          wash(pp.tie, '#e2a84f', 0.95, 79, { bleed: 0.8 });
+          ink(pp.body, true, 1.4, 0.6, 80);
+          const back = pp.rim.filter((p, i) => i > pp.rim.length / 2);
+          ink(back, false, 1.3, 0.55, 81);
+        }
+        function drawTree() {
+          const T = S.TREE_SHAPES;
+          wash(T.trunk, '#7a5a45', 0.9, 82, { smooth: false, bleed: 1 });
+          T.crowns.forEach((c, i) => { wash(c, '#8db062', 0.85, 83 + i, { bleed: 2.2 }); shadeIn(c, S.ellipsePts(c[0][0] - 18, c[0][1] + 22, 52, 34, 14, 0), '#4e7a52', 0.6, 86 + i); });
+        }
+        function drawSlab() {
+          glaze(S.ellipsePts(S.SLAB.x + 60, S.SLAB.y + 20, S.SLAB.rx * 1.02, S.SLAB.ry * 0.9, 30, 0.02), '#8e8cb6', 0.5, 90);
+          wash(S.SLAB_SIDE, '#9b97ad', 0.85, 91, { bleed: 1.4 });
+          wash(S.SLAB_TOP, '#d3cabb', 0.8, 92, { bleed: 2 });
+          shadeIn(S.SLAB_TOP, S.ellipsePts(S.SLAB.x + 160, S.SLAB.y + 24, 170, 50, 20, 0), '#a7a3bd', 0.5, 93);
+          ink(S.SLAB_TOP, true, 1.2, 0.5, 94); ink(S.SLAB_SIDE, true, 1.0, 0.4, 95);
+        }
+        function groundShadows(t) {
+          const sh = '#8f8db6';
+          for (const st of S.STONES) {
+            if (st.row !== 0 || st.pillar != null) continue;
+            glaze(S.ellipsePts(st.x + st.w * 0.7, st.base + 3, st.w * 0.85, st.h * 0.42, 12, 0), sh, 0.35, st.seed + 7, { tex: 0.1, edge: 0.15 });
+          }
+          for (const pi of [0, 1]) { const Q = pi ? S.P2 : S.P1; glaze(S.ellipsePts(Q.x + 70, Q.y + 4, 80, 12, 16, 0.05), sh, 0.4, 97 + pi, { tex: 0.1 }); }
+          for (let i = 0; i < S.N; i++) {
+            const st = S.sheepState(i, t); if (!st.visible) continue;
+            glaze(S.ellipsePts(st.x + 28 * st.sc, st.y + 2, 60 * st.sc, 8.5 * st.sc, 18, 0), sh, 0.5, 99 + i, { tex: 0.1, bleed: 1.5 });
+          }
+        }
+        function drawGlint(t) {
+          const g = S.glint(t); if (g <= 0.001) return;
+          const ps = S.pebbleState(8, t);
+          const m = ctx.getTransform();
+          const x = m.a * ps.x + m.e, y = m.d * (ps.y - 6) + m.f;
+          ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'screen';
+          let gr = ctx.createRadialGradient(x, y, 0, x, y, 175 * g);
+          gr.addColorStop(0, 'rgba(255,214,150,0.75)'); gr.addColorStop(0.45, 'rgba(250,170,90,0.2)'); gr.addColorStop(1, 'rgba(250,170,90,0)');
+          ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 175 * g, 0, Math.PI * 2); ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+          const L = 58 * g, w = 7 * g;
+          ctx.beginPath();
+          for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 - Math.PI / 2, b = a + Math.PI / 4, len = k % 2 ? L * 0.72 : L; ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); ctx.lineTo(x + Math.cos(b) * w, y + Math.sin(b) * w); }
+          ctx.closePath();
+          gr = ctx.createRadialGradient(x, y, 0, x, y, L);
+          gr.addColorStop(0, 'rgba(255,252,238,1)'); gr.addColorStop(0.4, 'rgba(255,228,170,0.95)'); gr.addColorStop(1, 'rgba(245,170,80,0.25)');
+          ctx.fillStyle = gr; ctx.fill();
+          ctx.restore();
+        }
+
+        function draw(t) {
+          if (!pats()) return;
+          const cam = S.camera(t);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+          ctx.drawImage($('d-kagit'), 0, 0);
+          WORLD = new DOMMatrix([cam.s, 0, 0, cam.s, cam.e, cam.f]);
+          ctx.setTransform(cam.s, 0, 0, cam.s, cam.e, cam.f);
+          // sky: wet-in-wet gradient
+          const sky = [[-2000, -2000], [4000, -2000]].concat(S.HILLS[1].slice().reverse().map(([x, y]) => [x, y + 6])).concat([[-2000, S.HORIZON + 10]]);
+          sky.splice(2, 0, [4000, S.HORIZON + 10]);
+          ctx.globalCompositeOperation = 'multiply';
+          let gr = ctx.createLinearGradient(0, -200, 0, 300);
+          gr.addColorStop(0, '#9fb3da'); gr.addColorStop(0.42, '#d9c3cf'); gr.addColorStop(0.7, '#f4c8a0'); gr.addColorStop(1, '#f7dca6');
+          path(sky, true, false); ctx.fillStyle = gr; ctx.globalAlpha = 0.75; ctx.fill();
+          ctx.globalAlpha = 0.8; ctx.fillStyle = worldP(P.yik, 1.3, 100, 40); ctx.fill();
+          ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+          // sun and soft clouds
+          glaze(S.ellipsePts(560, 150, 40, 40, 36, 0), '#f6cf6e', 0.9, 11, { bleed: 1.5, edge: 0.4 });
+          glaze(S.blob(1140, 110, 170, 22, 14, 0, 12, 0.8, 1.1), '#e9aeb0', 0.35, 12, { bleed: 5, edge: 0.2 });
+          glaze(S.blob(300, 80, 120, 16, 12, 0, 13, 0.8, 1.1), '#e9aeb0', 0.3, 13, { bleed: 5, edge: 0.2 });
+          // hills and fields
+          const far = S.HILLS[0].concat(S.HILLS[1].slice().reverse().map(([x, y]) => [x, y + 8]));
+          glaze(far, '#a9a6c9', 0.7, 14, { smooth: false, bleed: 3 });
+          const ground = S.HILLS[1].concat([[3000, 240], [3000, 3000], [-2000, 3000], [-2000, 240]]);
+          ctx.globalCompositeOperation = 'multiply';
+          gr = ctx.createLinearGradient(0, 214, 0, 1100);
+          gr.addColorStop(0, '#a6b77c'); gr.addColorStop(0.35, '#bccb86'); gr.addColorStop(1, '#a9c078');
+          path(ground, true, false); ctx.fillStyle = gr; ctx.globalAlpha = 0.85; ctx.fill();
+          ctx.globalAlpha = 0.9; ctx.fillStyle = worldP(P.yik, 1.2, 300, 500); ctx.fill();
+          ctx.globalAlpha = 0.12; ctx.fillStyle = worldP(P.gran, 1, 0, 0); ctx.fill();
+          ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+          // loose varied washes in the field (painterly, never in the lower-right third)
+          [[300, 330, 260, 60, '#8fae5e', 0.35], [980, 760, 330, 70, '#c9c27a', 0.35], [520, 980, 380, 80, '#94b266', 0.3], [1500, 250, 380, 40, '#9bb16a', 0.3], [150, 620, 200, 90, '#d6c683', 0.3]]
+            .forEach(([x, y, rx, ry, c, a], i) => glaze(S.blob(x, y, rx, ry, 22, 0.05, 200 + i, 0.75, 1.15), c, a, 200 + i, { bleed: 7, edge: 0.5 }));
+          // pen floor a touch warmer (evening light on the grass)
+          glaze(S.ellipsePts(S.PEN.cx, S.PEN.cy, S.PEN.rx * 0.95, S.PEN.ry * 0.92, 60, 0), '#f1d49a', 0.3, 15, { bleed: 6, edge: 0.1 });
+          groundShadows(t);
+          drawSlab();
+          for (let k = 0; k < 8; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'row') drawPebble(ps, 500 + k); }
+          for (const it of S.items(t)) {
+            if (it.type === 'stone') drawStone(it.o);
+            else if (it.type === 'tuft') drawTuft(it.o);
+            else if (it.type === 'sheep') drawSheep(it.o);
+            else if (it.type === 'pouch') drawPouch(t);
+            else if (it.type === 'tree') drawTree();
+          }
+          for (let k = 0; k < 8; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'air') drawPebble(ps, 500 + k); }
+          drawGlint(t);
+          // warm evening glaze from the left, paper tooth, soft vignette
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'multiply';
+          gr = ctx.createLinearGradient(0, 0, 1920, 400);
+          gr.addColorStop(0, 'rgba(248,214,160,1)'); gr.addColorStop(1, 'rgba(255,248,236,1)');
+          ctx.globalAlpha = 0.45; ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+          ctx.globalAlpha = 0.3; ctx.drawImage($('d-kagit'), 0, 0);
+          const vg = ctx.createRadialGradient(960, 540, 520, 960, 540, 1150);
+          vg.addColorStop(0, 'rgba(255,255,255,1)'); vg.addColorStop(1, 'rgba(222,204,184,1)');
+          ctx.globalAlpha = 1; ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+
+        const state = { t: 0 };
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo(state, { t: 0 }, { t: S.DUR, duration: S.DUR, ease: 'none', onUpdate() { draw(state.t); } }, 0);
+        window.__timelines['main'] = tl;
+        window.addEventListener('load', () => draw(state.t));
+      })();
+    </script>
+  </body>
+</html>

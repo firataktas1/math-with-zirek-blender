@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Teknik çizim · akşam taşları</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/sahne.js"></script>
+    <style>
+      body { margin: 0; background: #1e4e8e; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #1e4e8e; }
+      #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      .doku { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="10">
+      <canvas id="cv" width="1920" height="1080"></canvas>
+      <img class="doku" id="d-kagit" src="assets/kagit.jpg" alt="" />
+    </div>
+    <script>
+      (function () {
+        const S = window.SAHNE;
+        const W = 1920, H = 1080;
+        const cv = document.getElementById('cv');
+        const ctx = cv.getContext('2d');
+        const $ = (id) => document.getElementById(id);
+        const WHITE = '#eef7ff', CYAN = '#93dcff', AMBER = '#ffc36e', AMBER_D = '#e98d3a';
+        let PAPER = null, T = 0;
+        const unit = () => { const m = ctx.getTransform(); return Math.hypot(m.a, m.b); };
+        const f = (a, d) => S.cl((T - a) / d, 0, 1);          // draw-on progress
+        function path(pts, closed, smooth) { ctx.beginPath(); if (smooth === false) S.poly(ctx, pts, closed); else S.smooth(ctx, pts, closed); }
+        function sample(pts, closed) {
+          // smooth outline -> dense polyline, so partial draw-on can follow it
+          const out = [], n = pts.length, P = (i) => closed ? pts[(i + n) % n] : pts[S.cl(i, 0, n - 1)], last = closed ? n : n - 1;
+          for (let i = 0; i < last; i++) {
+            const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+            for (let k = 0; k < 4; k++) {
+              const u = k / 4, u2 = u * u, u3 = u2 * u;
+              out.push([0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * u + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * u2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * u3),
+                        0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * u + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * u2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * u3)]);
+            }
+          }
+          if (!closed) out.push(pts[n - 1]);
+          return out;
+        }
+        function stroke(pts, closed, w, col, a, prog, opts) {
+          opts = opts || {};
+          if (prog <= 0) return;
+          const u = unit();
+          const q = opts.raw ? pts : sample(pts, closed);
+          ctx.beginPath();
+          if (prog >= 1) S.poly(ctx, q, closed); else S.partial(ctx, q, closed, prog);
+          ctx.lineWidth = w / u; ctx.strokeStyle = col; ctx.globalAlpha = a;
+          ctx.setLineDash(opts.dash ? opts.dash.map((d) => d / u) : []);
+          ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+          ctx.setLineDash([]); ctx.globalAlpha = 1;
+        }
+        function paper(pts, a, smooth) {
+          if (a <= 0) return;
+          path(pts, true, smooth); PAPER.setTransform(ctx.getTransform().invertSelf()); ctx.fillStyle = PAPER; ctx.globalAlpha = a; ctx.fill(); ctx.globalAlpha = 1;
+        }
+        function hatch(clipPts, region, gap, ang, col, a, smooth) {
+          if (a <= 0) return;
+          ctx.save(); path(clipPts, true, smooth); ctx.clip();
+          if (region) { path(region, true); ctx.clip(); }
+          const xs = clipPts.map((p) => p[0]), ys = clipPts.map((p) => p[1]);
+          const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+          const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, R = Math.hypot(x1 - x0, y1 - y0) / 2 + 2;
+          const c = Math.cos(ang), s = Math.sin(ang);
+          ctx.beginPath();
+          for (let d = -R; d <= R; d += gap) { ctx.moveTo(cx - c * R - s * d, cy - s * R + c * d); ctx.lineTo(cx + c * R - s * d, cy + s * R + c * d); }
+          ctx.lineWidth = 1 / unit(); ctx.strokeStyle = col; ctx.globalAlpha = a; ctx.stroke(); ctx.globalAlpha = 1;
+          ctx.restore();
+        }
+        function arrow(x0, y0, x1, y1, a, prog) {
+          // dimension line with two arrowheads, no numbers
+          if (prog <= 0) return;
+          const xe = x0 + (x1 - x0) * prog, ye = y0 + (y1 - y0) * prog;
+          stroke([[x0, y0], [xe, ye]], false, 1, CYAN, a, 1, { raw: true });
+          const hd = (x, y, dx, dy) => { const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, k = 11 / unit(), w = 4 / unit(); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - ux * k - uy * w, y - uy * k + ux * w); ctx.lineTo(x - ux * k + uy * w, y - uy * k - ux * w); ctx.closePath(); ctx.fillStyle = CYAN; ctx.globalAlpha = a; ctx.fill(); ctx.globalAlpha = 1; };
+          hd(x0, y0, x0 - x1, y0 - y1);
+          if (prog >= 1) hd(x1, y1, x1 - x0, y1 - y0);
+        }
+
+        // ---------------------------------------------------------------- pieces
+        const stoneStart = (st) => {
+          // the wall is drawn in as one sweep from the gate around the ring
+          if (st.pillar != null) return 0.55 + st.row * 0.06;
+          let a = Math.atan2((st.base - S.PEN.cy) / S.PEN.ry, (st.x - S.PEN.cx) / S.PEN.rx);
+          let u = ((a - Math.PI * 200 / 180) % (Math.PI * 2) + Math.PI * 4) % (Math.PI * 2) / (Math.PI * 2);
+          return 0.2 + u * 0.95 + st.row * 0.05;
+        };
+        function drawStone(st) {
+          const p = f(stoneStart(st), 0.3);
+          if (p <= 0) return;
+          paper(st.pts, S.cl(p * 1.6 - 0.2, 0, 1));
+          if (p >= 1) hatch(st.pts, S.ellipsePts(st.x + st.w * 0.28, st.y + st.h * 0.36, st.w * 0.55, st.h * 0.5, 14, 0), 5.5, -0.8, CYAN, 0.45);
+          stroke(st.pts, true, 1.5, WHITE, 0.88, p);
+        }
+        function drawTuft(tf) {
+          const p = f(0.7 + S.h2(tf.seed, 1) * 0.5, 0.3);
+          for (const b of S.tuftPts(tf)) stroke(b, false, 1.1, CYAN, 0.55, p, { raw: true });
+        }
+        function sheepProg(st) { return st.i < 2 ? f(0.05 + st.i * 0.25, 0.7) : 1; }
+        function drawSheep(st) {
+          const sp = S.sheepParts(st), p = sheepProg(st);
+          ctx.save(); ctx.translate(st.x, st.y); ctx.scale(st.sc, st.sc);
+          const legQuad = (L) => { const [hx, hy] = L.hip, [fx, fy] = L.foot, dx = fx - hx, dy = fy - hy, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len; return [[hx + nx * 3.4, hy + ny * 3.4], [fx + nx * 2.5, fy + ny * 2.5], [fx - nx * 2.5, fy - ny * 2.5], [hx - nx * 3.4, hy - ny * 3.4]]; };
+          const fillA = S.cl(p * 1.5 - 0.4, 0, 1);
+          for (const L of sp.legs.filter((l) => !l.near)) { const q = legQuad(L); paper(q, fillA, false); hatch(q, null, 3, 0.8, CYAN, 0.5 * fillA, false); stroke(q, true, 1.2, CYAN, 0.8, p, { raw: true }); }
+          paper(sp.body, fillA);
+          hatch(sp.body, S.ellipsePts(10, -22 + sp.bob, 60, 18, 20, 0), 4, -0.8, CYAN, 0.5 * fillA * fillA);
+          for (let c = 0; c < 6; c++) {
+            const cx = -28 + c * 10 + S.h2(st.seed, c) * 6, cy = -58 + ((c * 37) % 5) * 6 + S.h2(st.seed, c + 20) * 6 + sp.bob;
+            const arc = []; for (let j = 0; j <= 6; j++) { const a = Math.PI * (1.1 + j / 6 * 0.9); arc.push([cx + Math.cos(a) * 5, cy + Math.sin(a) * 4]); }
+            stroke(arc, false, 1, CYAN, 0.6, S.cl(p * 2 - 1, 0, 1), { raw: true });
+          }
+          stroke(sp.body, true, 1.8, WHITE, 0.95, p);
+          paper(sp.tail, fillA); stroke(sp.tail, true, 1.4, WHITE, 0.9, p);
+          for (const L of sp.legs.filter((l) => l.near)) { const q = legQuad(L); paper(q, fillA, false); hatch(q, null, 2.4, 0.8, WHITE, 0.7 * fillA, false); stroke(q, true, 1.4, WHITE, 0.95, p, { raw: true }); }
+          paper(sp.earFar, fillA); hatch(sp.earFar, null, 2.4, 0.8, WHITE, 0.6 * fillA); stroke(sp.earFar, true, 1.2, WHITE, 0.85, p);
+          paper(sp.head, fillA); hatch(sp.head, null, 2.6, 0.8, WHITE, 0.75 * fillA); stroke(sp.head, true, 1.8, WHITE, 0.95, p);
+          paper(sp.tuft, fillA); stroke(sp.tuft, true, 1.2, WHITE, 0.9, p);
+          paper(sp.ear, fillA); hatch(sp.ear, null, 2.4, 0.8, WHITE, 0.75 * fillA); stroke(sp.ear, true, 1.3, WHITE, 0.95, p);
+          if (fillA > 0) { paper(S.ellipsePts(sp.eye[0], sp.eye[1], 3, 3, 12, 0), 1); stroke(S.ellipsePts(sp.eye[0], sp.eye[1], 3, 3, 12, 0), true, 1, WHITE, fillA, 1); }
+          ctx.restore();
+        }
+        function drawPebble(ps, seed, prog) {
+          const pts = S.pebblePts(ps, seed);
+          const p = prog == null ? 1 : prog;
+          if (p <= 0) return;
+          path(pts, true); ctx.fillStyle = AMBER; ctx.globalAlpha = 0.9 * S.cl(p * 1.5 - 0.3, 0, 1); ctx.fill(); ctx.globalAlpha = 1;
+          hatch(pts, S.ellipsePts(ps.x + 5 * ps.sc, ps.y + 2 * ps.sc, 14 * ps.sc, 8 * ps.sc, 12, 0), 3, -0.8, AMBER_D, 0.8 * p);
+          stroke(pts, true, 1.5, '#fff1d8', 0.95, p);
+        }
+        function drawPouch(t) {
+          const pp = S.pouchParts(t), p = f(0.35, 0.6), h = S.cl(p * 2 - 1, 0, 1);
+          if (p <= 0) return;
+          stroke(pp.rope, false, 1.6, WHITE, 0.9, p, { raw: true });
+          paper(pp.peg, p, false); stroke(pp.peg, true, 1.4, WHITE, 0.9, p, { raw: true });
+          paper(pp.rim, p); hatch(pp.rim, null, 2.6, 0.8, WHITE, 0.55 * h); hatch(pp.rim, null, 2.6, -0.8, WHITE, 0.4 * h);
+          const inP = []; for (let k = 0; k < 9; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'pouch') inP.push([k, ps]); }
+          inP.sort((a, b) => b[1].y - a[1].y);
+          for (const [k, ps] of inP) drawPebble(ps, 500 + k, f(0.75 + k * 0.03, 0.3));
+          paper(pp.body, p);
+          hatch(pp.body, pp.shade, 4, -0.8, CYAN, 0.55 * h);
+          pp.folds.forEach((fo) => stroke(fo, false, 1, CYAN, 0.7, p));
+          paper(pp.tie, p); stroke(pp.tie, true, 1.2, WHITE, 0.9, p);
+          stroke(pp.body, true, 1.9, WHITE, 0.95, p);
+          const back = pp.rim.filter((q, i) => i > pp.rim.length / 2);
+          stroke(back, false, 1.6, WHITE, 0.9, p);
+        }
+        function drawTree() {
+          const TS = S.TREE_SHAPES, p = f(0.25, 0.6), h = S.cl(p * 2 - 1, 0, 1);
+          paper(TS.trunk, p, false); stroke(TS.trunk, true, 1.3, WHITE, 0.8, p);
+          TS.crowns.forEach((c, i) => { paper(c, p); hatch(c, S.ellipsePts(c[0][0] - 18, c[0][1] + 22, 52, 34, 14, 0), 4.5, -0.8, CYAN, 0.45 * h); stroke(c, true, 1.3, WHITE, 0.8, p); });
+        }
+        function drawSlab(t) {
+          const p = f(0.45, 0.55), SL = S.SLAB, h = S.cl(p * 2 - 1, 0, 1);
+          paper(S.SLAB_SIDE, p, false); hatch(S.SLAB_SIDE, null, 4, -0.8, CYAN, 0.55 * h, false); stroke(S.SLAB_SIDE, true, 1.4, WHITE, 0.85, p, { raw: true });
+          paper(S.SLAB_TOP, p); stroke(S.SLAB_TOP, true, 1.8, WHITE, 0.95, p);
+          // pebble baseline (dash-dot centre line) and dimension line under the slab: no numbers
+          const q = f(0.85, 0.5);
+          const by = S.ROW[0].y + 2;
+          stroke([[SL.x - SL.rx + 30, by], [SL.x + SL.rx - 30, by]], false, 1, CYAN, 0.45, q, { raw: true, dash: [16, 5, 3, 5] });
+          const dy = SL.y + SL.ry + SL.th + 38;
+          stroke([[SL.x - SL.rx + 6, SL.y + 14], [SL.x - SL.rx + 6, dy + 12]], false, 1, CYAN, 0.55, q, { raw: true });
+          stroke([[SL.x + SL.rx - 6, SL.y + 14], [SL.x + SL.rx - 6, dy + 12]], false, 1, CYAN, 0.55, q, { raw: true });
+          arrow(SL.x - SL.rx + 6, dy, SL.x + SL.rx - 6, dy, 0.75, f(1.0, 0.5));
+        }
+        function construction(t) {
+          // horizon, hills, pen axes and base ellipse, plumb line of the pouch
+          const PEN = S.PEN;
+          stroke([[-400, S.HORIZON], [2600, S.HORIZON]], false, 1, CYAN, 0.35, f(0, 0.7), { raw: true });
+          stroke(S.HILLS[0], false, 1.4, WHITE, 0.55, f(0.05, 0.8), { raw: true });
+          stroke(S.HILLS[1], false, 1.4, WHITE, 0.7, f(0.1, 0.8), { raw: true });
+          const e = S.ellipsePts(PEN.cx, PEN.cy, PEN.rx, PEN.ry, 120, 0);
+          stroke(e.slice(60).concat(e.slice(0, 60)), false, 1, CYAN, 0.35, f(0.1, 0.8), { raw: true, dash: [10, 7] });
+          stroke([[PEN.cx - PEN.rx - 60, PEN.cy], [PEN.cx + PEN.rx + 60, PEN.cy]], false, 1, CYAN, 0.3, f(0.15, 0.6), { raw: true, dash: [26, 6, 4, 6] });
+          stroke([[PEN.cx, PEN.cy - PEN.ry - 50], [PEN.cx, PEN.cy + PEN.ry + 50]], false, 1, CYAN, 0.3, f(0.2, 0.6), { raw: true, dash: [26, 6, 4, 6] });
+          // pen width: extension lines + dimension arrows above the pen
+          const q = f(0.9, 0.5), dy = PEN.cy - PEN.ry - 34;
+          stroke([[PEN.cx - PEN.rx, PEN.cy - 30], [PEN.cx - PEN.rx, dy - 12]], false, 1, CYAN, 0.4, q, { raw: true });
+          stroke([[PEN.cx + PEN.rx, PEN.cy - 30], [PEN.cx + PEN.rx, dy - 12]], false, 1, CYAN, 0.4, q, { raw: true });
+          arrow(PEN.cx - PEN.rx, dy, PEN.cx + PEN.rx, dy, 0.55, f(1.05, 0.5));
+          // plumb line through the pouch
+          const M = S.MOUTH;
+          stroke([[M.x, M.y - 130], [M.x, M.y + 150]], false, 1, CYAN, 0.35, f(0.5, 0.5), { raw: true, dash: [20, 6, 4, 6] });
+          // sun as a construction circle
+          stroke(S.ellipsePts(560, 150, 40, 40, 48, 0), true, 1.2, WHITE, 0.6, f(0.0, 0.6), { raw: true });
+          stroke([[500, 150], [620, 150]], false, 1, CYAN, 0.4, f(0.2, 0.4), { raw: true });
+          stroke([[560, 90], [560, 210]], false, 1, CYAN, 0.4, f(0.25, 0.4), { raw: true });
+        }
+        function trajectories(t) {
+          for (let k = 0; k < 8; k++) {
+            const t0 = S.T_LEAVE[k], t1 = t0 + S.LIFT + S.FLY;
+            if (t < t0 - 0.2 || t > t1 + 0.9) continue;
+            const pts = S.pebblePath(k, t);
+            const shown = S.cl((t - (t0 - 0.2)) / 0.35, 0, 1);
+            const a = 0.6 * (1 - S.cl((t - t1 - 0.2) / 0.7, 0, 1));
+            stroke(pts, false, 1.2, CYAN, a, shown, { raw: true, dash: [8, 6] });
+            if (t > t1) {
+              // landing mark: expanding construction ring + tick on the baseline
+              const u = S.cl((t - t1) / 0.6, 0, 1), R = S.ROW[k];
+              stroke(S.ellipsePts(R.x, R.y - 4, 18 + 30 * u, 8 + 12 * u, 36, 0), true, 1, CYAN, 0.6 * (1 - u), 1, { raw: true });
+            }
+          }
+          // ticks under landed pebbles stay
+          for (let k = 0; k < 8; k++) {
+            const t1 = S.T_LEAVE[k] + S.LIFT + S.FLY;
+            if (t < t1) continue;
+            const R = S.ROW[k];
+            stroke([[R.x, R.y + 12], [R.x, R.y + 24]], false, 1.2, CYAN, 0.7, S.cl((t - t1) / 0.2, 0, 1), { raw: true });
+          }
+        }
+        function drawGlint(t) {
+          const g = S.glint(t);
+          const ps = S.pebbleState(8, t);
+          // technical focus mark around the last pebble before it shines
+          const c = f(7.4, 0.9);
+          if (c > 0) {
+            stroke(S.ellipsePts(ps.x, ps.y - 4, 30, 30, 64, 0), true, 1.2, CYAN, 0.7, c, { raw: true });
+            stroke([[ps.x - 48, ps.y - 4], [ps.x + 48, ps.y - 4]], false, 1, CYAN, 0.5, f(7.7, 0.5), { raw: true, dash: [12, 4, 3, 4] });
+            stroke([[ps.x, ps.y - 52], [ps.x, ps.y + 44]], false, 1, CYAN, 0.5, f(7.8, 0.5), { raw: true, dash: [12, 4, 3, 4] });
+          }
+          if (g <= 0.001) return;
+          const m = ctx.getTransform();
+          const x = m.a * ps.x + m.e, y = m.d * (ps.y - 6) + m.f;
+          ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'screen';
+          let gr = ctx.createRadialGradient(x, y, 0, x, y, 170 * g);
+          gr.addColorStop(0, 'rgba(255,200,120,0.7)'); gr.addColorStop(0.45, 'rgba(255,170,80,0.18)'); gr.addColorStop(1, 'rgba(255,170,80,0)');
+          ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 170 * g, 0, Math.PI * 2); ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+          const L = 58 * g, w = 7 * g;
+          ctx.beginPath();
+          for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 - Math.PI / 2, b = a + Math.PI / 4, len = k % 2 ? L * 0.72 : L; ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); ctx.lineTo(x + Math.cos(b) * w, y + Math.sin(b) * w); }
+          ctx.closePath();
+          gr = ctx.createRadialGradient(x, y, 0, x, y, L);
+          gr.addColorStop(0, 'rgba(255,253,240,1)'); gr.addColorStop(0.4, 'rgba(255,226,165,0.95)'); gr.addColorStop(1, 'rgba(255,170,80,0.3)');
+          ctx.fillStyle = gr; ctx.fill();
+          ctx.restore();
+        }
+        function grid(cam) {
+          // world-locked drafting grid (it widens as the camera pushes in)
+          const inv = (x, y) => [(x - cam.e) / cam.s, (y - cam.f) / cam.s];
+          const [x0, y0] = inv(0, 0), [x1, y1] = inv(W, H);
+          const g = f(0, 0.8);
+          for (const [step, a] of [[24, 0.05], [120, 0.11]]) {
+            ctx.beginPath();
+            for (let x = Math.floor(x0 / step) * step; x <= x1; x += step) { ctx.moveTo(x, y0); ctx.lineTo(x, y0 + (y1 - y0) * g); }
+            for (let y = Math.floor(y0 / step) * step; y <= y1; y += step) { ctx.moveTo(x0, y); ctx.lineTo(x0 + (x1 - x0) * g, y); }
+            ctx.lineWidth = 1 / cam.s; ctx.strokeStyle = WHITE; ctx.globalAlpha = a; ctx.stroke(); ctx.globalAlpha = 1;
+          }
+        }
+
+        function draw(t) {
+          const img = $('d-kagit');
+          if (!(img.complete && img.naturalWidth)) return;
+          if (!PAPER) PAPER = ctx.createPattern(img, 'no-repeat');
+          T = t;
+          const cam = S.camera(t);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+          ctx.drawImage(img, 0, 0);
+          ctx.setTransform(cam.s, 0, 0, cam.s, cam.e, cam.f);
+          grid(cam);
+          construction(t);
+          drawSlab(t);
+          for (let k = 0; k < 8; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'row') drawPebble(ps, 500 + k); }
+          for (const it of S.items(t)) {
+            if (it.type === 'stone') drawStone(it.o);
+            else if (it.type === 'tuft') drawTuft(it.o);
+            else if (it.type === 'sheep') drawSheep(it.o);
+            else if (it.type === 'pouch') drawPouch(t);
+            else if (it.type === 'tree') drawTree();
+          }
+          trajectories(t);
+          for (let k = 0; k < 8; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'air') drawPebble(ps, 500 + k); }
+          drawGlint(t);
+        }
+
+        const state = { t: 0 };
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo(state, { t: 0 }, { t: S.DUR, duration: S.DUR, ease: 'none', onUpdate() { draw(state.t); } }, 0);
+        window.__timelines['main'] = tl;
+        window.addEventListener('load', () => draw(state.t));
+      })();
+    </script>
+  </body>
+</html>

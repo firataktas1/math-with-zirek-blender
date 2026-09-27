@@ -1,0 +1,5 @@
+Kaynaklar ve lisanslar · suluboya
+- Bütün çizimler (koyun, ağıl, kese, çakıl, taş levha, ağaç, gökyüzü) assets/sahne.js ve index.html içinde kodla, sabit tohumlu gürültüyle üretildi. Dış görsel, fotoğraf ya da model yok.
+- Dokular (assets/*.jpg, assets/*.png) doku.py ile numpy gürültüsünden üretildi (kendi işimiz).
+- Yazı tipi yok (ekranda yazı yok).
+- GSAP 3.14.2 (assets/vendor/gsap.min.js): GreenSock standart lisansı, ücretsiz; kanalın video1-v5 projesinden kopyalandı.

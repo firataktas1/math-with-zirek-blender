@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Karakalem · akşam taşları</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/sahne.js"></script>
+    <style>
+      body { margin: 0; background: #f3ebdb; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #f3ebdb; }
+      #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      .doku { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="10">
+      <canvas id="cv" width="1920" height="1080"></canvas>
+      <img class="doku" id="d-kagit" src="assets/kagit.jpg" alt="" />
+      <img class="doku" id="d-grafit" src="assets/grafit.png" alt="" />
+      <img class="doku" id="d-t1" src="assets/tarama1.png" alt="" />
+      <img class="doku" id="d-t2" src="assets/tarama2.png" alt="" />
+      <img class="doku" id="d-t3" src="assets/tarama3.png" alt="" />
+    </div>
+    <script>
+      (function () {
+        const S = window.SAHNE;
+        const cv = document.getElementById('cv');
+        const ctx = cv.getContext('2d');
+        const $ = (id) => document.getElementById(id);
+        const PAPER = '#f3ebdb';
+        const POUCH = '#cf6f45', POUCH_D = '#9c4a2c', PEBBLE = '#ee8836', PEBBLE_D = '#b9571c';
+        let P = null;
+        function pats() {
+          if (P) return P;
+          const ok = ['d-kagit', 'd-grafit', 'd-t1', 'd-t2', 'd-t3'].every((id) => $(id).complete && $(id).naturalWidth > 0);
+          if (!ok) return null;
+          P = { kagit: ctx.createPattern($('d-kagit'), 'no-repeat'), graf: ctx.createPattern($('d-grafit'), 'repeat'), t1: ctx.createPattern($('d-t1'), 'repeat'), t2: ctx.createPattern($('d-t2'), 'repeat'), t3: ctx.createPattern($('d-t3'), 'repeat') };
+          return P;
+        }
+        let BOIL = 0, CAM = null;
+        // pattern locked to the screen (paper, graphite and hatching never zoom with the camera)
+        function scrP(pat, ox, oy) {
+          // translate in screen space: inverse(CTM) * T(ox,oy)
+          const m = ctx.getTransform().invertSelf().multiply(new DOMMatrix([1, 0, 0, 1, ox || 0, oy || 0]));
+          pat.setTransform(m);
+          return pat;
+        }
+        const unit = () => { const m = ctx.getTransform(); return Math.hypot(m.a, m.b); };   // screen px per local unit
+        function pencil(pts, closed, w, alpha, seed, dark) {
+          const u = unit();
+          const amp = 1.25 / u;
+          for (let p = 0; p < 2; p++) {
+            let q = S.wobble(pts, amp * (p ? 1.7 : 1), seed * 13 + BOIL * 101 + p * 7, 0.34);
+            if (closed) q = q.concat([q[0], q[1], q[2]].map(([x, y], i) => [x + (i + 1) * 0.6 * amp, y - (i + 1) * 0.4 * amp]));
+            ctx.beginPath(); S.smooth(ctx, q, false);
+            ctx.lineWidth = (w * Math.pow(u, 0.55)) / u * (p ? 0.55 : 1);
+            ctx.globalAlpha = alpha * (p ? 0.4 : 1);
+            ctx.strokeStyle = scrP(P.graf, 0, 0);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
+        }
+        function fillPaper(pts) { ctx.beginPath(); S.smooth(ctx, pts, true); ctx.fillStyle = scrP(P.kagit, 0, 0); ctx.globalAlpha = 1; ctx.fill(); }
+        function fillCol(pts, col, a) { ctx.beginPath(); S.smooth(ctx, pts, true); ctx.fillStyle = col; ctx.globalAlpha = a == null ? 1 : a; ctx.fill(); ctx.globalAlpha = 1; }
+        function hatchIn(clipPts, regionPts, pat, alpha) {
+          ctx.save();
+          ctx.beginPath(); S.smooth(ctx, clipPts, true); ctx.clip();
+          ctx.beginPath(); if (regionPts) S.smooth(ctx, regionPts, true); else S.smooth(ctx, clipPts, true);
+          ctx.fillStyle = scrP(pat, (BOIL % 3) * 2, (BOIL % 2) * 2); ctx.globalAlpha = alpha; ctx.fill();
+          ctx.restore(); ctx.globalAlpha = 1;
+        }
+        function hatchFill(pts, pat, alpha) {
+          ctx.beginPath(); S.smooth(ctx, pts, true);
+          ctx.fillStyle = scrP(pat, (BOIL % 3) * 2, (BOIL % 2) * 2); ctx.globalAlpha = alpha; ctx.fill(); ctx.globalAlpha = 1;
+        }
+
+        // ---------------------------------------------------------------- pieces
+        function drawStone(st) {
+          fillPaper(st.pts);
+          const shade = S.ellipsePts(st.x + st.w * 0.22, st.y + st.h * 0.3, st.w * 0.52, st.h * 0.5, 14, 0);
+          hatchIn(st.pts, shade, st.tone > 0.55 ? P.t2 : P.t1, 0.75);
+          if (st.tone > 0.8) hatchFill(st.pts, P.t1, 0.35);
+          pencil(st.pts, true, 1.5, 0.78, st.seed);
+        }
+        function drawTuft(tf) {
+          for (const b of S.tuftPts(tf)) pencil(b, false, 1.2, 0.55, tf.seed + b[1][0]);
+        }
+        function leg(L, a, seed) {
+          // tapered leg: filled quad in graphite + small dark hoof
+          const [hx, hy] = L.hip, [fx, fy] = L.foot;
+          const dx = fx - hx, dy = fy - hy, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
+          const q = [[hx + nx * 3.4, hy + ny * 3.4], [fx + nx * 2.3, fy - 5 + ny * 2.3], [fx - nx * 2.3, fy - 5 - ny * 2.3], [hx - nx * 3.4, hy - ny * 3.4]];
+          ctx.beginPath(); S.poly(ctx, q, true); ctx.fillStyle = '#5e5650'; ctx.globalAlpha = a * 0.75; ctx.fill(); ctx.globalAlpha = 1;
+          hatchFill(q, P.t3, a);
+          const hoof = S.ellipsePts(fx + 0.8, fy - 2.4, 3.6, 2.8, 10, 0);
+          fillCol(hoof, '#3a3431', a);
+          pencil([[hx + nx * 3.4, hy + ny * 3.4], [fx + nx * 2.3, fy - 4 + ny * 2.3]], false, 1.1, a * 0.9, seed);
+          pencil([[hx - nx * 3.4, hy - ny * 3.4], [fx - nx * 2.3, fy - 4 - ny * 2.3]], false, 1.1, a * 0.9, seed + 1);
+        }
+        function drawSheep(st) {
+          const sp = S.sheepParts(st);
+          ctx.save();
+          ctx.translate(st.x, st.y); ctx.scale(st.sc, st.sc);
+          // far legs
+          for (const L of sp.legs.filter((l) => !l.near)) leg(L, 0.5, st.seed + L.hip[0]);
+          // body
+          fillPaper(sp.body);
+          hatchIn(sp.body, S.ellipsePts(8, -26 + sp.bob, 56, 18, 20, 0), P.t1, 0.7);
+          // curls: a few small arcs on the wool
+          for (let c = 0; c < 7; c++) {
+            const cx = -30 + c * 10 + S.h2(st.seed, c) * 6, cy = -58 + ((c * 37) % 5) * 6 + S.h2(st.seed, c + 20) * 6 + sp.bob;
+            const arc = []; for (let j = 0; j <= 6; j++) { const a = Math.PI * (1.1 + j / 6 * 0.9); arc.push([cx + Math.cos(a) * 5, cy + Math.sin(a) * 4]); }
+            pencil(arc, false, 1.1, 0.45, st.seed + c * 3);
+          }
+          pencil(sp.body, true, 2.0, 0.85, st.seed);
+          fillPaper(sp.tail); pencil(sp.tail, true, 1.6, 0.8, st.seed + 2);
+          // near legs
+          for (const L of sp.legs.filter((l) => l.near)) leg(L, 0.85, st.seed + L.hip[0] + 3);
+          // head
+          fillPaper(sp.earFar); hatchFill(sp.earFar, P.t3, 0.9); pencil(sp.earFar, true, 1.3, 0.7, st.seed + 8);
+          fillCol(sp.head, '#6b625c', 0.55); hatchFill(sp.head, P.t3, 0.95);
+          pencil(sp.head, true, 1.8, 0.9, st.seed + 4);
+          fillPaper(sp.tuft); pencil(sp.tuft, true, 1.3, 0.75, st.seed + 6);
+          fillCol(sp.ear, '#6b625c', 0.5); hatchFill(sp.ear, P.t3, 0.9); pencil(sp.ear, true, 1.3, 0.85, st.seed + 9);
+          ctx.beginPath(); ctx.arc(sp.eye[0], sp.eye[1], 2.2, 0, Math.PI * 2); ctx.fillStyle = PAPER; ctx.fill();
+          ctx.restore();
+        }
+        function drawPebble(ps, seed, onRow) {
+          const pts = S.pebblePts(ps, seed);
+          fillCol(pts, PEBBLE, 0.95);
+          const sh = S.ellipsePts(ps.x + 4 * ps.sc, ps.y + 1 * ps.sc, 12 * ps.sc, 7 * ps.sc, 12, 0);
+          ctx.save(); ctx.beginPath(); S.smooth(ctx, pts, true); ctx.clip(); fillCol(sh, PEBBLE_D, 0.45); ctx.restore();
+          hatchIn(pts, sh, P.t1, 0.35);
+          pencil(pts, true, 1.5, 0.8, seed);
+        }
+        function drawPouch(t) {
+          const pp = S.pouchParts(t);
+          pencil(pp.rope, false, 2.2, 0.85, 71);
+          // peg
+          fillPaper(pp.peg); hatchFill(pp.peg, P.t2, 0.8); pencil(pp.peg, true, 1.6, 0.85, 72);
+          // inside of the mouth
+          fillCol(pp.rim, POUCH_D, 0.9); hatchFill(pp.rim, P.t3, 0.6);
+          // pebbles in the pouch, back ones first
+          const inP = []; for (let k = 0; k < 9; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'pouch') inP.push([k, ps]); }
+          inP.sort((a, b) => b[1].y - a[1].y);
+          for (const [k, ps] of inP) drawPebble(ps, 500 + k);
+          // body
+          fillCol(pp.body, POUCH, 0.95);
+          ctx.save(); ctx.beginPath(); S.smooth(ctx, pp.body, true); ctx.clip();
+          fillCol(pp.shade, POUCH_D, 0.45); ctx.restore();
+          hatchIn(pp.body, pp.shade, P.t2, 0.55);
+          pp.folds.forEach((f, i) => pencil(f, false, 1.2, 0.5, 77 + i));
+          fillCol(pp.tie, POUCH_D, 0.7); hatchFill(pp.tie, P.t2, 0.6);
+          pencil(pp.tie, true, 1.4, 0.7, 74);
+          pencil(pp.body, true, 2.2, 0.9, 75);
+          // rim back edge
+          const back = pp.rim.filter((p, i) => i > pp.rim.length / 2);
+          pencil(back, false, 1.8, 0.85, 76);
+        }
+        function drawTree() {
+          const T = S.TREE_SHAPES;
+          fillPaper(T.trunk); hatchFill(T.trunk, P.t2, 0.8); pencil(T.trunk, true, 1.4, 0.7, 81);
+          T.crowns.forEach((c, i) => { fillPaper(c); hatchIn(c, S.ellipsePts(c[0][0] - 20, c[0][1] + 20, 50, 34, 14, 0), P.t1, 0.7); pencil(c, true, 1.4, 0.7, 82 + i); });
+        }
+        function drawSlab(t) {
+          // cast shadow to the right (evening sun on the left)
+          const shadow = S.ellipsePts(S.SLAB.x + 60, S.SLAB.y + 20, S.SLAB.rx * 1.02, S.SLAB.ry * 0.9, 30, 0.02);
+          hatchFill(shadow, P.t1, 0.5);
+          fillPaper(S.SLAB_SIDE); hatchFill(S.SLAB_SIDE, P.t2, 0.85); pencil(S.SLAB_SIDE, true, 1.6, 0.8, 91);
+          fillPaper(S.SLAB_TOP);
+          hatchIn(S.SLAB_TOP, S.ellipsePts(S.SLAB.x + 150, S.SLAB.y + 20, 170, 50, 20, 0), P.t1, 0.5);
+          pencil(S.SLAB_TOP, true, 1.7, 0.85, 92);
+          // cracks
+          pencil([[S.SLAB.x - 150, S.SLAB.y - 20], [S.SLAB.x - 120, S.SLAB.y - 12], [S.SLAB.x - 96, S.SLAB.y - 16]], false, 1.0, 0.45, 93);
+          pencil([[S.SLAB.x + 120, S.SLAB.y + 22], [S.SLAB.x + 150, S.SLAB.y + 30], [S.SLAB.x + 170, S.SLAB.y + 26]], false, 1.0, 0.45, 94);
+        }
+        function groundShadows(t) {
+          // wall shadows: soft hatch to the right of each bottom stone
+          for (const st of S.STONES) {
+            if (st.row !== 0 || st.pillar != null) continue;
+            hatchFill(S.ellipsePts(st.x + st.w * 0.7, st.base + 3, st.w * 0.85, st.h * 0.42, 12, 0), P.t1, 0.35);
+          }
+          for (const pi of [0, 1]) { const Q = pi ? S.P2 : S.P1; hatchFill(S.ellipsePts(Q.x + 70, Q.y + 4, 80, 12, 16, 0.05), P.t1, 0.5); }
+          for (let i = 0; i < S.N; i++) {
+            const st = S.sheepState(i, t); if (!st.visible) continue;
+            hatchFill(S.ellipsePts(st.x + 28 * st.sc, st.y + 2, 60 * st.sc, 8.5 * st.sc, 18, 0), P.t2, 0.55);
+          }
+        }
+        function drawGlint(t) {
+          const g = S.glint(t); if (g <= 0.001) return;
+          const ps = S.pebbleState(8, t);
+          const m = ctx.getTransform();
+          const x = m.a * ps.x + m.e, y = m.d * (ps.y - 6) + m.f;
+          ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+          const R = 150 * g;
+          let gr = ctx.createRadialGradient(x, y, 0, x, y, R);
+          gr.addColorStop(0, 'rgba(255,214,140,0.7)'); gr.addColorStop(0.4, 'rgba(250,176,90,0.22)'); gr.addColorStop(1, 'rgba(250,176,90,0)');
+          ctx.fillStyle = gr; ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
+          const L = 58 * g, w = 7 * g;
+          ctx.beginPath();
+          for (let k = 0; k < 4; k++) {
+            const a = k * Math.PI / 2 - Math.PI / 2, b = a + Math.PI / 4;
+            const len = k % 2 ? L * 0.72 : L;
+            ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+            ctx.lineTo(x + Math.cos(b) * w, y + Math.sin(b) * w);
+          }
+          ctx.closePath();
+          gr = ctx.createRadialGradient(x, y, 0, x, y, L);
+          gr.addColorStop(0, 'rgba(255,252,236,1)'); gr.addColorStop(0.35, 'rgba(255,226,160,0.95)'); gr.addColorStop(1, 'rgba(245,160,70,0.2)');
+          ctx.fillStyle = gr; ctx.fill();
+          ctx.restore();
+        }
+
+        function draw(t) {
+          if (!pats()) return;
+          BOIL = Math.floor(t * 8 + 1e-6);
+          CAM = S.camera(t);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+          ctx.drawImage($('d-kagit'), 0, 0);
+          ctx.setTransform(CAM.s, 0, 0, CAM.s, CAM.e, CAM.f);
+          // sky: low sun and a couple of cloud strokes
+          pencil(S.ellipsePts(560, 150, 34, 34, 30, 0), true, 1.2, 0.45, 11);
+          pencil([[980, 120], [1120, 112], [1250, 118]], false, 1.1, 0.35, 12);
+          pencil([[1040, 138], [1190, 132], [1330, 140], [1400, 136]], false, 1.0, 0.3, 13);
+          pencil([[180, 96], [300, 90], [390, 96]], false, 1.0, 0.3, 14);
+          // hills: hatched band between the far and near hill lines
+          const band = S.HILLS[0].concat(S.HILLS[1].slice().reverse());
+          ctx.beginPath(); S.poly(ctx, band, true); ctx.fillStyle = scrP(P.t1, (BOIL % 3) * 2, 0); ctx.globalAlpha = 0.4; ctx.fill(); ctx.globalAlpha = 1;
+          pencil(S.HILLS[0], false, 1.3, 0.55, 15);
+          pencil(S.HILLS[1], false, 1.5, 0.7, 16);
+          groundShadows(t);
+          drawSlab(t);
+          for (let k = 0; k < 8; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'row') drawPebble(ps, 500 + k, true); }
+          for (const it of S.items(t)) {
+            if (it.type === 'stone') drawStone(it.o);
+            else if (it.type === 'tuft') drawTuft(it.o);
+            else if (it.type === 'sheep') drawSheep(it.o);
+            else if (it.type === 'pouch') drawPouch(t);
+            else if (it.type === 'tree') drawTree();
+          }
+          for (let k = 0; k < 8; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'air') drawPebble(ps, 500 + k); }
+          drawGlint(t);
+          // paper tooth over everything + soft vignette
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.35;
+          ctx.drawImage($('d-kagit'), 0, 0);
+          ctx.globalAlpha = 1;
+          const vg = ctx.createRadialGradient(960, 540, 500, 960, 540, 1150);
+          vg.addColorStop(0, 'rgba(255,255,255,1)'); vg.addColorStop(1, 'rgba(214,200,178,1)');
+          ctx.fillStyle = vg; ctx.fillRect(0, 0, 1920, 1080);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+
+        const state = { t: 0 };
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo(state, { t: 0 }, { t: S.DUR, duration: S.DUR, ease: 'none', onUpdate() { draw(state.t); } }, 0);
+        window.__timelines['main'] = tl;
+        window.addEventListener('load', () => draw(state.t));
+      })();
+    </script>
+  </body>
+</html>

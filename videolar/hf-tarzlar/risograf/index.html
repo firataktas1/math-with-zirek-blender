@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Risograf · akşam taşları</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/sahne.js"></script>
+    <style>
+      body { margin: 0; background: #f4eee1; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #f4eee1; }
+      #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      .doku { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="10">
+      <canvas id="cv" width="1920" height="1080"></canvas>
+      <img class="doku" id="d-kagit" src="assets/kagit.jpg" alt="" />
+      <img class="doku" id="d-gren" src="assets/gren.png" alt="" />
+    </div>
+    <script>
+      (function () {
+        const S = window.SAHNE;
+        const W = 1920, H = 1080;
+        const cv = document.getElementById('cv');
+        const ctx = cv.getContext('2d');
+        const $ = (id) => document.getElementById(id);
+        // three spot inks
+        const INKS = {
+          r: { col: '#ee4f4a', ang: 15, off: [2.6, -1.6] },
+          t: { col: '#16858c', ang: 45, off: [-1.8, 1.4] },
+          m: { col: '#eeb030', ang: 75, off: [0, 0] },
+        };
+        const KEYS = ['m', 't', 'r'];
+        const CELL = 7.2;
+        const COV = [0, 0.16, 0.36, 0.6, 1];
+        let READY = false;
+        function setup() {
+          if (READY) return true;
+          if (!($('d-kagit').complete && $('d-gren').complete && $('d-gren').naturalWidth)) return false;
+          for (const k of KEYS) {
+            const c = document.createElement('canvas'); c.width = W; c.height = H;
+            INKS[k].cv = c; INKS[k].ctx = c.getContext('2d');
+            INKS[k].pats = COV.map((cov, lv) => {
+              if (lv === 0 || lv === 4) return null;
+              const n = 64, tile = document.createElement('canvas');
+              // a tile holding a whole number of cells keeps the dot grid regular
+              const cells = 8; tile.width = tile.height = Math.round(CELL * cells);
+              const tc = tile.getContext('2d'); tc.fillStyle = '#000';
+              const r = CELL * Math.sqrt(cov / Math.PI) * (lv === 3 ? 1.02 : 1);
+              const step = tile.width / cells;
+              for (let i = 0; i < cells; i++) for (let j = 0; j < cells; j++) { tc.beginPath(); tc.arc((i + 0.5) * step, (j + 0.5) * step, r, 0, Math.PI * 2); tc.fill(); }
+              return INKS[k].ctx.createPattern(tile, 'repeat');
+            });
+          }
+          for (const k of KEYS) INKS[k].grain = INKS[k].ctx.createPattern($('d-gren'), 'repeat');
+          READY = true; return true;
+        }
+        let CAMM = null, BOIL = 0;
+        function forEachInk(fn) { for (const k of KEYS) fn(k, INKS[k], INKS[k].ctx); }
+        function style(k, c, lv) {
+          if (lv >= 4) return '#000';
+          const pat = INKS[k].pats[lv];
+          const R = new DOMMatrix().rotate(INKS[k].ang);
+          pat.setTransform(c.getTransform().invertSelf().multiply(R));
+          return pat;
+        }
+        function pathOn(c, pts, closed, smooth) { c.beginPath(); if (smooth === false) S.poly(c, pts, closed); else S.smooth(c, pts, closed); }
+        // paint a shape: knock out every ink under it, then lay the given tints (levels 0..4)
+        function paint(pts, lv, opts) {
+          opts = opts || {};
+          forEachInk((k, ink, c) => {
+            const L = lv[k] || 0;
+            pathOn(c, pts, true, opts.smooth);
+            if (!opts.over) { c.globalCompositeOperation = 'destination-out'; c.fillStyle = '#000'; c.fill(); }
+            c.globalCompositeOperation = 'source-over';
+            if (L > 0) { c.fillStyle = style(k, c, L); c.fill(); }
+          });
+        }
+        function over(pts, lv, opts) { paint(pts, lv, Object.assign({ over: true }, opts || {})); }
+        function clipOver(clipPts, pts, lv) {
+          forEachInk((k, ink, c) => {
+            const L = lv[k] || 0; if (!L) return;
+            c.save(); pathOn(c, clipPts, true); c.clip();
+            pathOn(c, pts, true); c.fillStyle = style(k, c, L); c.fill(); c.restore();
+          });
+        }
+        function line(pts, closed, w, lv, smooth) {
+          forEachInk((k, ink, c) => {
+            const L = lv[k] || 0; if (!L) return;
+            pathOn(c, pts, closed, smooth);
+            const u = Math.hypot(c.getTransform().a, c.getTransform().b);
+            c.lineWidth = w / Math.pow(u, 0.5); c.lineCap = 'round'; c.lineJoin = 'round';
+            c.strokeStyle = style(k, c, L); c.stroke();
+          });
+        }
+        function setT(a, b, cc, d, e, f) { forEachInk((k, ink, c) => c.setTransform(a, b, cc, d, e, f)); }
+        function save() { forEachInk((k, ink, c) => c.save()); }
+        function restore() { forEachInk((k, ink, c) => c.restore()); }
+        function translate(x, y) { forEachInk((k, ink, c) => c.translate(x, y)); }
+        function scale(a) { forEachInk((k, ink, c) => c.scale(a, a)); }
+
+        const GROUND = { t: 2, m: 3 }, SHADOW = { t: 4, m: 3 }, DARK = { r: 4, t: 4 };
+        function drawStone(st) {
+          paint(st.pts, { t: 1 });
+          clipOver(st.pts, S.ellipsePts(st.x + st.w * 0.22, st.y + st.h * 0.32, st.w * 0.55, st.h * 0.5, 14, 0), { t: st.tone > 0.6 ? 3 : 2 });
+          line(st.pts, true, 2.0, { t: 4 });
+        }
+        function drawTuft(tf) { for (const b of S.tuftPts(tf)) line(b, false, 2.2, { t: 4, m: 4 }, false); }
+        function drawSheep(st) {
+          const sp = S.sheepParts(st);
+          save(); translate(st.x, st.y); scale(st.sc);
+          const legQuad = (L) => { const [hx, hy] = L.hip, [fx, fy] = L.foot, dx = fx - hx, dy = fy - hy, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len; return [[hx + nx * 3.6, hy + ny * 3.6], [fx + nx * 2.6, fy + ny * 2.6], [fx - nx * 2.6, fy - ny * 2.6], [hx - nx * 3.6, hy - ny * 3.6]]; };
+          for (const L of sp.legs.filter((l) => !l.near)) paint(legQuad(L), { r: 3, t: 3 }, { smooth: false });
+          paint(sp.body, {});
+          clipOver(sp.body, S.ellipsePts(8, -24 + sp.bob, 58, 19, 20, 0), { t: 1 });
+          for (let c = 0; c < 6; c++) {
+            const cx = -28 + c * 10 + S.h2(st.seed, c) * 6, cy = -58 + ((c * 37) % 5) * 6 + S.h2(st.seed, c + 20) * 6 + sp.bob;
+            const arc = []; for (let j = 0; j <= 6; j++) { const a = Math.PI * (1.1 + j / 6 * 0.9); arc.push([cx + Math.cos(a) * 5, cy + Math.sin(a) * 4]); }
+            line(arc, false, 1.4, { t: 3 });
+          }
+          line(sp.body, true, 2.4, { t: 4 });
+          paint(sp.tail, {}); line(sp.tail, true, 2, { t: 4 });
+          for (const L of sp.legs.filter((l) => l.near)) paint(legQuad(L), DARK, { smooth: false });
+          paint(sp.earFar, { r: 3, t: 4 });
+          paint(sp.head, DARK);
+          paint(sp.tuft, {}); line(sp.tuft, true, 1.6, { t: 4 });
+          paint(sp.ear, DARK);
+          paint(S.ellipsePts(sp.eye[0], sp.eye[1], 2.4, 2.4, 10, 0), {});
+          restore();
+        }
+        function drawPebble(ps, seed) {
+          const pts = S.pebblePts(ps, seed);
+          paint(pts, { m: 4, r: 1 });
+          clipOver(pts, S.ellipsePts(ps.x + 5 * ps.sc, ps.y + 2 * ps.sc, 14 * ps.sc, 8 * ps.sc, 12, 0), { r: 3 });
+          line(pts, true, 1.8, { t: 4 });
+        }
+        function drawPouch(t) {
+          const pp = S.pouchParts(t);
+          line(pp.rope, false, 3.2, { m: 4, r: 2 });
+          paint(pp.peg, { m: 3, r: 3 }, { smooth: false }); line(pp.peg, true, 1.6, { r: 4, t: 3 }, false);
+          paint(pp.rim, { r: 4, t: 3 });
+          const inP = []; for (let k = 0; k < 9; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'pouch') inP.push([k, ps]); }
+          inP.sort((a, b) => b[1].y - a[1].y);
+          for (const [k, ps] of inP) drawPebble(ps, 500 + k);
+          paint(pp.body, { r: 4 });
+          clipOver(pp.body, pp.shade, { t: 2 });
+          pp.folds.forEach((f) => line(f, false, 1.6, { r: 4, t: 2 }));
+          paint(pp.tie, { m: 4, r: 2 });
+          line(pp.body, true, 2.0, { r: 4, t: 3 });
+          const back = pp.rim.filter((p, i) => i > pp.rim.length / 2);
+          line(back, false, 2.0, { r: 4, t: 3 });
+        }
+        function drawTree() {
+          const T = S.TREE_SHAPES;
+          paint(T.trunk, { r: 3, t: 3 });
+          T.crowns.forEach((c) => { paint(c, { t: 3, m: 3 }); clipOver(c, S.ellipsePts(c[0][0] - 18, c[0][1] + 22, 52, 34, 14, 0), { t: 4 }); });
+        }
+        function drawSlab() {
+          over(S.ellipsePts(S.SLAB.x + 60, S.SLAB.y + 20, S.SLAB.rx * 1.02, S.SLAB.ry * 0.9, 30, 0.02), SHADOW);
+          paint(S.SLAB_SIDE, { t: 3, m: 1 }); line(S.SLAB_SIDE, true, 2, { t: 4 });
+          paint(S.SLAB_TOP, { t: 1, m: 1 });
+          clipOver(S.SLAB_TOP, S.ellipsePts(S.SLAB.x + 160, S.SLAB.y + 24, 170, 50, 20, 0), { t: 2 });
+          line(S.SLAB_TOP, true, 2.2, { t: 4 });
+        }
+        function groundShadows(t) {
+          for (const st of S.STONES) {
+            if (st.row !== 0 || st.pillar != null) continue;
+            over(S.ellipsePts(st.x + st.w * 0.7, st.base + 3, st.w * 0.85, st.h * 0.42, 12, 0), SHADOW);
+          }
+          for (const pi of [0, 1]) { const Q = pi ? S.P2 : S.P1; over(S.ellipsePts(Q.x + 70, Q.y + 4, 80, 12, 16, 0.05), SHADOW); }
+          for (let i = 0; i < S.N; i++) {
+            const st = S.sheepState(i, t); if (!st.visible) continue;
+            over(S.ellipsePts(st.x + 28 * st.sc, st.y + 2, 60 * st.sc, 8.5 * st.sc, 18, 0), SHADOW);
+          }
+        }
+        // light in print = less ink: the halo erases ink in halftone steps (drawn behind the pouch)
+        function knock(pts, lv) {
+          forEachInk((k, ink, c) => {
+            pathOn(c, pts, true, false);
+            c.globalCompositeOperation = 'destination-out';
+            c.fillStyle = lv >= 4 ? '#000' : style(k, c, lv); c.fill();
+            c.globalCompositeOperation = 'source-over';
+          });
+        }
+        function glintPos(t) { const ps = S.pebbleState(8, t); return [ps.x, ps.y - 6]; }
+        function drawHalo(t) {
+          const g = S.glint(t); if (g <= 0.001) return;
+          const [x, y] = glintPos(t), sc = 1 / S.camera(t).s;
+          const rings = [[190, 1], [140, 2], [95, 3], [60, 4]];
+          for (const [r, lv] of rings) knock(S.ellipsePts(x, y, r * g * sc, r * g * sc, 64, 0), lv);
+          over(S.ellipsePts(x, y, 120 * g * sc, 120 * g * sc, 64, 0), { m: 1 });
+        }
+        function drawGlint(t) {
+          const g = S.glint(t); if (g <= 0.001) return;
+          const [x, y] = glintPos(t), sc = 1 / S.camera(t).s;
+          const L = 56 * g * sc, w = 7 * g * sc, star = [], star2 = [];
+          for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 - Math.PI / 2, b = a + Math.PI / 4, len = k % 2 ? L * 0.72 : L; star.push([x + Math.cos(a) * len, y + Math.sin(a) * len]); star.push([x + Math.cos(b) * w, y + Math.sin(b) * w]); star2.push([x + Math.cos(a) * len * 1.25, y + Math.sin(a) * len * 1.25]); star2.push([x + Math.cos(b) * w * 1.9, y + Math.sin(b) * w * 1.9]); }
+          paint(star2, { m: 4 }, { smooth: false });
+          paint(star, {}, { smooth: false });
+        }
+
+        function draw(t) {
+          if (!setup()) return;
+          BOIL = Math.floor(t * 12 + 1e-6);
+          const cam = S.camera(t);
+          forEachInk((k, ink, c) => { c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-over'; c.clearRect(0, 0, W, H); });
+          setT(cam.s, 0, 0, cam.s, cam.e, cam.f);
+          // sky bands, sun, hills, ground
+          paint([[-3000, -2000], [5000, -2000], [5000, 3000], [-3000, 3000]], { m: 1 }, { smooth: false });
+          over([[-3000, -2000], [5000, -2000], [5000, 70], [-3000, 70]], { t: 1 }, { smooth: false });
+          over([[-3000, 128], [5000, 128], [5000, 400], [-3000, 400]], { r: 1 }, { smooth: false });
+          paint(S.ellipsePts(560, 150, 42, 42, 40, 0), { m: 4, r: 2 });
+          const hillBand = S.HILLS[0].concat([[4000, 214], [4000, 3000], [-3000, 3000], [-3000, 214]]);
+          paint(hillBand, { t: 2, r: 1, m: 1 }, { smooth: false });
+          const ground = S.HILLS[1].concat([[4000, 240], [4000, 3000], [-3000, 3000], [-3000, 240]]);
+          paint(ground, GROUND, { smooth: false });
+          groundShadows(t);
+          drawSlab();
+          for (let k = 0; k < 8; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'row') drawPebble(ps, 500 + k); }
+          drawHalo(t);
+          for (const it of S.items(t)) {
+            if (it.type === 'stone') drawStone(it.o);
+            else if (it.type === 'tuft') drawTuft(it.o);
+            else if (it.type === 'sheep') drawSheep(it.o);
+            else if (it.type === 'pouch') drawPouch(t);
+            else if (it.type === 'tree') drawTree();
+          }
+          for (let k = 0; k < 8; k++) { const ps = S.pebbleState(k, t); if (ps.where === 'air') drawPebble(ps, 500 + k); }
+          drawGlint(t);
+          // ink texture: speckled voids that change with every printed frame, then colour each drum
+          const gx = Math.floor(S.hash(BOIL) * 900), gy = Math.floor(S.hash(BOIL + 50) * 900);
+          forEachInk((k, ink, c) => {
+            c.setTransform(1, 0, 0, 1, 0, 0);
+            c.globalCompositeOperation = 'destination-out';
+            ink.grain.setTransform(new DOMMatrix([1, 0, 0, 1, gx + KEYS.indexOf(k) * 311, gy + KEYS.indexOf(k) * 173]));
+            c.fillStyle = ink.grain; c.globalAlpha = 0.85; c.fillRect(0, 0, W, H); c.globalAlpha = 1;
+            c.globalCompositeOperation = 'source-in';
+            c.fillStyle = ink.col; c.fillRect(0, 0, W, H);
+            c.globalCompositeOperation = 'source-over';
+          });
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+          ctx.drawImage($('d-kagit'), 0, 0);
+          ctx.globalCompositeOperation = 'multiply';
+          for (const k of KEYS) {
+            const j = 0.7, o = INKS[k].off;
+            const jx = (S.hash(BOIL * 3 + KEYS.indexOf(k)) - 0.5) * j, jy = (S.hash(BOIL * 5 + KEYS.indexOf(k) + 9) - 0.5) * j;
+            ctx.globalAlpha = 0.93;
+            ctx.drawImage(INKS[k].cv, o[0] + jx, o[1] + jy);
+          }
+          ctx.globalAlpha = 0.25; ctx.drawImage($('d-kagit'), 0, 0);
+          ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+        }
+
+        const state = { t: 0 };
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo(state, { t: 0 }, { t: S.DUR, duration: S.DUR, ease: 'none', onUpdate() { draw(state.t); } }, 0);
+        window.__timelines['main'] = tl;
+        window.addEventListener('load', () => draw(state.t));
+      })();
+    </script>
+  </body>
+</html>
