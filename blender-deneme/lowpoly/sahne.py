@@ -183,7 +183,7 @@ def emissive(name, color, strength):
 
 
 # pastel, sıcak akşam paleti (kanal: sıcak ışık, krem; soğuk/karanlık renk alınmaz)
-M_GROUND = mat('zemin', (0.30, 0.52, 0.26), (0.50, 0.56, 0.26), axis='Y', lo=-4.0, hi=22.0, coord='Object', facet=0.035)
+M_GROUND = mat('zemin', (0.36, 0.60, 0.30), (0.58, 0.62, 0.30), axis='Y', lo=-4.0, hi=22.0, coord='Object', facet=0.035)
 M_GRASS = mat('ot', (0.16, 0.38, 0.20), facet=0.06)
 M_GRASS2 = mat('ot2', (0.36, 0.52, 0.18), facet=0.06)
 M_FLOWER = mat('cicek', (0.98, 0.80, 0.55), facet=0.0)
@@ -299,7 +299,7 @@ def build_backdrop():
         bm_obj('tepe_%d' % k, bm, [m])
     # ağaçlar: ağılın arkasında ve solunda (sağ alt boş kalır)
     r = rng(91)
-    spots = [(-7.5, 13.0, 1.25), (-5.2, 15.5, 1.0), (6.8, 14.8, 1.1), (9.6, 12.0, 0.9), (-10.5, 9.0, 1.15), (3.2, 16.8, 0.85)]
+    spots = [(-6.6, 11.6, 1.1), (-4.8, 12.6, 0.9), (5.6, 12.0, 1.0), (7.8, 10.4, 0.85), (-8.6, 8.4, 1.1), (2.0, 12.9, 0.8)]
     for k, (x, y, s) in enumerate(spots):
         z = hfun(x, y)
         bm = bmesh.new()
@@ -643,8 +643,10 @@ _kn = POUCH_OFF + _front * 0.145 + Vector((0, 0, NECK_Z + 0.006))
 prism(cord_bm, _kn, _kn + _front * 0.03 + _side * 0.07 + Vector((0, 0, -0.08)), 0.014, 0.012, seg=5)
 prism(cord_bm, _kn, _kn + _front * 0.03 - _side * 0.05 + Vector((0, 0, -0.1)), 0.014, 0.012, seg=5)
 gem(cord_bm, _kn + _front * 0.01, (0.026, 0.026, 0.024), subdiv=1, amp=0.0, seed=8)
-_bk = POUCH_OFF + _back * 0.14 + Vector((0, 0, NECK_Z + 0.006))
-prism(cord_bm, _bk, Vector((0, 0, 0.0)), 0.009, 0.009, seg=5)
+# askı: ağzın iki yanından çiviye V biçiminde iki ip (tek taşın önünden geçmez)
+for sgn in (1, -1):
+    _sk = POUCH_OFF + (_side * sgn * 0.93 + _back * 0.37).normalized() * 0.142 + Vector((0, 0, NECK_Z + 0.006))
+    prism(cord_bm, _sk, Vector((0, 0, 0.0)), 0.009, 0.009, seg=5)
 cord = bm_obj('ip', cord_bm, [M_CORD])
 cord.parent = pouch
 
@@ -684,13 +686,13 @@ def pebble_mesh(name, seed):
 
 # kesedeki yığın (kese yerel ekseni): 0 = en son kalan, ağzın ortasında en üstte
 # yığın ağızdan taşar (geniş planda da taşlar görünür); son kalan ortada, ağız hizasında
-heap_local = [POUCH_OFF + Vector((0.0, 0.0, LIP_Z - 0.02))]
+heap_local = [POUCH_OFF + Vector((0.0, 0.0, LIP_Z + 0.025))]
 for k in range(5):
     th = 2 * math.pi * k / 5 + 0.3
-    heap_local.append(POUCH_OFF + Vector((0.1 * math.cos(th), 0.09 * math.sin(th), LIP_Z - 0.005)))
+    heap_local.append(POUCH_OFF + Vector((0.1 * math.cos(th), 0.09 * math.sin(th), LIP_Z + 0.01)))
 for k in range(3):
     th = 2 * math.pi * k / 3 + 0.9
-    heap_local.append(POUCH_OFF + Vector((0.05 * math.cos(th), 0.05 * math.sin(th), LIP_Z + 0.06)))
+    heap_local.append(POUCH_OFF + Vector((0.05 * math.cos(th), 0.05 * math.sin(th), LIP_Z + 0.085)))
 take_order = [8, 7, 6, 5, 4, 3, 2, 1]
 pebbles = [pebble_mesh('cakil_%d' % k, 3000 + k) for k in range(9)]
 LAST = pebbles[0]
