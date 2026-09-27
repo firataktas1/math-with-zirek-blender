@@ -1,0 +1,3 @@
+tebesir · dış kaynak yok
+- Tahta, tebeşir tanecik maskesi ve toz dokusu dokular.py ile üretildi (sabit tohum).
+- Bütün çizimler index.html içinde yordamsal SVG; kütüphane: GSAP 3.14.2 (kanalın mevcut projelerindekiyle aynı dosya).

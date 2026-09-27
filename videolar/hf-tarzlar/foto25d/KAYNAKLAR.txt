@@ -1,0 +1,18 @@
+foto25d · dış kaynaklar (hepsi Poly Haven, lisans CC0 1.0: ticari kullanım serbest, künye zorunlu değil; yine de yazıldı)
+İndirme tarihi: 2026-09-27. Ham dosyalar ham/ klasöründe (depoya konmadı), assets/ altındakiler hazirla.py ile üretildi.
+
+Manzara (fotoğraf, arka plan):
+- Drackenstein Quarry (HDRI, tonemapped JPG 8K) · Andreas Mischok
+  https://polyhaven.com/a/drackenstein_quarry
+  https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/drackenstein_quarry.jpg
+  -> assets/manzara.jpg, assets/manzara-flu.jpg (360° görüntüden 82° düz perspektif kesit, akşam renk ayarı, 3 rüzgâr türbini silindi)
+
+Dokular (2k diffuse JPG):
+- Stacked Stone Wall · Dimitrios Savva · https://polyhaven.com/a/stacked_stone_wall -> assets/duvar.jpg (ağıl duvarı, direkler)
+- Hessian 230 · colormass, Rico Cilliers · https://polyhaven.com/a/hessian_230 -> assets/kese.jpg (kese)
+- Curly Teddy Natural · colormass, Rico Cilliers · https://polyhaven.com/a/curly_teddy_natural -> assets/yun.jpg (koyun yünü)
+- Rock Boulder Dry · Dimitrios Savva, Rico Cilliers · https://polyhaven.com/a/rock_boulder_dry -> assets/tas.jpg (düz taş)
+- Rock Surface · Amal Kumar · https://polyhaven.com/a/rock_surface -> assets/cakil.jpg (çakıllar)
+
+Kendi üretimimiz: koyun, kese, taş biçimleri (SVG, index.html), gren dokusu (assets/gren.png), bütün hareket.
+Kütüphane: GSAP 3.14.2 (kanalın mevcut projelerindekiyle aynı dosya).

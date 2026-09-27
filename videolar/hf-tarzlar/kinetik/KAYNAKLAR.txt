@@ -1,0 +1,5 @@
+kinetik · dış kaynaklar
+- Yazı tipi: Baloo 2 (değişken, 400-800) · The Baloo 2 Project Authors · SIL Open Font License 1.1
+  https://github.com/google/fonts/tree/main/ofl/baloo2 -> assets/Baloo2.ttf, lisans metni assets/Baloo2-OFL.txt
+- Kütüphane: GSAP 3.14.2 (kanalın mevcut projelerindekiyle aynı dosya).
+Başka her şey (şekiller, yerleşim, hareket) bu projede elle yazıldı. Ekranda rakam yok; yalnız Türkçe kelimeler: akşam, bulut, çimen, ot, taş, kese, koyun.
