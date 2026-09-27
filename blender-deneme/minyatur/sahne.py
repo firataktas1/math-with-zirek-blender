@@ -369,10 +369,10 @@ M_HILLROCK = paint('kaya', (0.52, 0.40, 0.60), mottle=0.06, pattern='tas', pcol=
                    grad=((0.93, 0.78, 0.80), 'Z', 0.3, 1.9), soft=0.3)
 M_HILLROCK2 = paint('kaya2', (0.74, 0.48, 0.34), mottle=0.06, pattern='tas', pcol=(0.50, 0.30, 0.20), pscale=2.3, pwidth=0.03,
                     grad=((0.97, 0.84, 0.64), 'Z', 0.3, 1.9), soft=0.3)
-M_WALL = paint('duvar', (0.88, 0.78, 0.64), pattern='tas', pcol=(0.46, 0.31, 0.20), pscale=2.0, pwidth=0.028, soft=0.25,
+M_WALL = paint('duvar', (0.88, 0.78, 0.64), pattern='tas', pcol=(0.60, 0.46, 0.34), pscale=2.0, pwidth=0.026, soft=0.25,
                shade=(0.80, 0.76, 0.84), uv=True)
 M_CAP = paint('duvar_kapak', (0.93, 0.86, 0.74), pattern='tas', pcol=(0.42, 0.28, 0.18), pscale=2.2, pwidth=0.05, soft=0.25)
-WOOL_COLS = [(0.97, 0.94, 0.86), (0.96, 0.92, 0.84), (0.84, 0.68, 0.48), (0.97, 0.93, 0.85), (0.40, 0.31, 0.28),
+WOOL_COLS = [(0.97, 0.94, 0.86), (0.96, 0.92, 0.84), (0.84, 0.68, 0.48), (0.97, 0.93, 0.85), (0.55, 0.45, 0.40),
              (0.95, 0.91, 0.82), (0.90, 0.88, 0.84), (0.86, 0.72, 0.52)]
 M_WOOLS = [paint('yun_%d' % k, c, pattern='yun', pcol=((0.62, 0.52, 0.42) if sum(c) > 1.2 else (0.70, 0.60, 0.52)),
                  pscale=11.0, pwidth=0.05, soft=0.3, shade=(0.84, 0.82, 0.90)) for k, c in enumerate(WOOL_COLS)]
@@ -387,7 +387,7 @@ M_GOLD = paint('altin', (0.84, 0.65, 0.28), gold=True, soft=0.35, shade=(0.82, 0
 M_CORD = paint('ip', (0.80, 0.26, 0.14), soft=0.3)
 M_WOOD = paint('civi', (0.52, 0.34, 0.20), soft=0.3)
 M_PEBBLE = paint('cakil', (0.86, 0.38, 0.16), mottle=0.05, soft=0.3, shade=(0.80, 0.76, 0.86))
-M_SLAB = paint('yassi_tas', (0.95, 0.91, 0.80), mottle=0.04, soft=0.4)
+M_SLAB = paint('yassi_tas', (0.88, 0.80, 0.62), mottle=0.05, soft=0.4)
 M_CYPRESS = paint('servi', (0.17, 0.38, 0.28), pattern='tas', pcol=(0.10, 0.25, 0.18), pscale=9.0, pwidth=0.06, soft=0.3)
 M_TREE = paint('agac', (0.30, 0.52, 0.34), pattern='benek', pcol=(0.97, 0.88, 0.86), pscale=8.0, pwidth=0.12, soft=0.3)
 M_TRUNK = paint('govde', (0.46, 0.30, 0.20), soft=0.3)
@@ -755,8 +755,8 @@ posts = build_pen()
 front_post = [p for p in posts if p[0] == 'on'][0]
 _, FA, FP = front_post
 TO_CAM0 = _FC
-PEB_R = 0.1
-ROW_GAP = 0.25
+PEB_R = 0.125              # çakıl ~25 cm: geniş planda telefonda okunur (taze göz sınavı)
+ROW_GAP = 0.3
 ROW_START = FP + TO_CAM0 * (POST_R + 1.0) - RIGHT * 0.1
 ROW_DIR = RIGHT
 ROW_CENTER = ROW_START + ROW_DIR * (ROW_GAP * 3.5)
@@ -789,14 +789,14 @@ pegdir2 = (TO_CAM0 * 0.8 + _out * 0.2).normalized()
 pegdir = Vector((pegdir2.x, pegdir2.y, 0.18)).normalized()
 z_post = hfun(FP.x, FP.y)
 peg_base = Vector((FP.x, FP.y, z_post + PEG_Z)) + pegdir2.to_3d() * (POST_R - 0.08)
-PEG_LEN = 0.3
+PEG_LEN = 0.36
 bm = bmesh.new()
 tube(bm, peg_base, peg_base + pegdir * PEG_LEN, 0.03, 0.026, seg=10)
 blob(bm, peg_base + pegdir * PEG_LEN, (0.03, 0.03, 0.03), subdiv=2)
 bm_obj('civi', bm, [M_WOOD])
 HANG = peg_base + pegdir * (PEG_LEN - 0.07) + Vector((0, 0, 0.02))
 
-PSC = 1.22                 # kese ölçeği: geniş planda telefonda okunur
+PSC = 1.45                 # kese ölçeği: geniş planda telefonda okunur
 DROP = 0.54 * PSC
 PROF = [(r_ * PSC, z * PSC) for (r_, z) in ((0.0, 0.0), (0.13, 0.012), (0.2, 0.06), (0.225, 0.13), (0.215, 0.21), (0.18, 0.27), (0.13, 0.31),
         (0.112, 0.335), (0.13, 0.36), (0.165, 0.395), (0.185, 0.42))]
@@ -854,7 +854,7 @@ _tilt_axis = Vector((-TO_CAM0.y, TO_CAM0.x, 0)).normalized()
 POUCH_Q0 = Quaternion(_tilt_axis, math.radians(-12))
 pouch.rotation_quaternion = POUCH_Q0
 _back = POUCH_Q0.inverted() @ (-TO_CAM0.to_3d()); _back.z = 0; _back.normalize()
-POUCH_OFF = -_back * 0.2
+POUCH_OFF = -_back * 0.2 * PSC / 1.22
 pouch.data.transform(Matrix.Translation(POUCH_OFF))
 for ch in pouch.children:
     ch.location = POUCH_OFF
@@ -913,13 +913,13 @@ def pebble_mesh(name, seed):
 
 
 # yığın ağızdan taşar (geniş planda da okunur); son kalan ortada, ağız hizasında
-heap_local = [POUCH_OFF + Vector((0.0, 0.0, LIP_Z - 0.03))]
+heap_local = [POUCH_OFF + Vector((0.0, 0.0, LIP_Z - 0.035))]
 for k in range(5):
     th = 2 * math.pi * k / 5 + 0.3
-    heap_local.append(POUCH_OFF + Vector((0.1 * math.cos(th), 0.09 * math.sin(th), LIP_Z - 0.01)))
+    heap_local.append(POUCH_OFF + Vector((0.125 * math.cos(th), 0.11 * math.sin(th), LIP_Z - 0.01)))
 for k in range(3):
     th = 2 * math.pi * k / 3 + 0.9
-    heap_local.append(POUCH_OFF + Vector((0.05 * math.cos(th), 0.05 * math.sin(th), LIP_Z + 0.06)))
+    heap_local.append(POUCH_OFF + Vector((0.062 * math.cos(th), 0.062 * math.sin(th), LIP_Z + 0.075)))
 take_order = [8, 7, 6, 5, 4, 3, 2, 1]
 pebbles = [pebble_mesh('cakil_%d' % k, 3000 + k) for k in range(9)]
 LAST = pebbles[0]
@@ -1052,7 +1052,7 @@ _row3 = Vector((ROW_CENTER.x, ROW_CENTER.y, SLAB_TOP))
 TGT_FWD = float(os.environ.get('TGT_FWD', '2.5'))
 S0 = 10.6              # geniş plan: kadraj genişliği (m)
 S1 = 10.0
-S_END = 2.0            # yakın plan
+S_END = 2.3            # yakın plan
 TGT0 = _g3.lerp(_row3, 0.35) + RIGHT3 * 1.6 + FWD3 * TGT_FWD + Vector((0, 0, 0.3))
 TGT1 = TGT0 - RIGHT3 * 0.15
 TGT_END = P_END + Vector((0, 0, -0.16)) - RIGHT3 * 0.02
