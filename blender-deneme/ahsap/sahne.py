@@ -1228,6 +1228,10 @@ _l3, _q3, _s3 = _M300.decompose()
 spark.location = (Matrix.Translation(_l3) @ _q3.to_matrix().to_4x4()).inverted() @ (P_END + _top * 0.031)
 for attr in ('visible_shadow', 'visible_diffuse', 'visible_glossy', 'visible_transmission'):
     setattr(spark, attr, False)
+# parıltı yanana kadar nokta görünmez (ışımasız hâlde çakılın üstünde kara nokta gibi duruyordu)
+for f, sc in ((1, 0.0), (261, 0.0), (262, 1.0)):
+    spark.scale = (sc, sc, sc)
+    spark.keyframe_insert('scale', frame=f)
 _sp = M_SPARK.node_tree.nodes['Emission'].inputs['Strength']
 for f, v in ((1, 0.0), (262, 0.0), (272, 260.0), (281, 120.0), (290, 210.0), (300, 150.0)):
     _sp.default_value = v
