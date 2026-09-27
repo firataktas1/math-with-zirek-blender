@@ -125,13 +125,13 @@ def tube(bm, p0, p1, r0, r1, seg=10, mi=0):
 
 # ---------------------------------------------------------------- yerleşim (öteki sürümlerle aynı düzen, ağıl biraz küçük)
 PEN_C = Vector((0.0, 6.0))
-PEN_R = 3.3
+PEN_R = 2.8
 GATE_ANG = math.radians(228)
-GAP_HALF = 0.27
+GAP_HALF = 0.33
 WALL_H = 0.8
 POST_R = 0.3
 POST_H = 1.3
-EL = math.radians(33.0)          # kamera yükselme açısı: zemin ekranda yukarı doğru "dizilir"
+EL = math.radians(30.0)          # kamera yükselme açısı: zemin ekranda yukarı doğru "dizilir"
 
 gu = Vector((math.cos(GATE_ANG), math.sin(GATE_ANG)))
 GATE_PT = PEN_C + gu * PEN_R
@@ -146,15 +146,26 @@ VIEW = Vector((-_FC.x * math.cos(EL), -_FC.y * math.cos(EL), -math.sin(EL)))   #
 LDIR = (-RIGHT3 * 0.55 + _FC.to_3d() * 0.35 + Vector((0, 0, 0.75))).normalized()  # boyadaki ışık: sol üst önden
 
 
+KD = PEN_R * 2 + 0.2        # sırtın başladığı derinlik (kapıdan, kamera yönünde)
+
+
+def ridge(u):
+    """Ufuk sırtı: (tepe derinliği, yüksekliği) ekranda sağa kaydıkça dalgalanır."""
+    return (KD + 0.35 + 0.35 * math.sin(u * 0.33 + 0.4), 0.55 + 0.22 * math.sin(u * 0.52 + 1.3) + 0.1 * math.sin(u * 1.1))
+
+
 def hfun(x, y):
-    """Ağıl düzlükte; arkada tepe katmanları yükselir (minyatürde üst üste dizilen zemin)."""
+    """Ağıl düzlükte; arkada yumuşak bir sırt yükselir ve arkası düşer: ekranın üstünde altın gök görünür
+    (ortografik dik açıda düz zemin sonsuza dek yükselir; minyatürdeki yüksek ufuk için sırtın arkası iner)."""
     p = Vector((x, y))
-    depth = (p - GATE_PT).dot(-_FC)          # kameradan uzaklaştıkça
-    h = 0.0
-    h += 1.6 * smooth(PEN_R * 2 + 0.8, PEN_R * 2 + 5.5, depth)
-    h += 1.4 * smooth(PEN_R * 2 + 6.0, PEN_R * 2 + 10.0, depth)
-    h += 0.35 * smooth(PEN_R * 2 + 1.0, PEN_R * 2 + 9.0, depth) * math.sin((p.dot(RIGHT)) * 0.45 + 0.7)
-    h += 0.05 * noise.noise(Vector((x * 0.3, y * 0.3, 0.3)))
+    depth = (p - GATE_PT).dot(-_FC)
+    u = (p - GATE_PT).dot(RIGHT)
+    rd, rh = ridge(u)
+    if depth <= rd:
+        h = rh * smooth(KD - 1.4, rd, depth) ** 1.3
+    else:
+        h = rh - 1.1 * (depth - rd) ** 1.25
+    h += 0.04 * noise.noise(Vector((x * 0.3, y * 0.3, 0.3)))
     return h
 
 
@@ -183,7 +194,7 @@ def _paper_grain(N, L):
 
 
 def paint(name, color, shade=(0.80, 0.78, 0.88), mottle=0.06, pattern=None, pcol=None, pscale=5.0, pwidth=0.05,
-          gold=False, grad=None, soft=0.22):
+          gold=False, grad=None, soft=0.22, uv=False):
     """Boyalı yüzey (ışıksız): düz renk, sol üstten yumuşak iki ton, pigment lekesi, kâğıt greni.
     pattern: 'yun' (kıvırcık kontur ağı), 'tas' (düzensiz taş örgüsü), 'benek' (seyrek nokta), 'sunger' (kaya delikleri)."""
     m = bpy.data.materials.new(name)
@@ -208,10 +219,12 @@ def paint(name, color, shade=(0.80, 0.78, 0.88), mottle=0.06, pattern=None, pcol
         col = mx.outputs['Result']
     if pattern is not None:
         pc = N.new('ShaderNodeRGB'); pc.outputs[0].default_value = (*s2l(pcol or (0.35, 0.22, 0.14)), 1)
-        mp = N.new('ShaderNodeMapping'); mp.inputs['Scale'].default_value = (pscale, pscale, pscale * (1.5 if pattern == 'tas' else 1.0))
-        L.new(tc.outputs['Object'], mp.inputs['Vector'])
+        mp = N.new('ShaderNodeMapping'); mp.inputs['Scale'].default_value = (pscale, pscale * (1.6 if uv else 1.0), pscale * (1.5 if pattern == 'tas' else 1.0))
+        L.new(tc.outputs['UV' if uv else 'Object'], mp.inputs['Vector'])
         if pattern in ('yun', 'tas'):
             vo = N.new('ShaderNodeTexVoronoi'); vo.feature = 'DISTANCE_TO_EDGE'
+            if uv:
+                vo.voronoi_dimensions = '2D'
             vo.inputs['Randomness'].default_value = 0.85
             L.new(mp.outputs[0], vo.inputs['Vector'])
             rp = N.new('ShaderNodeMapRange'); rp.inputs['From Min'].default_value = pwidth
@@ -222,6 +235,8 @@ def paint(name, color, shade=(0.80, 0.78, 0.88), mottle=0.06, pattern=None, pcol
             if pattern == 'tas':
                 # taş başına ton farkı
                 vc = N.new('ShaderNodeTexVoronoi'); vc.inputs['Randomness'].default_value = 0.85
+                if uv:
+                    vc.voronoi_dimensions = '2D'
                 L.new(mp.outputs[0], vc.inputs['Vector'])
                 hs = N.new('ShaderNodeHueSaturation')
                 vm = N.new('ShaderNodeMath'); vm.operation = 'MULTIPLY_ADD'; vm.inputs[1].default_value = 0.16; vm.inputs[2].default_value = 0.9
@@ -337,8 +352,8 @@ M_HILLROCK = paint('kaya', (0.62, 0.50, 0.66), mottle=0.06, pattern='sunger', pc
                    grad=((0.94, 0.80, 0.78), 'Z', -0.3, 1.1), soft=0.3)
 M_HILLROCK2 = paint('kaya2', (0.80, 0.56, 0.40), mottle=0.06, pattern='sunger', pcol=(0.62, 0.40, 0.28), pscale=7.0, pwidth=0.12,
                     grad=((0.97, 0.84, 0.66), 'Z', -0.3, 1.1), soft=0.3)
-M_WALL = paint('duvar', (0.88, 0.78, 0.64), pattern='tas', pcol=(0.42, 0.28, 0.18), pscale=3.1, pwidth=0.055, soft=0.25,
-               shade=(0.80, 0.76, 0.84))
+M_WALL = paint('duvar', (0.88, 0.78, 0.64), pattern='tas', pcol=(0.46, 0.31, 0.20), pscale=3.4, pwidth=0.035, soft=0.25,
+               shade=(0.80, 0.76, 0.84), uv=True)
 M_CAP = paint('duvar_kapak', (0.93, 0.86, 0.74), pattern='tas', pcol=(0.42, 0.28, 0.18), pscale=2.2, pwidth=0.05, soft=0.25)
 WOOL_COLS = [(0.97, 0.94, 0.86), (0.96, 0.92, 0.84), (0.84, 0.68, 0.48), (0.97, 0.93, 0.85), (0.40, 0.31, 0.28),
              (0.95, 0.91, 0.82), (0.90, 0.88, 0.84), (0.86, 0.72, 0.52)]
@@ -424,14 +439,20 @@ def build_sky():
     return sky
 
 
+def on_ridge(u, back=0.0):
+    rd, rh = ridge(u)
+    p = GATE_PT.to_3d() + FWD3 * (rd - back) + RIGHT3 * u
+    return Vector((p.x, p.y, hfun(p.x, p.y)))
+
+
 def build_backdrop():
     """Tepede süngerimsi pastel kayalar, servi ve çiçekli ağaç (sol ve orta arkada; sağ alt boş)."""
     fwd = FWD3
     # kaya kümeleri: (sağ kayma, derinlik, ölçek, malzeme)
-    for k, (u, dep, s, m) in enumerate(((-6.8, 11.5, 1.2, M_HILLROCK), (-4.6, 13.8, 0.8, M_HILLROCK2), (6.4, 14.5, 1.0, M_HILLROCK),
-                                        (9.2, 12.2, 0.75, M_HILLROCK2), (1.5, 16.5, 0.9, M_HILLROCK2))):
-        p = GATE_PT.to_3d() + fwd * dep + RIGHT3 * u
-        z = hfun(p.x, p.y)
+    for k, (u, dep, s, m) in enumerate(((-5.9, 0.1, 0.9, M_HILLROCK), (-4.6, 0.5, 0.6, M_HILLROCK2), (5.6, 0.2, 0.8, M_HILLROCK),
+                                        (7.6, 0.0, 0.6, M_HILLROCK2), (1.2, -0.1, 0.55, M_HILLROCK2))):
+        p = on_ridge(u, dep)
+        z = p.z
         bm = bmesh.new()
         r = rng(400 + k)
         for j in range(6):
@@ -441,9 +462,9 @@ def build_backdrop():
                  seed=400 + k * 10 + j, curls=0.1, curl_scale=4.0)
         bm_obj('kaya_%d' % k, bm, [m])
     # serviler
-    for k, (u, dep, s) in enumerate(((-3.2, 12.2, 1.0), (-2.5, 12.8, 0.8), (4.2, 11.6, 0.9))):
-        p = GATE_PT.to_3d() + fwd * dep + RIGHT3 * u
-        z = hfun(p.x, p.y)
+    for k, (u, dep, s) in enumerate(((-2.7, 0.3, 0.8), (-2.1, 0.0, 0.62), (3.9, 0.35, 0.72))):
+        p = on_ridge(u, dep)
+        z = p.z
         bm = bmesh.new()
         tube(bm, Vector((p.x, p.y, z - 0.1)), Vector((p.x, p.y, z + 0.5 * s)), 0.07 * s, 0.06 * s, seg=8)
         bm_obj('servi_govde_%d' % k, bm, [M_TRUNK])
@@ -463,9 +484,9 @@ def build_backdrop():
                 bm.faces.new((rings[j][t], rings[j][(t + 1) % seg], rings[j + 1][(t + 1) % seg], rings[j + 1][t]))
         bm_obj('servi_%d' % k, bm, [M_CYPRESS], subsurf=1)
     # çiçekli ağaç
-    for k, (u, dep, s) in enumerate(((-8.8, 9.6, 1.0), (7.6, 12.8, 0.85))):
-        p = GATE_PT.to_3d() + fwd * dep + RIGHT3 * u
-        z = hfun(p.x, p.y)
+    for k, (u, dep, s) in enumerate(((-7.6, 0.4, 0.8), (6.8, 0.5, 0.7))):
+        p = on_ridge(u, dep)
+        z = p.z
         bm = bmesh.new()
         tube(bm, Vector((p.x, p.y, z - 0.1)), Vector((p.x + 0.1, p.y, z + 1.2 * s)), 0.1 * s, 0.06 * s, seg=8)
         tube(bm, Vector((p.x + 0.05, p.y, z + 0.8 * s)), Vector((p.x - 0.35 * s, p.y, z + 1.4 * s)), 0.05 * s, 0.03 * s, seg=6)
@@ -493,14 +514,43 @@ def sweep_ring(name, a0, a1, prof, radius, center, m, step=0.05):
             row.append(bm.verts.new((x, y, hfun(x, y) + zz + (wob if zz > 0.1 else 0))))
         rows.append(row)
     k = len(prof)
+    uvl = bm.loops.layers.uv.new('UVMap')
+    # UV: yay boyu x yükseklik (üst yüzde profil boyunca devam) -> taş örgüsü düz, dilimsiz
+    vcoord = [0.0]
+    for j in range(1, k):
+        vcoord.append(vcoord[-1] + (Vector(prof[j]) - Vector(prof[j - 1])).length)
     for i in range(n):
         for j in range(k - 1):
-            bm.faces.new((rows[i][j], rows[i + 1][j], rows[i + 1][j + 1], rows[i][j + 1]))
+            f = bm.faces.new((rows[i][j], rows[i + 1][j], rows[i + 1][j + 1], rows[i][j + 1]))
+            for lp, (ii, jj) in zip(f.loops, ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1))):
+                a = a0 + (a1 - a0) * ii / n
+                lp[uvl].uv = (a * radius, vcoord[jj])
     if abs(a1 - a0) < 2 * math.pi - 1e-3:
-        for row in (rows[0], list(reversed(rows[-1]))):
-            bm.faces.new(row)
+        for ii, row in ((0, rows[0]), (n, list(reversed(rows[-1])))):
+            f = bm.faces.new(row)
+            for lp in f.loops:
+                co = lp.vert.co
+                lp[uvl].uv = (co.x * 1.3 + 50.0, co.z)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     return bm_obj(name, bm, [m])
+
+
+def cyl_uv(bm, cx, cy, R):
+    """Silindir yüzeyine yay boyu x yükseklik UV (taş örgüsü için)."""
+    uvl = bm.loops.layers.uv.verify()
+    for f in bm.faces:
+        us = []
+        for lp in f.loops:
+            co = lp.vert.co
+            us.append(math.atan2(co.y - cy, co.x - cx))
+        if max(us) - min(us) > math.pi:
+            us = [u + 2 * math.pi if u < 0 else u for u in us]
+        for lp, u in zip(f.loops, us):
+            co = lp.vert.co
+            if abs(f.normal.z) > 0.7:
+                lp[uvl].uv = (co.x * 1.3 + 20.0, co.y * 1.3)
+            else:
+                lp[uvl].uv = (u * R, co.z)
 
 
 WALL_PROF = [(0.24, -0.1), (0.23, 0.0), (0.2, WALL_H * 0.6), (0.17, WALL_H - 0.02), (0.1, WALL_H + 0.05), (0.0, WALL_H + 0.08),
@@ -517,7 +567,9 @@ def build_pen():
         p = ring_pos(a)
         z = hfun(p.x, p.y)
         bm = bmesh.new()
-        tube(bm, Vector((p.x, p.y, z - 0.1)), Vector((p.x, p.y, z + POST_H)), POST_R, POST_R * 0.92, seg=24)
+        tube(bm, Vector((p.x, p.y, z - 0.1)), Vector((p.x, p.y, z + POST_H)), POST_R, POST_R * 0.92, seg=32)
+        bm.normal_update()
+        cyl_uv(bm, p.x, p.y, POST_R)
         ob = bm_obj('direk_' + side, bm, [M_WALL])
         bm = bmesh.new()
         blob(bm, Vector((p.x, p.y, z + POST_H + 0.05)), (POST_R * 1.25, POST_R * 1.2, 0.12), subdiv=3, amp=0.08, seed=30 + sgn)
@@ -573,7 +625,7 @@ def grass_tufts(avoid):
 def build_sheep(i):
     r = rng(1000 + i)
     root = link(bpy.data.objects.new('koyun_%d' % i, None))
-    s = r.uniform(0.95, 1.05)
+    s = r.uniform(0.86, 0.94)
     bob = link(bpy.data.objects.new('koyun_%d_govde' % i, None))
     bob.parent = root
     bob.scale = (s, s, s)
@@ -654,7 +706,7 @@ class Path:
         return bs
 
 
-INSIDE = GATE_PT - gu * 1.1
+INSIDE = GATE_PT - gu * 1.0
 OUT1 = GATE_PT - _RT * 0.8 + _FC * 1.3
 SPOTS = []
 _rs = rng(77)
@@ -662,11 +714,11 @@ _tries = 0
 while len(SPOTS) < N_SHEEP:
     _tries += 1
     a = _rs.uniform(0, 2 * math.pi)
-    rr = _rs.uniform(0.3, PEN_R - 0.85)
+    rr = _rs.uniform(0.2, PEN_R - 0.8)
     q = PEN_C + Vector((rr * math.cos(a), rr * math.sin(a)))
-    if (q - INSIDE).length < 0.9:
+    if (q - INSIDE).length < 0.8:
         continue
-    if all((q - o).length > (1.15 if _tries < 5000 else 0.95) for o in SPOTS):
+    if all((q - o).length > (1.05 if _tries < 5000 else 0.9) for o in SPOTS):
         SPOTS.append(q)
 SPOTS.sort(key=lambda q: -(q - INSIDE).length)
 START = [GATE_PT - _RT * 11.0 + _FC * 2.6, GATE_PT - _RT * 3.2 + _FC * 2.2]
@@ -683,9 +735,9 @@ posts = build_pen()
 front_post = [p for p in posts if p[0] == 'on'][0]
 _, FA, FP = front_post
 TO_CAM0 = _FC
-PEB_R = 0.085
-ROW_GAP = 0.21
-ROW_START = FP + TO_CAM0 * (POST_R + 0.85) - RIGHT * 0.05
+PEB_R = 0.1
+ROW_GAP = 0.25
+ROW_START = FP + TO_CAM0 * (POST_R + 1.0) - RIGHT * 0.1
 ROW_DIR = RIGHT
 ROW_CENTER = ROW_START + ROW_DIR * (ROW_GAP * 3.5)
 
@@ -703,7 +755,7 @@ grass_tufts([lambda p: abs((p - PEN_C).length - PEN_R) < 0.4,
 
 slab_c = ROW_CENTER
 bm = bmesh.new()
-blob(bm, Vector((0, 0, 0)), (ROW_GAP * 4 + 0.24, 0.32, 0.07), subdiv=3, amp=0.05, seed=55, nscale=1.3)
+blob(bm, Vector((0, 0, 0)), (ROW_GAP * 3.5 + 0.26, 0.3, 0.07), subdiv=3, amp=0.05, seed=55, nscale=1.3)
 SLAB = bm_obj('yassi_tas', bm, [M_SLAB])
 SLAB.location = (slab_c.x, slab_c.y, hfun(slab_c.x, slab_c.y) + 0.0)
 SLAB.rotation_euler = (0, 0, math.atan2(ROW_DIR.y, ROW_DIR.x))
@@ -724,11 +776,12 @@ blob(bm, peg_base + pegdir * PEG_LEN, (0.03, 0.03, 0.03), subdiv=2)
 bm_obj('civi', bm, [M_WOOD])
 HANG = peg_base + pegdir * (PEG_LEN - 0.07) + Vector((0, 0, 0.02))
 
-DROP = 0.54
-PROF = [(0.0, 0.0), (0.13, 0.012), (0.2, 0.06), (0.225, 0.13), (0.215, 0.21), (0.18, 0.27), (0.13, 0.31),
-        (0.112, 0.335), (0.13, 0.36), (0.165, 0.395), (0.185, 0.42)]
-LIP_Z = 0.42 - DROP
-NECK_Z = 0.33 - DROP
+PSC = 1.22                 # kese ölçeği: geniş planda telefonda okunur
+DROP = 0.54 * PSC
+PROF = [(r_ * PSC, z * PSC) for (r_, z) in ((0.0, 0.0), (0.13, 0.012), (0.2, 0.06), (0.225, 0.13), (0.215, 0.21), (0.18, 0.27), (0.13, 0.31),
+        (0.112, 0.335), (0.13, 0.36), (0.165, 0.395), (0.185, 0.42))]
+LIP_Z = 0.42 * PSC - DROP
+NECK_Z = 0.33 * PSC - DROP
 
 
 def build_pouch():
@@ -759,12 +812,12 @@ def build_pouch():
     ob.data.materials.append(M_POUCH_IN)
     ss = ob.modifiers.new('ss', 'SUBSURF'); ss.levels = 1; ss.render_levels = 1
     bm = bmesh.new()
-    blob(bm, Vector((0, 0, NECK_Z + 0.012)), (0.105, 0.095, 0.012), subdiv=2)
+    blob(bm, Vector((0, 0, NECK_Z + 0.012)), (0.105 * PSC, 0.095 * PSC, 0.012), subdiv=2)
     inn = bm_obj('kese_ic', bm, [M_POUCH_IN], noline=True)
     inn.parent = ob
     # altın bantlar: boğazda ve gövdenin ortasında
     gb = bmesh.new()
-    for (zc, rad, th_) in ((NECK_Z + 0.004, 0.118, 0.012), (0.15 - DROP, 0.228, 0.01)):
+    for (zc, rad, th_) in ((NECK_Z + 0.004, 0.118 * PSC, 0.013), (0.15 * PSC - DROP, 0.228 * PSC, 0.012)):
         n = 40
         for s in range(n):
             a0_, a1_ = 2 * math.pi * s / n, 2 * math.pi * (s + 1) / n
@@ -778,10 +831,10 @@ pouch, gold_bm = build_pouch()
 pouch.location = HANG
 pouch.rotation_mode = 'QUATERNION'
 _tilt_axis = Vector((-TO_CAM0.y, TO_CAM0.x, 0)).normalized()
-POUCH_Q0 = Quaternion(_tilt_axis, math.radians(-10))
+POUCH_Q0 = Quaternion(_tilt_axis, math.radians(-12))
 pouch.rotation_quaternion = POUCH_Q0
 _back = POUCH_Q0.inverted() @ (-TO_CAM0.to_3d()); _back.z = 0; _back.normalize()
-POUCH_OFF = -_back * 0.17
+POUCH_OFF = -_back * 0.2
 pouch.data.transform(Matrix.Translation(POUCH_OFF))
 for ch in pouch.children:
     ch.location = POUCH_OFF
@@ -791,15 +844,17 @@ gband.parent = pouch
 _front = -_back
 _side = Vector((-_front.y, _front.x, 0))
 cord_bm = bmesh.new()
-_kn = POUCH_OFF + _front * 0.12 + Vector((0, 0, NECK_Z + 0.006))
+_kn = POUCH_OFF + _front * 0.12 * PSC + Vector((0, 0, NECK_Z + 0.006))
 tube(cord_bm, _kn, _kn + _front * 0.03 + _side * 0.06 + Vector((0, 0, -0.1)), 0.011, 0.009, seg=6)
 tube(cord_bm, _kn, _kn + _front * 0.03 - _side * 0.04 + Vector((0, 0, -0.12)), 0.011, 0.009, seg=6)
 blob(cord_bm, _kn + _front * 0.012, (0.022, 0.022, 0.02), subdiv=2)
 for sgn in (1, -1):         # püskül
     blob(cord_bm, _kn + _front * 0.03 + _side * (0.06 if sgn > 0 else -0.04) + Vector((0, 0, -0.1 if sgn > 0 else -0.12)),
          (0.018, 0.018, 0.03), subdiv=2)
-_bk = POUCH_OFF + _back * 0.115 + Vector((0, 0, NECK_Z + 0.006))
-tube(cord_bm, _bk, Vector((0, 0, 0.0)), 0.01, 0.01, seg=6)
+# askı: ağzın iki yanından çiviye V biçiminde iki ip (tek taşın önünden geçmez)
+for sgn in (1, -1):
+    _sk = POUCH_OFF + (_side * sgn * 0.93 + _back * 0.37).normalized() * 0.118 * PSC + Vector((0, 0, NECK_Z + 0.006))
+    tube(cord_bm, _sk, Vector((0, 0, 0.0)), 0.009, 0.009, seg=6)
 cord = bm_obj('ip', cord_bm, [M_CORD])
 cord.parent = pouch
 
@@ -837,13 +892,14 @@ def pebble_mesh(name, seed):
     return ob
 
 
-heap_local = [POUCH_OFF + Vector((0.0, 0.0, LIP_Z - 0.035))]
+# yığın ağızdan taşar (geniş planda da okunur); son kalan ortada, ağız hizasında
+heap_local = [POUCH_OFF + Vector((0.0, 0.0, LIP_Z - 0.03))]
 for k in range(5):
     th = 2 * math.pi * k / 5 + 0.3
-    heap_local.append(POUCH_OFF + Vector((0.095 * math.cos(th), 0.085 * math.sin(th), LIP_Z - 0.07)))
+    heap_local.append(POUCH_OFF + Vector((0.1 * math.cos(th), 0.09 * math.sin(th), LIP_Z - 0.01)))
 for k in range(3):
     th = 2 * math.pi * k / 3 + 0.9
-    heap_local.append(POUCH_OFF + Vector((0.05 * math.cos(th), 0.05 * math.sin(th), LIP_Z - 0.012)))
+    heap_local.append(POUCH_OFF + Vector((0.05 * math.cos(th), 0.05 * math.sin(th), LIP_Z + 0.06)))
 take_order = [8, 7, 6, 5, 4, 3, 2, 1]
 pebbles = [pebble_mesh('cakil_%d' % k, 3000 + k) for k in range(9)]
 LAST = pebbles[0]
@@ -973,12 +1029,12 @@ def last_world(f):
 P_END = last_world(N_FRAMES)
 _g3 = Vector((GATE_PT.x, GATE_PT.y, hfun(GATE_PT.x, GATE_PT.y) + 0.5))
 _row3 = Vector((ROW_CENTER.x, ROW_CENTER.y, SLAB_TOP))
-S0 = 10.0              # geniş plan: kadraj genişliği (m)
-S1 = 9.4
-S_END = 1.35           # yakın plan
-TGT0 = _g3.lerp(_row3, 0.35) + RIGHT3 * 1.5 + FWD3 * 1.2 + Vector((0, 0, 0.3))
+S0 = 10.6              # geniş plan: kadraj genişliği (m)
+S1 = 10.0
+S_END = 2.0            # yakın plan
+TGT0 = _g3.lerp(_row3, 0.35) + RIGHT3 * 1.6 + FWD3 * 2.2 + Vector((0, 0, 0.3))
 TGT1 = TGT0 - RIGHT3 * 0.15
-TGT_END = P_END + Vector((0, 0, -0.06)) - RIGHT3 * 0.04
+TGT_END = P_END + Vector((0, 0, -0.16)) - RIGHT3 * 0.02
 PUSH0, PUSH1 = 212, 296
 CAM_DIST = 40.0
 ORTHO = []
@@ -1184,7 +1240,8 @@ for _f in (1, 68, 180, 212, 290):
     scene.frame_set(_f)
     for _nm, _p in (('kapi', _g3), ('kese', HANG + Vector((0, 0, -0.3))), ('dizi_bas', LAND[0].to_3d() + Vector((0, 0, SLAB_TOP))),
                     ('dizi_son', LAND[-1].to_3d() + Vector((0, 0, SLAB_TOP))), ('son_tas', P_END),
-                    ('agil_arka', (PEN_C - gu * PEN_R).to_3d())):
+                    ('agil_arka', (PEN_C - gu * PEN_R).to_3d()),
+                    ('sirt_u0', on_ridge(0.0)), ('sirt_u5', on_ridge(5.0)), ('sirt_u-5', on_ridge(-5.0))):
         _c = world_to_camera_view(scene, cam, _p)
         print('KADRAJ f%d %-9s x=%.2f y(ust)=%.2f' % (_f, _nm, _c.x, 1 - _c.y))
     for _i in (0, 7):
