@@ -221,7 +221,7 @@ def felt(name, color, palette=None, var=0.08, hue_var=0.012, sheen=0.9, rough=0.
     L.new(hs.outputs['Color'], b.inputs['Base Color'])
     bp = N.new('ShaderNodeBump')
     bp.inputs['Strength'].default_value = bump
-    bp.inputs['Distance'].default_value = 0.0015
+    bp.inputs['Distance'].default_value = 0.005
     height = fh
     if dimple > 0:
         # iğne izleri: küçük çukurlar
@@ -416,9 +416,13 @@ M_KNOT = felt('fransiz_dugum', (0.95, 0.70, 0.18), var=0.1, sss=0.0)
 def fuzz_group(name, density, length, radius, mat, tilt=0.8, smin=0.4, smax=1.3, dens_attr=None):
     ng = bpy.data.node_groups.new(name, 'GeometryNodeTree')
     ng.interface.new_socket('Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
+    ng.interface.new_socket('Kaynak', in_out='INPUT', socket_type='NodeSocketObject')
     ng.interface.new_socket('Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
     N, L = ng.nodes, ng.links
     gi = N.new('NodeGroupInput'); go = N.new('NodeGroupOutput')
+    oinf = N.new('GeometryNodeObjectInfo')
+    oinf.transform_space = 'RELATIVE'
+    L.new(gi.outputs['Kaynak'], oinf.inputs['Object'])
     dp = N.new('GeometryNodeDistributePointsOnFaces')
     dp.inputs['Density'].default_value = density
     if dens_attr:
@@ -429,7 +433,7 @@ def fuzz_group(name, density, length, radius, mat, tilt=0.8, smin=0.4, smax=1.3,
         mu.inputs[1].default_value = density
         L.new(na.outputs['Attribute'], mu.inputs[0])
         L.new(mu.outputs[0], dp.inputs['Density'])
-    L.new(gi.outputs[0], dp.inputs['Mesh'])
+    L.new(oinf.outputs['Geometry'], dp.inputs['Mesh'])
     line = N.new('GeometryNodeCurvePrimitiveLine')
     line.inputs['End'].default_value = (0, 0, length)
     rsub = N.new('GeometryNodeResampleCurve')
@@ -477,18 +481,28 @@ def fuzz_group(name, density, length, radius, mat, tilt=0.8, smin=0.4, smax=1.3,
     L.new(sp.outputs['Geometry'], cr.inputs['Curve'])
     sm = N.new('GeometryNodeSetMaterial'); sm.inputs['Material'].default_value = mat
     L.new(cr.outputs['Curve'], sm.inputs['Geometry'])
-    j = N.new('GeometryNodeJoinGeometry')
-    L.new(sm.outputs[0], j.inputs['Geometry'])
-    L.new(gi.outputs[0], j.inputs['Geometry'])
-    L.new(j.outputs[0], go.inputs[0])
+    L.new(sm.outputs[0], go.inputs[0])
     return ng
 
 
 def add_fuzz(ob, group):
     if not A.tuy or group is None:
         return
-    md = ob.modifiers.new('lif', 'NODES')
-    md.node_group = group
+    cu = bpy.data.hair_curves.new(ob.name + '_lif')
+    for sl in group.nodes:
+        if sl.bl_idname == 'GeometryNodeSetMaterial':
+            cu.materials.append(sl.inputs['Material'].default_value)
+    co = link(bpy.data.objects.new(ob.name + '_lif', cu))
+    co.parent = ob
+    co.matrix_parent_inverse = Matrix.Identity(4)
+    g2 = group.copy()
+    for nd in g2.nodes:
+        if nd.bl_idname == 'GeometryNodeObjectInfo':
+            for lk in list(nd.inputs['Object'].links):
+                g2.links.remove(lk)
+            nd.inputs['Object'].default_value = ob
+    md = co.modifiers.new('lif', 'NODES')
+    md.node_group = g2
 
 
 FZ_WOOL = fuzz_group('lif_yun', 26000.0, 0.018, 0.0007, M_WOOL_F, tilt=1.0)
@@ -930,8 +944,9 @@ def felt_tree(name, x, y, sc, seed):
 
 felt_tree('agac1', -2.4, 3.0, 0.62, 1301)
 felt_tree('agac2', 2.9, 5.2, 0.5, 1311)
-felt_tree('agac3', -0.9, 5.6, 0.55, 1321)
-felt_tree('agac4', 3.9, 5.9, 0.45, 1331)
+felt_tree('agac3', -1.1, 3.7, 0.5, 1321)
+felt_tree('agac4', 2.4, 3.6, 0.45, 1331)
+felt_tree('agac5', 0.7, 4.6, 0.4, 1341)
 
 
 def flowers():
@@ -1501,7 +1516,7 @@ for _f in (1, 68, 210, 296):
 _dg2 = bpy.context.evaluated_depsgraph_get()
 _nc = _np = 0
 for _in in _dg2.object_instances:
-    if _in.object.type == 'CURVES':
+    if _in.object.type in ('CURVES', 'CURVE'):
         _nc += 1
         _np += len(_in.object.data.points)
 print('LIF nesne %d nokta %d' % (_nc, _np), flush=True)
