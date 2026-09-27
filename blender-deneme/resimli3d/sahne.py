@@ -283,7 +283,7 @@ if SU:
     M_WOOD = paint('tahta', (0.52, 0.36, 0.22), var=0.15, patch=12.0, spread=0.12)
     M_CLOTH = paint('bez', (0.72, 0.28, 0.20), var=0.0, patch=9.0, spread=0.14)
     M_CORD = paint('ip', (0.62, 0.48, 0.32), var=0.0, spread=0.05)
-    M_PEBBLE = paint('cakil', (0.93, 0.62, 0.30), var=0.12, patch=30.0, spread=0.12)
+    M_PEBBLE = paint('cakil', (0.90, 0.63, 0.36), var=0.12, patch=30.0, spread=0.14)
     M_SLAB = paint('yassi_tas', (0.74, 0.75, 0.78), var=0.0, patch=5.0, spread=0.16)
     M_HILL1 = paint('tepe1', (0.56, 0.66, 0.36), var=0.0, patch=0.35, spread=0.18)
     M_HILL2 = paint('tepe2', (0.86, 0.70, 0.42), var=0.0, patch=0.35, spread=0.16)
@@ -302,7 +302,7 @@ else:
     M_WOOD = paint('tahta', (0.55, 0.36, 0.20), var=0.15, patch=12.0, spread=0.18, strokes=(60.0, 6.0))
     M_CLOTH = paint('bez', (0.70, 0.24, 0.17), var=0.0, patch=9.0, spread=0.18, strokes=(55.0, 4.0), bump=0.1)
     M_CORD = paint('ip', (0.60, 0.44, 0.28), var=0.0, spread=0.08)
-    M_PEBBLE = paint('cakil', (0.94, 0.60, 0.26), var=0.12, patch=30.0, spread=0.14, strokes=(90.0, 2.5))
+    M_PEBBLE = paint('cakil', (0.90, 0.60, 0.30), var=0.12, patch=30.0, spread=0.16, strokes=(90.0, 2.5))
     M_SLAB = paint('yassi_tas', (0.64, 0.66, 0.70), var=0.0, patch=5.0, spread=0.18, strokes=(26.0, 3.0), bump=0.1)
     M_HILL1 = paint('tepe1', (0.44, 0.58, 0.30), var=0.0, patch=0.35, spread=0.2, strokes=(2.5, 5.0))
     M_HILL2 = paint('tepe2', (0.84, 0.64, 0.34), var=0.0, patch=0.35, spread=0.2, strokes=(2.5, 5.0))
@@ -444,11 +444,11 @@ def build_pouch(front_post):
     _, a, p = front_post
     to_cam = (CAM_POS0.xy - p).normalized()
     # çivi kameraya ve biraz sağa bakar: kese kapı açıklığını örtmesin (girişi gören kare okunur kalsın)
-    _pd = Matrix.Rotation(math.radians(34), 2) @ to_cam
+    _pd = Matrix.Rotation(math.radians(30), 2) @ to_cam
     pegdir = Vector((_pd.x, _pd.y, 0.18)).normalized()
     z_top = hfun(p.x, p.y) + 0.06 + 0.05 * 1.75 * 6
     peg_base = Vector((p.x, p.y, z_top - 0.05))
-    peg_len = 0.3
+    peg_len = 0.2
     bm = bmesh.new()
     q = Vector((0, 0, 1)).rotation_difference(pegdir)
     blob(bm, (peg_base + pegdir * (peg_len / 2))[:], (0.018, 0.018, peg_len / 2), subdiv=3, amp=0.05, nscale=2.0,
@@ -949,7 +949,7 @@ def light(name, kind, energy, color, loc=None, direction=None, size=None):
 # alçak akşam güneşi: soldan ve hafif önden (koyunların kameraya bakan yanı aydınlık, gölgeler sağ arkaya)
 SUN_AZ, SUN_EL = math.radians(203.0), math.radians(21.0)
 TO_SUN = Vector((math.cos(SUN_AZ) * math.cos(SUN_EL), math.sin(SUN_AZ) * math.cos(SUN_EL), math.sin(SUN_EL)))
-light('gunes', 'SUN', 3.2, (1.0, 0.82, 0.62), direction=-TO_SUN, size=math.radians(3.5 if SU else 1.5))
+light('gunes', 'SUN', 3.2, (1.0, 0.82, 0.62) if SU else (1.0, 0.74, 0.50), direction=-TO_SUN, size=math.radians(3.5 if SU else 1.5))
 if not SU:
     # resimli3d: arkadan serin kenar ışığı (siluetleri ayırır), sıcak ana ışığa karşı
     RIM = Vector((0.55, 0.95, 0.45)).normalized()
@@ -1024,7 +1024,7 @@ for f, v in ((1, 0.0), (262, 0.0), (272, 320.0), (281, 150.0), (290, 260.0), (30
 # son taşa sıcak bir dokunuş: çakılın çevresinde hafif ışık (yalnız parıltı anında)
 glint = light('parilti', 'POINT', 0.0, (1.0, 0.8, 0.5), loc=P_END + (cam_dir_end * 0.6 + Vector((0, 0, 0.8))).normalized() * 0.35, size=0.02)
 glint.visible_camera = False
-for f, en in ((1, 0.0), (258, 0.0), (278, 0.1), (300, 0.08)):
+for f, en in ((1, 0.0), (258, 0.0), (278, 0.0), (300, 0.0)):
     glint.data.energy = en
     glint.data.keyframe_insert('energy', frame=f)
 
@@ -1215,11 +1215,11 @@ else:
     # resimli3d: ışığın rengi korunur, değeri basamaklanır (sert ama boyanmış geçiş), terminatörde sıcak bant
     K = 1.0
     gval = cramp(math_('MULTIPLY', lum, K), [
-        (0.00, (0.30, 0.30, 0.30)),
-        (0.28, (0.36, 0.36, 0.36)),
-        (0.40, (0.80, 0.80, 0.80)),
+        (0.00, (0.06, 0.06, 0.06)),
+        (0.25, (0.20, 0.20, 0.20)),
+        (0.40, (0.72, 0.72, 0.72)),
         (0.95, (1.00, 1.00, 1.00)),
-        (2.00, (1.25, 1.25, 1.25))], 'EASE')
+        (2.00, (1.20, 1.20, 1.20))], 'EASE')
     ratio = math_('DIVIDE', bw(gval), math_('MAXIMUM', lum, 0.03))
     lit = mix(LIGHT, ratio, 'MULTIPLY')
     tint = cramp(math_('MULTIPLY', lum, K), [
@@ -1245,7 +1245,7 @@ img = mix(sky, hz, 'MIX', fac=P_AL)
 # 5) boya: Kuwahara (fırça/leke), ardından tarza göre
 kw = NN.new('CompositorNodeKuwahara'); put(kw.inputs['Image'], img)
 menu(kw, 'Type', 'Anisotropic')
-kw.inputs['Size'].default_value = (6.0 if SU else 4.0) * PX
+kw.inputs['Size'].default_value = (6.0 if SU else 4.5) * PX
 kw.inputs['Uniformity'].default_value = 4
 kw.inputs['Sharpness'].default_value = 0.35 if SU else 0.7
 kw.inputs['Eccentricity'].default_value = 1.0
@@ -1255,6 +1255,7 @@ PAINT = kw.outputs[0]
 sob = NN.new('CompositorNodeFilter'); put(sob.inputs['Image'], P_Z); menu(sob, 'Type', 'Sobel')
 edge_rel = math_('DIVIDE', bw(sob.outputs[0]), math_('MAXIMUM', P_Z, 0.1))
 LINE = math_('MULTIPLY', math_('SUBTRACT', edge_rel, 0.04), 8.0, clamp=True)
+LINE = math_('MULTIPLY', LINE, math_('SUBTRACT', 1.0, math_('MULTIPLY', P_MI, 4.0), clamp=True))
 
 if SU:
     # taşan kenar: resim, yavaş değişen gürültüyle 2-3 piksel itilir
@@ -1271,11 +1272,11 @@ if SU:
     edge = bw(mix(c01, bl, 'DIFFERENCE'))
     g1, _ = tnoise(UV, 240.0, 3.0, 0.6, 0.0, w=5.0)            # kâğıt greni
     g2, _ = tnoise(UV, 30.0, 4.0, 0.6, 0.2, w=7.0)             # granülasyon (boya çökmesi)
-    wm, _ = tnoise(UV, 2.4, 3.0, 0.55, 0.3, w=9.0)             # ıslak leke
+    wm, _ = tnoise(UV, 1.5, 3.0, 0.5, 0.3, w=9.0)             # ıslak leke
     dens = math_('MULTIPLY_ADD', edge, 2.6, 1.0)
     dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g1, 0.5), 0.22, dens)
     dens = math_('MULTIPLY_ADD', math_('SUBTRACT', g2, 0.5), 0.3, dens)
-    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', wm, 0.5), 0.75, dens)
+    dens = math_('MULTIPLY_ADD', math_('SUBTRACT', wm, 0.5), 0.5, dens)
     pig2 = mix(pig, dens, 'MULTIPLY')
     col = mix((1, 1, 1), pig2, 'SUBTRACT', clamp=True)
     PAPER = lin((0.975, 0.955, 0.905))
@@ -1291,8 +1292,8 @@ if SU:
     put(scl.inputs[0], cen.outputs[0]); scl.inputs[1].default_value = (1.0, 0.72, 1.0)
     ln = NN.new('ShaderNodeVectorMath'); ln.operation = 'LENGTH'; put(ln.inputs[0], scl.outputs[0])
     vv = math_('MULTIPLY_ADD', vn, 0.10, osock(ln, 'Value'))
-    vig = math_('MULTIPLY', math_('SUBTRACT', vv, 0.47), 3.6, clamp=True)
-    col = mix(col, PAPER, 'MIX', fac=math_('MULTIPLY', vig, 0.85))
+    vig = math_('MULTIPLY', math_('SUBTRACT', vv, 0.5), 3.4, clamp=True)
+    col = mix(col, PAPER, 'MIX', fac=math_('MULTIPLY', vig, 0.72))
     OUTC = col
 else:
     # resimli3d: hafif keskinleştirme (boya kenarı) + koyu sıcak kontur
@@ -1301,8 +1302,8 @@ else:
     col = mix(shp.outputs[0], (0, 0, 0), 'ADD', clamp=False)
     col = mix(col, lin((0.16, 0.10, 0.10)), 'MIX', fac=math_('MULTIPLY', LINE, 0.55))
     # boyalı gren (ekrana sabit ince tuval dokusu, çok hafif)
-    g1, _ = tnoise(UV, 300.0, 4.0, 0.6, 0.0, w=5.0)
-    col = mix(col, math_('MULTIPLY_ADD', g1, 0.07, 0.965), 'MULTIPLY')
+    g1, _ = tnoise(UV, 160.0, 4.0, 0.6, 0.0, w=5.0)
+    col = mix(col, math_('MULTIPLY_ADD', g1, 0.04, 0.98), 'MULTIPLY')
     OUTC = col
 
 # 6) ışıma (gözdeki ışık, parıltı, toz) boyadan sonra eklenir: net kalır
