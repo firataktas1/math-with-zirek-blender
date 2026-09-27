@@ -226,8 +226,8 @@ def paint(name, color, shade=(0.80, 0.78, 0.88), mottle=0.06, pattern=None, pcol
     tc = N.new('ShaderNodeTexCoord')
     if grad is not None:
         # nesne ekseninde renk geçişi (kaya: koyu dip, açık tepe; gök: ufukta açık)
-        c2, axis, lo, hi = grad
-        sp = N.new('ShaderNodeSeparateXYZ'); L.new(tc.outputs['Object'], sp.inputs[0])
+        c2, axis, lo, hi = grad[:4]
+        sp = N.new('ShaderNodeSeparateXYZ'); L.new(tc.outputs[grad[4] if len(grad) > 4 else 'Object'], sp.inputs[0])
         mr = N.new('ShaderNodeMapRange'); mr.inputs['From Min'].default_value = lo; mr.inputs['From Max'].default_value = hi
         L.new(sp.outputs[axis], mr.inputs['Value'])
         cc = N.new('ShaderNodeRGB'); cc.outputs[0].default_value = (*s2l(c2), 1)
@@ -395,7 +395,7 @@ M_GRASS = flat_emit('ot', (0.22, 0.42, 0.26))
 M_GRASS2 = flat_emit('ot2', (0.36, 0.52, 0.28))
 M_FLOWER = [flat_emit('cicek_k', (0.84, 0.24, 0.14)), flat_emit('cicek_b', (0.98, 0.95, 0.86)),
             flat_emit('cicek_l', (0.20, 0.34, 0.70))]
-M_SKY = paint('gok', (0.86, 0.66, 0.30), gold=True, grad=((0.98, 0.85, 0.58), 'Z', 3.0, -2.0), soft=0.0, mottle=0.03)
+M_SKY = paint('gok', (0.82, 0.60, 0.22), gold=True, grad=((0.97, 0.84, 0.56), 'Y', 0.97, 0.70, 'Window'), soft=0.0, mottle=0.04)
 M_CLOUD = paint('bulut', (0.97, 0.93, 0.88), grad=((0.80, 0.76, 0.90), 'Z', 0.2, -0.3), soft=0.4)
 M_CREAM = flat_emit('pervaz_kagit', (0.94, 0.89, 0.77))
 M_LAPIS = flat_emit('pervaz_lacivert', (0.13, 0.24, 0.56))
@@ -437,21 +437,23 @@ def build_sky():
     sky = bm_obj('gok', bm, [M_SKY], noline=True)
     # gök geçişi nesne Z'sine göre: düzlemin yerel Z = dünya Z
     r = rng(17)
-    for k, (u, h, w) in enumerate(((-4.5, 4.4, 3.2), (3.8, 4.9, 2.6), (8.5, 4.2, 2.0))):
+    for k, (u, h, w) in enumerate(((-0.6, 0.25, 0.62), (2.9, 0.55, 0.5), (8.2, 0.35, 0.45))):
         bm = bmesh.new()
         pts = []
         nlob = 7
         for s in range(64):
             t = 2 * math.pi * s / 64
             rr = 1.0 + 0.22 * abs(math.sin(nlob * t / 2 + k))
-            pts.append((math.cos(t) * w * rr, math.sin(t) * w * 0.22 * rr))
+            pts.append((math.cos(t) * w * rr, math.sin(t) * w * 0.3 * rr))
         vs = [bm.verts.new((px, 0, pz)) for (px, pz) in pts]
         f = bm.faces.new(vs)
         ex = bmesh.ops.extrude_face_region(bm, geom=[f])
         bmesh.ops.translate(bm, verts=[e for e in ex['geom'] if isinstance(e, bmesh.types.BMVert)], vec=(0, 0.05, 0))
         cl = bm_obj('bulut_%d' % k, bm, [M_CLOUD], smooth_shade=False)
-        pos = GATE_PT.to_3d() + FWD3 * 22.0 + RIGHT3 * u
-        pos.z = h + 3.0
+        # sırtın arkasında, gök şeridinde görünecek yükseklikte (ortografik: derinlik ekranda yukarı taşır)
+        rd, rh = ridge(u)
+        pos = GATE_PT.to_3d() + FWD3 * (rd + 2.2) + RIGHT3 * u
+        pos.z = rh - 0.35 + h
         cl.matrix_world = Matrix.Translation(pos) @ Matrix((x_, -n_, y_)).transposed().to_4x4()
     return sky
 
@@ -466,8 +468,8 @@ def build_backdrop():
     """Tepede süngerimsi pastel kayalar, servi ve çiçekli ağaç (sol ve orta arkada; sağ alt boş)."""
     fwd = FWD3
     # kaya kümeleri: (sağ kayma, derinlik, ölçek, malzeme)
-    for k, (u, dep, s, m) in enumerate(((-5.9, 0.1, 0.9, M_HILLROCK), (-4.6, 0.5, 0.6, M_HILLROCK2), (5.6, 0.2, 0.8, M_HILLROCK),
-                                        (7.6, 0.0, 0.6, M_HILLROCK2), (1.2, -0.1, 0.55, M_HILLROCK2))):
+    for k, (u, dep, s, m) in enumerate(((-5.9, 0.1, 0.9, M_HILLROCK), (-4.6, 0.5, 0.6, M_HILLROCK2), (5.0, 0.2, 0.55, M_HILLROCK),
+                                        (7.6, 0.0, 0.45, M_HILLROCK2), (1.2, -0.1, 0.5, M_HILLROCK2))):
         p = on_ridge(u, dep)
         z = p.z
         bm = bmesh.new()
@@ -479,7 +481,7 @@ def build_backdrop():
                  seed=400 + k * 10 + j, curls=0.1, curl_scale=4.0)
         bm_obj('kaya_%d' % k, bm, [m])
     # serviler
-    for k, (u, dep, s) in enumerate(((-2.7, 0.3, 0.8), (-2.1, 0.0, 0.62), (3.9, 0.35, 0.72))):
+    for k, (u, dep, s) in enumerate(((-2.2, 0.3, 0.8), (-1.65, 0.0, 0.62), (3.9, 0.35, 0.72))):
         p = on_ridge(u, dep)
         z = p.z
         bm = bmesh.new()
@@ -501,7 +503,7 @@ def build_backdrop():
                 bm.faces.new((rings[j][t], rings[j][(t + 1) % seg], rings[j + 1][(t + 1) % seg], rings[j + 1][t]))
         bm_obj('servi_%d' % k, bm, [M_CYPRESS], subsurf=1)
     # çiçekli ağaç
-    for k, (u, dep, s) in enumerate(((-7.6, 0.4, 0.8), (6.8, 0.5, 0.7))):
+    for k, (u, dep, s) in enumerate(((-7.6, 0.4, 0.8), (6.3, 0.5, 0.6))):
         p = on_ridge(u, dep)
         z = p.z
         bm = bmesh.new()
