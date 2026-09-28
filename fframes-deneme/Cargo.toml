@@ -1,0 +1,36 @@
+[package]
+name = "zirek-duz2d"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Same layout `cargo fframes new --backend cpu` generates (fframes 1.0.0 from crates.io).
+[dependencies]
+fframes = { version = "=1.0.0", features = ["compile-time-svgtree", "cli"] }
+
+[target.'cfg(not(windows))'.dependencies]
+fframes = { version = "=1.0.0", features = ["h264", "libav-agree-gpl"] }
+
+[features]
+default = []
+# Optional GPU backend (Skia on Vulkan); built only by the `skia` job.
+skia = ["dep:fframes_skia_renderer"]
+
+[dependencies.fframes_skia_renderer]
+version = "=1.0.0"
+features = ["vulkan"]
+optional = true
+
+[lib]
+name = "zirek_duz2d"
+path = "src/lib.rs"
+doctest = false
+
+[[bin]]
+name = "zirek-duz2d"
+path = "src/main.rs"
+
+[workspace]
+
+[profile.release]
+opt-level = 3

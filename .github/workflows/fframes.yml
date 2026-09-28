@@ -1,0 +1,170 @@
+# Math with Zirek · fframes (Rust + SVG) denemesi: duz2d sahnesinin fframes kopyası
+# Elle başlatılır:
+#   gh workflow run fframes.yml                       (CPU; önbellekli)
+#   gh workflow run fframes.yml -f onbellek=hayir     (soğuk derleme süresini ölçmek için)
+#   gh workflow run fframes.yml -f skia=evet          (ek iş: Skia/Vulkan arka ucu, yazılım Vulkan ile)
+# Çıktı: fframes.mp4 + kareler.png (68., 180., 290. kareler) + kayıpsız PNG kareler + sure.txt (3 gün).
+
+name: fframes
+
+on:
+  workflow_dispatch:
+    inputs:
+      onbellek:
+        description: "Rust önbelleği kullanılsın mı (evet/hayir)"
+        required: true
+        default: "evet"
+      skia:
+        description: "Skia (Vulkan, lavapipe) işini de çalıştır (evet/hayir)"
+        required: true
+        default: "hayir"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fframes-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: never
+  CARGO_INCREMENTAL: 0
+  PROJE: fframes-deneme
+
+jobs:
+  cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: fframes-deneme
+
+      - name: Sistem paketleri
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q yasm nasm pkg-config libx264-dev libx265-dev libopus-dev libvpx-dev \
+            libclang-dev clang ninja-build libasound2-dev libfontconfig1-dev ffmpeg time
+          nproc; free -h; lscpu | grep -E "Model name|^CPU\(s\)"
+
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustc --version; cargo --version
+
+      - uses: Swatinem/rust-cache@v2
+        if: inputs.onbellek == 'evet'
+        with:
+          workspaces: fframes-deneme
+          cache-on-failure: true
+          key: cpu-v1
+
+      - name: Derleme (cargo build --release)
+        working-directory: ${{ env.PROJE }}
+        run: |
+          start=$(date +%s)
+          /usr/bin/time -v cargo build --release 2> >(tee build-time.log >&2)
+          sure=$(( $(date +%s) - start ))
+          rss=$(grep "Maximum resident" build-time.log | awk '{print $NF}')
+          echo "Derleme: $((sure / 60)) dk $((sure % 60)) sn (önbellek: ${{ inputs.onbellek }}, $(nproc) çekirdek, en çok RAM tek süreç ${rss} KB)" | tee -a "$GITHUB_STEP_SUMMARY" | tee sure.txt
+
+      - name: Denetim (inspect)
+        working-directory: ${{ env.PROJE }}
+        run: ./target/release/zirek-duz2d inspect 2>&1 | tail -n 30 | tee inspect.txt || true
+
+      - name: Render (CPU, tiny-skia)
+        working-directory: ${{ env.PROJE }}
+        run: |
+          for i in 1 2; do
+            rm -f fframes.mp4
+            start=$(date +%s.%N)
+            /usr/bin/time -v ./target/release/zirek-duz2d render -o fframes.mp4 2> render-time.log
+            sure=$(echo "$(date +%s.%N) - $start" | bc)
+            rss=$(grep "Maximum resident" render-time.log | awk '{print $NF}')
+            echo "Render $i: ${sure} sn (CPU arka ucu, $(nproc) çekirdek, en çok RAM ${rss} KB)" | tee -a "$GITHUB_STEP_SUMMARY" | tee -a sure.txt
+          done
+          tail -n 5 render-time.log
+          ffprobe -v error -show_entries stream=codec_name,width,height,pix_fmt,nb_frames -show_entries format=duration,size -of default=nw=1 fframes.mp4 | tee -a "$GITHUB_STEP_SUMMARY" | tee -a sure.txt
+
+      - name: Kareler
+        working-directory: ${{ env.PROJE }}
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -i fframes.mp4 \
+            -vf "select='eq(n\,68)+eq(n\,180)+eq(n\,290)',scale=1280:720:flags=lanczos,tile=3x1" \
+            -frames:v 1 -fps_mode passthrough kareler.png
+          start=$(date +%s.%N)
+          ./target/release/zirek-duz2d frame 68,180,290 -o png-kareler
+          echo "3 kayıpsız PNG kare: $(echo "$(date +%s.%N) - $start" | bc) sn" | tee -a sure.txt
+          ls -l kareler.png png-kareler
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fframes-cpu-${{ github.run_number }}
+          path: |
+            ${{ env.PROJE }}/fframes.mp4
+            ${{ env.PROJE }}/kareler.png
+            ${{ env.PROJE }}/png-kareler/
+            ${{ env.PROJE }}/sure.txt
+            ${{ env.PROJE }}/inspect.txt
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: warn
+
+  skia:
+    if: inputs.skia == 'evet'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: fframes-deneme
+
+      - name: Sistem paketleri
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q yasm nasm pkg-config libx264-dev libx265-dev libopus-dev libvpx-dev \
+            libclang-dev clang llvm ninja-build libasound2-dev libfontconfig1-dev ffmpeg time \
+            libvulkan-dev mesa-vulkan-drivers vulkan-tools libgl1-mesa-dev libgles2-mesa-dev libwayland-dev libssl-dev
+          nproc; free -h
+          vulkaninfo --summary 2>&1 | head -n 40 || true
+
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@v2
+        if: inputs.onbellek == 'evet'
+        with:
+          workspaces: fframes-deneme
+          cache-on-failure: true
+          key: skia-v1
+
+      - name: Derleme (Skia + Vulkan)
+        working-directory: ${{ env.PROJE }}
+        run: |
+          start=$(date +%s)
+          cargo build --release --features skia
+          sure=$(( $(date +%s) - start ))
+          echo "Skia derleme: $((sure / 60)) dk $((sure % 60)) sn" | tee -a "$GITHUB_STEP_SUMMARY" | tee sure-skia.txt
+
+      - name: Render (Skia, lavapipe yazılım Vulkan)
+        working-directory: ${{ env.PROJE }}
+        run: |
+          start=$(date +%s.%N)
+          ./target/release/zirek-duz2d render -o fframes-skia.mp4
+          echo "Skia render: $(echo "$(date +%s.%N) - $start" | bc) sn (GPU yok, lavapipe)" | tee -a "$GITHUB_STEP_SUMMARY" | tee -a sure-skia.txt
+          ./target/release/zirek-duz2d frame 68,180,290 -o png-kareler-skia || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fframes-skia-${{ github.run_number }}
+          path: |
+            ${{ env.PROJE }}/fframes-skia.mp4
+            ${{ env.PROJE }}/png-kareler-skia/
+            ${{ env.PROJE }}/sure-skia.txt
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: warn
