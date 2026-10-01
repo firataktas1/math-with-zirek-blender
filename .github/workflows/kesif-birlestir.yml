@@ -1,0 +1,71 @@
+# Math with Zirek · video1-son klipleri: bir render koşusunun yama-*/tam-* PNG karelerini bulutta MP4'e çevirir.
+# Gren/vinyet yok (ana video kendi ekler). Örnek:
+#   gh workflow run kesif-birlestir.yml -f run=<renderRunId> -f ad=ahsap-kesif -f kare_sayisi=357 -f ornek=16,151,241,346
+name: Kesif birlestir
+
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: "render koşusu (run id)"
+        required: true
+      ad:
+        description: "çıktı adı"
+        required: true
+        default: "ahsap-kesif"
+      kare_sayisi:
+        description: "beklenen kare sayısı"
+        required: true
+        default: "357"
+      ornek:
+        description: "kontrol kareleri (2x2 pano)"
+        required: true
+        default: "16,151,241,346"
+      crf:
+        description: "x264 CRF"
+        required: false
+        default: "14"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  birlestir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: ffmpeg
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg > /dev/null
+      - name: Kareleri indir
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download ${{ inputs.run }} -R ${{ github.repository }} -p 'yama-*' -D yeni || true
+          gh run download ${{ inputs.run }} -R ${{ github.repository }} -p 'tam-*' -D yeni || true
+          mkdir -p kareler && find yeni -name 'k_*.png' -exec cp {} kareler/ \;
+          N=$(ls kareler | wc -l); echo "kare: $N"
+          [ "$N" -eq "${{ inputs.kare_sayisi }}" ] || { echo "beklenen ${{ inputs.kare_sayisi }}"; exit 1; }
+          for i in $(seq 1 ${{ inputs.kare_sayisi }}); do f=kareler/k_$(printf %04d $i).png; [ -f $f ] || { echo "eksik $f"; exit 1; }; done
+      - name: MP4 (H.264, yuv420p, BT.709, filtre yok)
+        run: |
+          A=${{ inputs.ad }}
+          ffmpeg -hide_banner -loglevel error -framerate 30 -start_number 1 -i kareler/k_%04d.png \
+            -vf "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p" \
+            -c:v libx264 -preset slow -crf ${{ inputs.crf }} -profile:v high -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv \
+            -an -movflags +faststart $A.mp4
+          ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames,width,height,r_frame_rate,pix_fmt,color_space -of default=nw=1 $A.mp4
+          IFS=, read a b c d <<< "${{ inputs.ornek }}"
+          ffmpeg -hide_banner -loglevel error -i kareler/k_$(printf %04d $a).png -i kareler/k_$(printf %04d $b).png \
+            -i kareler/k_$(printf %04d $c).png -i kareler/k_$(printf %04d $d).png \
+            -filter_complex "[0]scale=960:540[p0];[1]scale=960:540[p1];[2]scale=960:540[p2];[3]scale=960:540[p3];[p0][p1]hstack[u];[p2][p3]hstack[l];[u][l]vstack" \
+            $A-kareler.png
+          ls -la $A.mp4 $A-kareler.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.ad }}-son
+          path: |
+            ${{ inputs.ad }}.mp4
+            ${{ inputs.ad }}-kareler.png
+          retention-days: 7
+          compression-level: 0
