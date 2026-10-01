@@ -35,12 +35,12 @@ FPS = 30
 N_FRAMES = 357
 N_SHEEP = 8                 # sabah çıkan koyun (ve çakıl) sayısı
 N_BACK = 7                  # akşam dönen koyun; biri dışarıda kalır → kesede tek çakıl
-M_GATE0 = 8                 # sabah: i. koyunun kapıdan geçtiği kare = M_GATE0 + M_GAP*i (son: 120 = 4.0 sn)
-M_GAP = 16
+M_GATE0 = 6                 # sabah: i. koyunun kapıdan geçtiği kare = M_GATE0 + M_GAP*i (son: 111 = 3.7 sn)
+M_GAP = 15
 M_SPEED = 1.25 / FPS
-T_GATE0 = 186               # akşam: k. koyunun kapıdan geçtiği kare (son: 282; son çakıl 299'da iner < 313)
-T_GAP = 16
-SPEED = 0.95 / FPS
+T_GATE0 = 188               # akşam: k. koyunun kapıdan geçtiği kare (son: 290; son çakıl 307'de iner < 313)
+T_GAP = 17
+SPEED = 1.15 / FPS          # 17 kare arayla ~0.65 birim: koyunlar burun-kuyruk değmez
 FLIGHT = 20                 # keseden diziye uçuş (taban)
 M_FLIGHT = 16               # yığından keseye uçuş
 LIGHT0, LIGHT1 = 145, 175   # 4.8 sn → 5.8 sn: sabah ışığı akşama döner
@@ -549,8 +549,8 @@ for k in range(N_BACK):
     jit = FWD0 * (0.06 * ((k * 7) % 3 - 1))
     paths.append(Path([START0 + jit, START1 + jit, OUT1, GATE, INSIDE, SPOTS[k]]))
 OUT_M = GATE + gu * 0.55
-M1 = OUT_M - RIGHT * 1.2 + FWD0 * 0.6
-MEND = OUT_M - RIGHT * 6.0 + FWD0 * 3.5
+M1 = OUT_M - RIGHT * 0.8 + FWD0 * 1.0      # akşam yolundan ayrı: sol arkaya, otlağa
+MEND = OUT_M - RIGHT * 4.5 + FWD0 * 5.0
 mpaths = []     # sabah yolları: ağıldaki yerinden kapıya, sonra sol arkaya (otlağa)
 for i in range(N_SHEEP):
     jit = FWD0 * (0.05 * ((i * 5) % 3 - 1))
@@ -639,6 +639,38 @@ def build_pen():
 
 
 POST_TOP = build_pen()
+
+
+def build_shadow_band():
+    """Görünmez gölge bandı: blok araları güneşte ince ışık çizgileri bırakıyordu (tahtada parlak çizgi gibi).
+    Duvarın içinde, yalnız gölge veren ince şerit; kameraya ve dolaylı ışığa görünmez."""
+    bm = bmesh.new()
+    a0 = GATE_ANG + GAP_HALF + 0.03
+    a1 = GATE_ANG - GAP_HALF - 0.03 + 2 * math.pi
+    n = 240
+    H = 0.27
+    rows = []
+    for j in range(n + 1):
+        a = a0 + (a1 - a0) * j / n
+        col = []
+        for rr in (PEN_R - 0.02, PEN_R + 0.02):
+            p = ring_pos(a, rr)
+            z = hfun(p.x, p.y)
+            col.append((bm.verts.new((p.x, p.y, z - 0.01)), bm.verts.new((p.x, p.y, z + H))))
+        rows.append(col)
+    for j in range(n):
+        for side in (0, 1):
+            b0, t0 = rows[j][side]
+            b1, t1 = rows[j + 1][side]
+            bm.faces.new((b0, b1, t1, t0))
+        bm.faces.new((rows[j][0][1], rows[j + 1][0][1], rows[j + 1][1][1], rows[j][1][1]))
+    ob = bm_to_obj('golge_bandi', bm, smooth_shade=False)
+    for attr in ('visible_camera', 'visible_diffuse', 'visible_glossy', 'visible_transmission', 'visible_volume_scatter'):
+        setattr(ob, attr, False)
+    ob.visible_shadow = True
+
+
+build_shadow_band()
 print('t duvar %.1f' % (time.time() - T_START), flush=True)
 
 
