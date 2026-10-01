@@ -476,7 +476,13 @@ TO_CAM = (CAM_POS0.xy - FP).normalized()
 TO_CAM3 = TO_CAM.to_3d()
 PEB_SP = 0.128
 ROW_CENTER = FP + TO_CAM * 0.62 + RIGHT * 0.14
-LAND = [ROW_CENTER + RIGHT * PEB_SP * (k - (N_BACK - 1) / 2) for k in range(N_BACK)]
+# Dizi tahtanın sağına kaydırıldı (aralık 0.12): akşam güneşi tahtanın sol ucunu aydınlatıyor, sağı arka direğin
+# gölgesinde; dizi aydınlık-gölge sınırına denk gelince iki çakılın gölgeleri arasında ince parlak bir çizik
+# kalıyordu (ışın taramasıyla bulundu). Artık bütün dizi gölgede, sınır ilk çakılın solunda.
+PEB_SP = 0.12
+ROW_SHIFT = 0.13
+SLAB_SHIFT = 0.08
+LAND = [ROW_CENTER + RIGHT * (ROW_SHIFT + PEB_SP * (k - (N_BACK - 1) / 2)) for k in range(N_BACK)]
 _rr = rng(4000)
 LAND = [p + Vector((_rr.uniform(-0.006, 0.006), _rr.uniform(-0.006, 0.006))) for p in LAND]
 # sabah: kapının önünde yerde küçük çakıl yığını (tahtanın solunda)
@@ -673,32 +679,6 @@ def build_shadow_band():
 
 build_shadow_band()
 
-
-def build_gate_curtain():
-    """Görünmez gölge perdesi (yalnız akşam): alçak akşam güneşi kapı aralığından (direklerin arasından, duvar
-    üstü yüksekliğinde) dar bir ışık demeti geçiriyor, çakıl tahtasında çakılların arasında parlak bir çizik gibi
-    duruyordu (ışın taramasıyla bulundu). Kapı aralığında 0.36 yüksekliğin üstünü yalnız gölge için kapatır;
-    sabah güneşinde boş yere gölge düşürmesin diye akşam ışığı yerleşince açılır."""
-    d = FP - BP
-    mid = (FP + BP) / 2
-    bm = bmesh.new()
-    rbox(bm, (0, 0, 0), (d.length, 0.03, 0.34), bev=0.001)
-    ob = bm_to_obj('kapi_golge_perdesi', bm, smooth_shade=False)
-    ob.location = (mid.x, mid.y, hfun(mid.x, mid.y) + 0.36 + 0.17)
-    ob.rotation_euler = (0, 0, math.atan2(d.y, d.x))
-    for attr in ('visible_camera', 'visible_diffuse', 'visible_glossy', 'visible_transmission', 'visible_volume_scatter'):
-        setattr(ob, attr, False)
-    ob.visible_shadow = True
-    for f, sc in ((-2, 0.0), (LIGHT1 - 6, 0.0), (LIGHT1 - 5, 1.0)):
-        ob.scale = (sc, sc, sc)
-        ob.keyframe_insert('scale', frame=f)
-    for fc in ob.animation_data.action.fcurves if hasattr(ob.animation_data.action, 'fcurves') else []:
-        for kp in fc.keyframe_points:
-            kp.interpolation = 'CONSTANT'
-    return ob
-
-
-GATE_CURTAIN = build_gate_curtain()
 print('t duvar %.1f' % (time.time() - T_START), flush=True)
 
 
@@ -747,8 +727,8 @@ def build_slab():
     bmesh.ops.bevel(tmp, geom=[e for e in tmp.edges if abs(e.verts[0].co.z - e.verts[1].co.z) < 1e-6],
                     offset=0.008, segments=3, profile=0.5, affect='EDGES', clamp_overlap=True)
     bmesh.ops.triangulate(tmp, faces=[fc for fc in tmp.faces if len(fc.verts) > 8])
-    c = ROW_CENTER
-    M = Matrix.Translation((c.x, c.y, hfun(c.x, c.y) - 0.004)) @ Matrix.Rotation(math.atan2(RIGHT.y, RIGHT.x), 4, 'Z')
+    c = ROW_CENTER + RIGHT * SLAB_SHIFT
+    M = Matrix.Translation((c.x, c.y, hfun(ROW_CENTER.x, ROW_CENTER.y) - 0.004)) @ Matrix.Rotation(math.atan2(RIGHT.y, RIGHT.x), 4, 'Z')
     merge_bm(bm, tmp, M)
     ob = bm_to_obj('cakil_tahtasi', bm, smooth_shade=False)
     setmat(ob, M_SLAB)
@@ -1536,7 +1516,6 @@ if A.isin:
         scene.frame_set(FR)
         dg = bpy.context.evaluated_depsgraph_get()
         sd = -(sun.matrix_world.to_quaternion() @ Vector((0, 0, -1)))
-        print('ISIN f%d perde olcek %s' % (FR, tuple(round(x, 2) for x in GATE_CURTAIN.matrix_world.to_scale())))
         base = (LAND[0] + LAND[1]) / 2
         for dt in (-0.07, 0.0):
             for k in range(-40, 14, 2):
