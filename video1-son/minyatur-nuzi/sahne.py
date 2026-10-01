@@ -360,11 +360,11 @@ M_CLOTH = paint('ortu', (0.14, 0.27, 0.62), pattern='benek', pcol=(0.86, 0.68, 0
                 shade=(0.80, 0.80, 0.92))
 M_GOLD = paint('altin', (0.84, 0.65, 0.28), gold=True, soft=0.35, shade=(0.82, 0.78, 0.74))
 M_VERMB = paint('kirmizi_serit', (0.78, 0.24, 0.12), soft=0.3)
-M_MAT = paint('hasir', (0.88, 0.77, 0.54), pattern='hasir', pcol=(0.74, 0.60, 0.38), pscale=9.0, pstr=0.55, soft=0.4,
+M_MAT = paint('hasir', (0.86, 0.72, 0.46), pattern='hasir', pcol=(0.70, 0.54, 0.32), pscale=3.2, pstr=0.5, soft=0.4,
               mottle=0.05, shade=(0.86, 0.84, 0.90))
 M_BENCH = paint('sedir_yuz', (0.80, 0.63, 0.45), pattern='tugla', pcol=(0.62, 0.46, 0.32), pscale=1.1, pwidth=0.03, pstr=0.6,
                 soft=0.3, mottle=0.06)
-M_WALL = paint('duvar', (0.90, 0.80, 0.63), pattern='tugla', pcol=(0.70, 0.56, 0.40), pscale=1.3, pwidth=0.025, pstr=0.45,
+M_WALL = paint('duvar', (0.94, 0.86, 0.74), pattern='tugla', pcol=(0.78, 0.64, 0.50), pscale=1.3, pwidth=0.02, pstr=0.35,
                soft=0.25, mottle=0.07, mscale=0.8, shade=(0.84, 0.80, 0.86))
 M_WOOD = paint('ahsap', (0.52, 0.34, 0.20), soft=0.3, pattern='tas', pcol=(0.40, 0.25, 0.15), pscale=3.0, pwidth=0.02, pstr=0.5)
 M_REED = paint('kamis', (0.86, 0.74, 0.46), soft=0.3)
@@ -403,15 +403,27 @@ M_BGOLD = paint('pervaz_altin', (0.85, 0.67, 0.30), gold=True, soft=0.0, mottle=
 
 # ---------------------------------------------------------------- oda: sedir (hasır üstü), duvar, pencere
 BENCH_Y0, WALL_Y0, WALL_Y1 = -1.9, 1.1, 1.45
-WIN_X0, WIN_X1, WIN_Z0, WIN_Z1 = -2.75, -0.55, 0.35, 1.95
+WIN_X0, WIN_X1, WIN_Z0, WIN_Z1 = -2.75, -0.55, 0.35, 2.2
 bm = bmesh.new()
 box(bm, -7.0, 6.0, BENCH_Y0, WALL_Y0 + 0.01, -2.2, 0.0, mi=1, top_mi=0)
 bm_obj('sedir', bm, [M_MAT, M_BENCH], smooth_shade=False)
 bm = bmesh.new()
-box(bm, -7.0, WIN_X0, WALL_Y0, WALL_Y1, 0.0, 5.0)
-box(bm, WIN_X1, 6.0, WALL_Y0, WALL_Y1, 0.0, 5.0)
-box(bm, WIN_X0, WIN_X1, WALL_Y0, WALL_Y1, 0.0, WIN_Z0)
-box(bm, WIN_X0, WIN_X1, WALL_Y0, WALL_Y1, WIN_Z1, 5.0)
+XS, ZS = (-7.0, WIN_X0, WIN_X1, 6.0), (0.0, WIN_Z0, WIN_Z1, 5.0)
+for yy in (WALL_Y0, WALL_Y1):
+    G = [[bm.verts.new((x, yy, z)) for x in XS] for z in ZS]
+    for iz in range(3):
+        for ix in range(3):
+            if ix == 1 and iz == 1:
+                continue
+            q = (G[iz][ix], G[iz][ix + 1], G[iz + 1][ix + 1], G[iz + 1][ix])
+            bm.faces.new(q if yy == WALL_Y0 else tuple(reversed(q)))
+    if yy == WALL_Y0:
+        GF = G
+    else:
+        GB = G
+for (a0, a1) in (((1, 1), (1, 2)), ((1, 2), (2, 2)), ((2, 2), (2, 1)), ((2, 1), (1, 1))):   # pencere içi yüzleri
+    bm.faces.new((GF[a0[0]][a0[1]], GF[a1[0]][a1[1]], GB[a1[0]][a1[1]], GB[a0[0]][a0[1]]))
+bm.normal_update()
 bm_obj('duvar', bm, [M_WALL], smooth_shade=False)
 bm = bmesh.new()
 box(bm, WIN_X0 - 0.22, WIN_X1 + 0.22, WALL_Y0 - 0.06, WALL_Y1 + 0.02, WIN_Z1, WIN_Z1 + 0.2)        # ahşap lento
@@ -765,9 +777,16 @@ def split_x(th):
 
 
 def egg_mesh(name, part, mats, seg=72, nphi=44):
-    """part: 'tam' (bütün), 'sol' (x < çatlak), 'sag' (x > çatlak). Kutuptan çatlağa meridyen açısıyla örülür."""
+    """part: 'tam' (bütün), 'sol' (x < çatlak), 'sag' (x > çatlak). Kutuptan çatlağa meridyen açısıyla örülür.
+    Yarılar elle kurulan kalın kabuk: dış yüz + içe ölçeklenmiş iç yüz + kırık kenar (kutupta sivri uç çıkmaz)."""
     bm = bmesh.new()
-    rows = []
+    KX, KR = 1.0 - WALL_T / EGG_A * 1.4, 1.0 - WALL_T / EGG_R
+
+    def inner(p):
+        return Vector((p.x * KX, p.y * KR, p.z * KR))
+
+    layers = ('out',) if part == 'tam' else ('out', 'in')
+    rows = {L_: [] for L_ in layers}
     for j in range(seg):
         th = 2 * math.pi * j / seg
         xs = split_x(th)
@@ -777,38 +796,53 @@ def egg_mesh(name, part, mats, seg=72, nphi=44):
             ph0, ph1 = 0.0, math.acos(max(-1.0, min(1.0, -xs / EGG_A)))
         else:
             ph0, ph1 = math.acos(max(-1.0, min(1.0, -xs / EGG_A))), math.pi
-        row = []
-        for i in range(nphi + 1):
-            ph = ph0 + (ph1 - ph0) * i / nphi
-            x = -EGG_A * math.cos(ph)
-            if (part == 'tam' and i in (0, nphi)) or (part == 'sol' and i == 0) or (part == 'sag' and i == nphi):
-                row.append(None)
-                continue
-            row.append(bm.verts.new(egg_pt(x, th)))
-        rows.append(row)
-    pole0 = bm.verts.new(Vector((-EGG_A, 0, 0))) if part in ('tam', 'sol') else None
-    pole1 = bm.verts.new(Vector((EGG_A, 0, 0))) if part in ('tam', 'sag') else None
-    for j in range(seg):
-        a, b = rows[j], rows[(j + 1) % seg]
-        for i in range(nphi):
-            q = [a[i], b[i], b[i + 1], a[i + 1]]
-            if q[0] is None and q[1] is None:
-                bm.faces.new((pole0, b[i + 1], a[i + 1]))
-            elif q[2] is None and q[3] is None:
-                bm.faces.new((a[i], b[i], pole1))
-            else:
-                bm.faces.new((a[i], a[i + 1], b[i + 1], b[i]))
-    bm.normal_update()
-    # normaller dışa
-    flip = sum(1 for f in bm.faces if f.normal.dot(f.calc_center_median() - Vector((f.calc_center_median().x, 0, 0))) < 0)
-    if flip > len(bm.faces) / 2:
-        for f in bm.faces:
-            f.normal_flip()
-    ob = bm_obj(name, bm, mats)
+        for L_ in layers:
+            row = []
+            for i in range(nphi + 1):
+                ph = ph0 + (ph1 - ph0) * i / nphi
+                x = -EGG_A * math.cos(ph)
+                if (part == 'tam' and i in (0, nphi)) or (part == 'sol' and i == 0) or (part == 'sag' and i == nphi):
+                    row.append(None)
+                    continue
+                p = egg_pt(x, th)
+                row.append(bm.verts.new(p if L_ == 'out' else inner(p)))
+            rows[L_].append(row)
+    out_faces, in_faces, rim_faces = [], [], []
+    for L_ in layers:
+        k = 1.0 if L_ == 'out' else None
+        pole0 = bm.verts.new(Vector((-EGG_A * (1 if L_ == 'out' else KX), 0, 0))) if part in ('tam', 'sol') else None
+        pole1 = bm.verts.new(Vector((EGG_A * (1 if L_ == 'out' else KX), 0, 0))) if part in ('tam', 'sag') else None
+        R_ = rows[L_]
+        lst = out_faces if L_ == 'out' else in_faces
+        for j in range(seg):
+            a, b = R_[j], R_[(j + 1) % seg]
+            for i in range(nphi):
+                if a[i] is None and b[i] is None:
+                    lst.append(bm.faces.new((pole0, b[i + 1], a[i + 1])))
+                elif a[i + 1] is None and b[i + 1] is None:
+                    lst.append(bm.faces.new((a[i], b[i], pole1)))
+                else:
+                    lst.append(bm.faces.new((a[i], a[i + 1], b[i + 1], b[i])))
     if part != 'tam':
-        so = ob.modifiers.new('kabuk', 'SOLIDIFY'); so.thickness = WALL_T; so.offset = -1.0
-        so.material_offset = 1; so.material_offset_rim = 1; so.use_rim = True
-    return ob
+        ii = nphi if part == 'sol' else 0
+        for j in range(seg):
+            jn = (j + 1) % seg
+            rim_faces.append(bm.faces.new((rows['out'][j][ii], rows['out'][jn][ii], rows['in'][jn][ii], rows['in'][j][ii])))
+    rim_set, in_set = set(rim_faces), set(in_faces)
+    for f in out_faces + in_faces + rim_faces:
+        f.normal_update()
+        c = f.calc_center_median()
+        if f in rim_set:
+            want = Vector((1, 0, 0)) if part == 'sol' else Vector((-1, 0, 0))
+            f.material_index = 1
+        else:
+            want = c - Vector((c.x * 0.5, 0, 0))
+            if f in in_set:
+                want = -want
+                f.material_index = 1
+        if f.normal.dot(want) < 0:
+            f.normal_flip()
+    return bm_obj(name, bm, mats)
 
 
 egg = egg_mesh('kap', 'tam', [M_CLAY])
@@ -846,14 +880,14 @@ def mark_list():
     r = rng(2024)
     marks = []       # (x, th, ang, shape, sc)
     rules = []       # (th) şerit çizgileri
-    reg = math.radians(13.5)
-    th_list = [TH_CAM + reg * k for k in range(-4, 4)]
+    reg = math.radians(12.5)
+    th_list = [TH_CAM + reg * k for k in range(-5, 5)]
     for k, th_c in enumerate(th_list):
         rules.append(th_c - reg / 2)
-        x = -0.36 + r.uniform(0, 0.03)
+        x = -0.37 + 0.08 * abs(k - 4.5) / 5 + r.uniform(0, 0.03)
         while True:
-            w = r.uniform(0.05, 0.085)
-            if x + w > 0.36 - 0.06 * abs(k - 0.5) / 4:
+            w = r.uniform(0.045, 0.075)
+            if x + w > 0.37 - 0.08 * abs(k - 4.5) / 5:
                 break
             kind = r.random()
             cx = x + w / 2
@@ -893,7 +927,7 @@ def mark_obj(name, part):
             continue
         if part == 'sag' and x < xs + 0.006:
             continue
-        add_mark(bm, x, th, ang, shape, sc)
+        add_mark(bm, x, th, ang, shape, sc * 1.25)
     ob = bm_obj(name, bm, [M_WEDGE], smooth_shade=False, noline=True)
     # şerit çizgileri: ince, açık ton
     bm = bmesh.new()
@@ -914,8 +948,8 @@ def mark_obj(name, part):
                 q = [bm.verts.new(v) for v in (prevp[0] - prevp[1], p - tt, p + tt, prevp[0] + prevp[1])]
                 bm.faces.new(q)
             prevp = (p, tt)
-    ru = bm_obj(name + '_serit', bm, [M_RULE], smooth_shade=False, noline=True)
-    return ob, ru
+    bm.free()
+    return (ob,)
 
 
 for (part, host) in (('tam', egg), ('sol', half_l), ('sag', half_r)):
@@ -1096,15 +1130,33 @@ scene.camera = cam
 cam.rotation_mode = 'QUATERNION'
 CAM_Q = (-VIEW).to_track_quat('Z', 'Y')
 CAM_DIST = 40.0
-X_W, V_W, S_W = -0.62, 0.42, 7.2           # geniş: pencere (sürü), kadeh, kap
-X_E, V_E, S_E = -0.12, -0.25, 4.45         # son: kap ve dizi, solda-ortada
+X_W, V_W, S_W = -0.62, 0.62, 7.2           # geniş: pencere (sürü, kentin evleri), kadeh, kap
+X_C, V_C, S_C = -0.30, 0.10, 2.75          # yakın: kap kahraman (~%34 genişlik), sol-orta
+X_E, V_E, S_E = -0.12, -0.25, 4.45         # son: açılmış kap ve 48 taşlık dizi, sol-orta
+F_C0, F_C1 = 430, 458                      # yakın planda bekleme (çatlak bu sırada)
+F_E = 566                                  # geri çekilme bitişi (taşlar yerleşirken)
 ORTHO = []
+
+
+def cam_state(f):
+    if f <= F_C0:
+        e = smoother((f - 1) / (F_C0 - 1))
+        a, b = (X_W, V_W, S_W), (X_C, V_C, S_C)
+        # yakın plan içinde çok hafif süzülme sürsün
+    elif f <= F_C1:
+        e = (f - F_C0) / (F_C1 - F_C0)
+        a, b = (X_C, V_C, S_C), (X_C + 0.02, V_C - 0.01, S_C * 0.985)
+    else:
+        e = smoother((f - F_C1) / (F_E - F_C1))
+        a, b = (X_C + 0.02, V_C - 0.01, S_C * 0.985), (X_E, V_E, S_E)
+    x = a[0] + (b[0] - a[0]) * e
+    v = a[1] + (b[1] - a[1]) * e
+    sc = math.exp(math.log(a[2]) * (1 - e) + math.log(b[2]) * e)
+    return x, v, sc
+
+
 for f in range(-2, N_FRAMES + 3):
-    u = (f - 1) / (N_FRAMES - 1)
-    e = smoother(min(1.0, max(0.0, u / 0.74))) * 0.95 + 0.05 * max(0.0, min(1.0, u))
-    x = X_W + (X_E - X_W) * e
-    v = V_W + (V_E - V_W) * e
-    sc = math.exp(math.log(S_W) * (1 - e) + math.log(S_E) * e)
+    x, v, sc = cam_state(f)
     cam.location = scr(x, v) - VIEW * CAM_DIST
     cam.rotation_quaternion = CAM_Q
     cam.keyframe_insert('location', frame=f)
@@ -1237,7 +1289,7 @@ if A.cizgi:
 from bpy_extras.object_utils import world_to_camera_view
 print('TAS SAYISI', len([o for o in bpy.data.objects if o.name.startswith('tas_')]))
 print('IZ SAYISI', len(MARKS))
-for _f in (1, 150, 300, 440, 481, 560, 609):
+for _f in (1, 430, 460, 520, 566, 609):
     scene.frame_set(_f)
     pts_ = [('kap', EGG_C + Vector((0, 0, 0.3))), ('kap_sol_uc', EGG_C + Vector((-EGG_A - SEP, 0, 0.2))),
             ('kap_sag_uc', EGG_C + Vector((EGG_A + SEP, 0, 0.2))),
