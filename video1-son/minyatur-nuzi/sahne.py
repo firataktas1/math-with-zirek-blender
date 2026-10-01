@@ -981,12 +981,13 @@ bd.frame_duration = 12
 bd.use_random_order = False
 
 # ---------------------------------------------------------------- kabın hareketi: titreme, açılma
-for f, hid in ((1, False), (F_SPLIT - 1, False), (F_SPLIT, True)):
+# kap F_SPLIT karesinde de bütün kalır (yarılar kapalıyken çatlak bir kare incelip "sıçramasın"); yarılar bir sonraki karede
+for f, hid in ((1, False), (F_SPLIT, False), (F_SPLIT + 1, True)):
     egg.hide_render = hid; egg.keyframe_insert('hide_render', frame=f)
     for ch in egg.children:
         ch.hide_render = hid; ch.keyframe_insert('hide_render', frame=f)
 for ob in (half_l, half_r):
-    for f, hid in ((1, True), (F_SPLIT - 1, True), (F_SPLIT, False)):
+    for f, hid in ((1, True), (F_SPLIT, True), (F_SPLIT + 1, False)):
         ob.hide_render = hid; ob.keyframe_insert('hide_render', frame=f)
         for ch in ob.children:
             ch.hide_render = hid; ch.keyframe_insert('hide_render', frame=f)
