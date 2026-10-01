@@ -360,7 +360,7 @@ M_CLOTH = paint('ortu', (0.14, 0.27, 0.62), pattern='benek', pcol=(0.86, 0.68, 0
                 shade=(0.80, 0.80, 0.92))
 M_GOLD = paint('altin', (0.84, 0.65, 0.28), gold=True, soft=0.35, shade=(0.82, 0.78, 0.74))
 M_VERMB = paint('kirmizi_serit', (0.78, 0.24, 0.12), soft=0.3)
-M_MAT = paint('hasir', (0.86, 0.72, 0.46), pattern='hasir', pcol=(0.70, 0.54, 0.32), pscale=3.2, pstr=0.5, soft=0.4,
+M_MAT = paint('hasir', (0.86, 0.72, 0.46), pattern='hasir', pcol=(0.70, 0.54, 0.32), pscale=3.2, pstr=0.3, soft=0.4,
               mottle=0.05, shade=(0.86, 0.84, 0.90))
 M_BENCH = paint('sedir_yuz', (0.80, 0.63, 0.45), pattern='tugla', pcol=(0.62, 0.46, 0.32), pscale=1.1, pwidth=0.03, pstr=0.6,
                 soft=0.3, mottle=0.06)
@@ -696,7 +696,7 @@ for j in range(len(rings) - 1):
         f.material_index = 1 if 0.8 < zc < 1.3 else 0
 cin = bm.verts.new(POT_C + Vector((0, 0, 1.3)))
 for t in range(seg):
-    bm.faces.new((cin, rings[-1][t], rings[-1][(t + 1) % seg]))
+    bm.faces.new((cin, rings[-1][t], rings[-1][(t + 1) % seg])).material_index = 1      # koyu ağız
 pot = bm_obj('kadeh', bm, [M_POT, M_POT_BAND])
 
 
