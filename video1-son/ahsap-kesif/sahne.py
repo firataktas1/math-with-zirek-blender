@@ -37,7 +37,7 @@ N_SHEEP = 8                 # sabah çıkan koyun (ve çakıl) sayısı
 N_BACK = 7                  # akşam dönen koyun; biri dışarıda kalır → kesede tek çakıl
 M_GATE0 = 6                 # sabah: i. koyunun kapıdan geçtiği kare = M_GATE0 + M_GAP*i (son: 111 = 3.7 sn)
 M_GAP = 15
-M_SPEED = 1.25 / FPS
+M_SPEED = 1.35 / FPS
 T_GATE0 = 188               # akşam: k. koyunun kapıdan geçtiği kare (son: 290; son çakıl 307'de iner < 313)
 T_GAP = 17
 SPEED = 1.15 / FPS          # 17 kare arayla ~0.65 birim: koyunlar burun-kuyruk değmez
@@ -549,8 +549,8 @@ for k in range(N_BACK):
     jit = FWD0 * (0.06 * ((k * 7) % 3 - 1))
     paths.append(Path([START0 + jit, START1 + jit, OUT1, GATE, INSIDE, SPOTS[k]]))
 OUT_M = GATE + gu * 0.55
-M1 = OUT_M - RIGHT * 0.8 + FWD0 * 1.0      # akşam yolundan ayrı: sol arkaya, otlağa
-MEND = OUT_M - RIGHT * 4.5 + FWD0 * 5.0
+M1 = OUT_M - RIGHT * 1.2 + FWD0 * 0.6      # sola, kadrajdan çabuk çıkar (akşam koyunu görünmeden önce)
+MEND = OUT_M - RIGHT * 6.0 + FWD0 * 3.5
 mpaths = []     # sabah yolları: ağıldaki yerinden kapıya, sonra sol arkaya (otlağa)
 for i in range(N_SHEEP):
     jit = FWD0 * (0.05 * ((i * 5) % 3 - 1))
