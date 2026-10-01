@@ -672,6 +672,33 @@ def build_shadow_band():
 
 
 build_shadow_band()
+
+
+def build_gate_curtain():
+    """Görünmez gölge perdesi (yalnız akşam): alçak akşam güneşi kapı aralığından (direklerin arasından, duvar
+    üstü yüksekliğinde) dar bir ışık demeti geçiriyor, çakıl tahtasında çakılların arasında parlak bir çizik gibi
+    duruyordu (ışın taramasıyla bulundu). Kapı aralığında 0.36 yüksekliğin üstünü yalnız gölge için kapatır;
+    sabah güneşinde boş yere gölge düşürmesin diye akşam ışığı yerleşince açılır."""
+    d = FP - BP
+    mid = (FP + BP) / 2
+    bm = bmesh.new()
+    rbox(bm, (0, 0, 0), (d.length, 0.03, 0.34), bev=0.001)
+    ob = bm_to_obj('kapi_golge_perdesi', bm, smooth_shade=False)
+    ob.location = (mid.x, mid.y, hfun(mid.x, mid.y) + 0.36 + 0.17)
+    ob.rotation_euler = (0, 0, math.atan2(d.y, d.x))
+    for attr in ('visible_camera', 'visible_diffuse', 'visible_glossy', 'visible_transmission', 'visible_volume_scatter'):
+        setattr(ob, attr, False)
+    ob.visible_shadow = True
+    for f, sc in ((-2, 0.0), (LIGHT1 - 6, 0.0), (LIGHT1 - 5, 1.0)):
+        ob.scale = (sc, sc, sc)
+        ob.keyframe_insert('scale', frame=f)
+    for fc in ob.animation_data.action.fcurves if hasattr(ob.animation_data.action, 'fcurves') else []:
+        for kp in fc.keyframe_points:
+            kp.interpolation = 'CONSTANT'
+    return ob
+
+
+GATE_CURTAIN = build_gate_curtain()
 print('t duvar %.1f' % (time.time() - T_START), flush=True)
 
 
@@ -947,23 +974,6 @@ def build_pouch():
 
 pouch, POUCH_Q0 = build_pouch()
 
-
-def build_pouch_blocker():
-    """Görünmez gölge perdesi: direk ile kesenin gölgeleri arasında akşam güneşi ince bir ışık şeridi bırakıp
-    çakıl tahtasında parlak bir çizik gibi görünüyordu. Direkten keseye uzanan, yalnız gölge veren ince levha."""
-    a = FP
-    c = Vector((HANG.x, HANG.y))
-    d = c - a
-    mid = (a + c) / 2
-    bm = bmesh.new()
-    rbox(bm, (mid.x, mid.y, 0.24), (d.length, 0.06, 0.46), yaw=math.atan2(d.y, d.x), bev=0.001)
-    ob = bm_to_obj('kese_golge_perdesi', bm, smooth_shade=False)
-    for attr in ('visible_camera', 'visible_diffuse', 'visible_glossy', 'visible_transmission', 'visible_volume_scatter'):
-        setattr(ob, attr, False)
-    ob.visible_shadow = True
-
-
-build_pouch_blocker()
 
 
 IMPULSES = [m_land(i) for i in range(N_SHEEP)] + [e_take(k) for k in range(N_BACK)]
