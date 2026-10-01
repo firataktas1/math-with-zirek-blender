@@ -947,6 +947,24 @@ def build_pouch():
 pouch, POUCH_Q0 = build_pouch()
 
 
+def build_pouch_blocker():
+    """Görünmez gölge perdesi: direk ile kesenin gölgeleri arasında akşam güneşi ince bir ışık şeridi bırakıp
+    çakıl tahtasında parlak bir çizik gibi görünüyordu. Direkten keseye uzanan, yalnız gölge veren ince levha."""
+    a = FP
+    c = Vector((HANG.x, HANG.y))
+    d = c - a
+    mid = (a + c) / 2
+    bm = bmesh.new()
+    rbox(bm, (mid.x, mid.y, 0.24), (d.length, 0.06, 0.46), yaw=math.atan2(d.y, d.x), bev=0.001)
+    ob = bm_to_obj('kese_golge_perdesi', bm, smooth_shade=False)
+    for attr in ('visible_camera', 'visible_diffuse', 'visible_glossy', 'visible_transmission', 'visible_volume_scatter'):
+        setattr(ob, attr, False)
+    ob.visible_shadow = True
+
+
+build_pouch_blocker()
+
+
 IMPULSES = [m_land(i) for i in range(N_SHEEP)] + [e_take(k) for k in range(N_BACK)]
 
 
