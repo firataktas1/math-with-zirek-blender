@@ -1532,24 +1532,24 @@ print('YAKIN %d olay; ilk 40: %s' % (len(_close), _close[:40]))
 print('sahne kuruldu: %.1f sn' % (time.time() - T_START), flush=True)
 if A.isin:
     # tanı: çakıl tahtasındaki ışık şeridinin geçtiği aralığı bul (güneşe doğru ışın)
-    scene.frame_set(241)
-    dg = bpy.context.evaluated_depsgraph_get()
-    sd = -(sun.matrix_world.to_quaternion() @ Vector((0, 0, -1)))
-    print('ISIN gunese yon', tuple(round(x, 3) for x in sd))
-    base = (LAND[0] + LAND[1]) / 2
-    for dt in (-0.06, -0.02, 0.02, 0.06):
-        for k in range(-12, 13):
-            p2 = base + RIGHT * (k * 0.01) + TO_CAM * dt
-            o = Vector((p2.x, p2.y, slab_z(p2) + 0.002))
-            hits = []
-            org = o.copy()
-            for _ in range(4):
-                ok, loc, nrm, idx, ob, _m = scene.ray_cast(dg, org, sd)
-                if not ok:
-                    break
-                hits.append('%s@%.2f' % (ob.name, (loc - o).length))
-                org = loc + sd * 0.002
-            print('ISIN dt=%+.2f k=%+d %s' % (dt, k, ' '.join(hits) if hits else 'GUNES'))
+    for FR in (241, 290):
+        scene.frame_set(FR)
+        dg = bpy.context.evaluated_depsgraph_get()
+        sd = -(sun.matrix_world.to_quaternion() @ Vector((0, 0, -1)))
+        print('ISIN f%d perde olcek %s' % (FR, tuple(round(x, 2) for x in GATE_CURTAIN.matrix_world.to_scale())))
+        base = (LAND[0] + LAND[1]) / 2
+        for dt in (-0.07, 0.0):
+            for k in range(-40, 14, 2):
+                p2 = base + RIGHT * (k * 0.01) + TO_CAM * dt
+                o = Vector((p2.x, p2.y, slab_z(p2) + 0.002))
+                ok, loc, nrm, idx, ob, _m = scene.ray_cast(dg, o, sd)
+                if ok:
+                    t = (loc - o).length
+                    print('ISIN f%d dt=%+.2f k=%+d %s t=%.2f at=(%.2f,%.2f,%.2f)' % (FR, dt, k, ob.name, t, loc.x, loc.y, loc.z))
+                else:
+                    q = o + sd * 1.2
+                    print('ISIN f%d dt=%+.2f k=%+d GUNES  t1.2=(%.2f,%.2f,%.2f)' % (FR, dt, k, q.x, q.y, q.z))
+    print('ISIN FP', tuple(FP), 'BP', tuple(BP), 'GATE', tuple(GATE))
     sys.exit(0)
 os.makedirs(A.cikti, exist_ok=True)
 if A.blend:
