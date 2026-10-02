@@ -944,7 +944,7 @@ window.ogrPoz = function (kok, p) {
         const Ls = (n) => T.L[n][0], Le = (n) => T.L[n][0] + T.L[n][1];
         // word anchor: when a voice track provides word times (English) an item appears on the word itself; otherwise the
         // original fraction-of-line time is used (Turkish), so the Turkish picture is unchanged
-        const KA = (k, yedek) => (T.K && T.K[k] !== undefined ? T.K[k] : yedek);
+        const KELA = (k, yedek) => (T.K && T.K[k] !== undefined ? T.K[k] : yedek);
         // fade window: 0 before a, ramps up over fi, holds, ramps down over fo ending at b
         const pen = (t, a, b, fi, fo) => cl(Math.min((t - a) / (fi || 0.4), (b - t) / (fo === undefined ? (fi || 0.4) : fo)), 0, 1);
         const ac = (t, a, b) => (t >= a && t < b ? 1 : 0);
@@ -1178,7 +1178,7 @@ window.ogrPoz = function (kok, p) {
             const ag = n ? agizSekli(n, t) : null;       // Rhubarb: mouth shape
             if (c.k === 'z') {
               c.bakisX = ad1 === 'zy' || ad1 === 'zyD' ? 0 : 3;
-              zUygula(c, t, pozKarisim(POZ.z, t), kim === 'z', v, ac(t, Ls(33), Le(33) + 0.8) || ac(t, Ls(41), Le(41) + 0.6) || ac(t, KA('55a', Ls(55) + T.L[55][1] * 0.5), Le(55) + 0.6) || ac(t, MK.son - 1.6, END), KILIT(t), ag);
+              zUygula(c, t, pozKarisim(POZ.z, t), kim === 'z', v, ac(t, Ls(33), Le(33) + 0.8) || ac(t, Ls(41), Le(41) + 0.6) || ac(t, KELA('55a', Ls(55) + T.L[55][1] * 0.5), Le(55) + 0.6) || ac(t, MK.son - 1.6, END), KILIT(t), ag);
             } else {
               c.bakisX = ad1 === 'oy' || ad1 === 'oyD' ? 0 : undefined;
               oUygula(c, t, pozKarisim(POZ.o, t), kim === 'o', v, ag);
@@ -1401,8 +1401,8 @@ window.ogrPoz = function (kok, p) {
           const s = seg(t, B, B2 + 1.0, 1.0, 1.06, 'sine.inOut', true);
           tr($('#sf-kat'), 960 - 1000 * s, 420 - 420 * s, s);
           const d2 = T.L[2][1], L2 = Ls(2);
-          sa($('#sf-balon'), 'opacity', pen(t, KA('2a', L2 + d2 * 0.4), Ls(3) + 0.8, 0.3, 0.5).toFixed(3));
-          sa($('#sf-uc'), 'opacity', pen(t, KA('2b', L2 + d2 * 0.62), B2 + 0.6, 0.4, 0.5).toFixed(3));
+          sa($('#sf-balon'), 'opacity', pen(t, KELA('2a', L2 + d2 * 0.4), Ls(3) + 0.8, 0.3, 0.5).toFixed(3));
+          sa($('#sf-uc'), 'opacity', pen(t, KELA('2b', L2 + d2 * 0.62), B2 + 0.6, 0.4, 0.5).toFixed(3));
         });
 
         // ---------------- B2 · faded memory, 2: school-age student walks home, notebook digits blur
@@ -1554,9 +1554,9 @@ window.ogrPoz = function (kok, p) {
           sa($('#kr-d100a'), 'opacity', ac(t, MK.d100, MK.d100s)); sa($('#kr-d100b'), 'opacity', ac(t, MK.d100, MK.d100s));
           sa($('#kr-panel'), 'opacity', (pen(t, Ls(11) - 0.2, MK.yan - 0.3, 0.4, 0.4) * 0.8).toFixed(3));
           const d11 = T.L[11][1];
-          sa($('#kr-100'), 'opacity', pen(t, KA('11a', Ls(11) + 0.3) - 0.2, MK.yan - 0.1, 0.3, 0.4).toFixed(3));
-          sa($('#kr-110'), 'opacity', pen(t, KA('11b', Ls(11) + d11 * 0.28), MK.yan - 0.1, 0.3, 0.4).toFixed(3));
-          sa($('#kr-fark'), 'opacity', pen(t, KA('11c', Ls(11) + d11 * 0.6), MK.yan - 0.1, 0.3, 0.4).toFixed(3));
+          sa($('#kr-100'), 'opacity', pen(t, KELA('11a', Ls(11) + 0.3) - 0.2, MK.yan - 0.1, 0.3, 0.4).toFixed(3));
+          sa($('#kr-110'), 'opacity', pen(t, KELA('11b', Ls(11) + d11 * 0.28), MK.yan - 0.1, 0.3, 0.4).toFixed(3));
+          sa($('#kr-fark'), 'opacity', pen(t, KELA('11c', Ls(11) + d11 * 0.6), MK.yan - 0.1, 0.3, 0.4).toFixed(3));
           // both comparisons side by side; the extra 10 turn one colour and glide into ONE tight clump
           const Y = MK.yan;
           sa($('#kr-yan'), 'opacity', pen(t, Y + 0.1, MK.E + 0.3, 0.4, 0.6).toFixed(3));
@@ -1577,8 +1577,8 @@ window.ogrPoz = function (kok, p) {
           });
           $$('.kr-art', S.k).forEach((e) => sa(e, 'opacity', seg(t, Y + 1.6, Y + 1.9, 0, 1).toFixed(3)));
           const d12 = T.L[12][1];
-          sa($('#kr-yari'), 'opacity', seg(t, KA('12a', Ls(12) + d12 * 0.3), KA('12a', Ls(12) + d12 * 0.3) + 0.3, 0, 1).toFixed(3));
-          sa($('#kr-kayip'), 'opacity', seg(t, KA('12b', Ls(12) + d12 * 0.7), KA('12b', Ls(12) + d12 * 0.7) + 0.3, 0, 1).toFixed(3));
+          sa($('#kr-yari'), 'opacity', seg(t, KELA('12a', Ls(12) + d12 * 0.3), KELA('12a', Ls(12) + d12 * 0.3) + 0.3, 0, 1).toFixed(3));
+          sa($('#kr-kayip'), 'opacity', seg(t, KELA('12b', Ls(12) + d12 * 0.7), KELA('12b', Ls(12) + d12 * 0.7) + 0.3, 0, 1).toFixed(3));
           // 13: the inset card (three pens, two baskets) covers the upper half of the sheet for the line
           sa($('#kr-ic'), 'opacity', pen(t, Ls(13) - 0.1, Le(13) + 0.3, 0.4, 0.5).toFixed(3));
         });
@@ -1837,18 +1837,18 @@ window.ogrPoz = function (kok, p) {
           const d23 = T.L[23][1];
           $$('.cb-isim', S.k).forEach((e) => {
             const i = +e.dataset.i, sh = CIKIS_SIRA[3 + i * 3], [x, y] = agilYer(FR.aksam, sh);
-            const o = pen(t, KA('23a', Ls(23) + d23 * 0.35) + d23 * i * 0.08, KA('25a', Ls(25) + T.L[25][1] * 0.3), 0.3, 0.5);
-            const kar = seg(t, Ls(25), KA('25a', Ls(25) + T.L[25][1] * 0.3), 0, 1);
+            const o = pen(t, KELA('23a', Ls(23) + d23 * 0.35) + d23 * i * 0.08, KELA('25a', Ls(25) + T.L[25][1] * 0.3), 0.3, 0.5);
+            const kar = seg(t, Ls(25), KELA('25a', Ls(25) + T.L[25][1] * 0.3), 0, 1);
             sa(e, 'opacity', o.toFixed(3));
             sa(e, 'transform', `translate(${(x + kar * (hash(i + 90) - 0.5) * 160).toFixed(1)} ${(y - 58 - kar * hash(i + 91) * 40).toFixed(1)}) rotate(${(kar * (hash(i + 92) - 0.5) * 70).toFixed(1)})`);
           });
-          sa($('#cb-sira20'), 'opacity', pen(t, Ls(24) + 0.2, KA('25a', Ls(25) + T.L[25][1] * 0.3) + T.L[25][1] * 0.05, 0.4, 0.4).toFixed(3));
-          const kar20 = seg(t, Ls(25), KA('25a', Ls(25) + T.L[25][1] * 0.3), 0, 1);
+          sa($('#cb-sira20'), 'opacity', pen(t, Ls(24) + 0.2, KELA('25a', Ls(25) + T.L[25][1] * 0.3) + T.L[25][1] * 0.05, 0.4, 0.4).toFixed(3));
+          const kar20 = seg(t, Ls(25), KELA('25a', Ls(25) + T.L[25][1] * 0.3), 0, 1);
           $$('.cb-s20', S.k).forEach((e, i) => {
             sa(e, 'opacity', seg(t, Ls(24) + 0.2 + i * 0.05, Ls(24) + 0.35 + i * 0.05, 0, 1).toFixed(3));
             sa(e, 'transform', `translate(${(380 + i * 50 + kar20 * (hash(i + 95) - 0.5) * 60).toFixed(1)} ${(135 + kar20 * (hash(i + 96) - 0.5) * 50).toFixed(1)}) rotate(${(kar20 * (hash(i + 97) - 0.5) * 50).toFixed(1)})`);
           });
-          sa($('#cb-100'), 'opacity', pen(t, KA('20a', Ls(20) + T.L[20][1] * 0.2 + 0.4) - 0.4, Le(20) + 0.2, 0.3, 0.5).toFixed(3));
+          sa($('#cb-100'), 'opacity', pen(t, KELA('20a', Ls(20) + T.L[20][1] * 0.2 + 0.4) - 0.4, Le(20) + 0.2, 0.3, 0.5).toFixed(3));
         });
         etiket(DAL_I.t1 + 0.3, MK.H - 0.4, IK.kalem);
         cek(DAL_I.t1 + 0.05, 'kenar', 0.6);
@@ -1925,7 +1925,7 @@ window.ogrPoz = function (kok, p) {
           sa($('#kl-temsili'), 'opacity', pen(t, KL + 0.6, Ls(39) + 0.2, 0.5, 0.4).toFixed(3));
           sa($('#kl-yil'), 'opacity', pen(t, KL + 0.6, Le(36), 0.5, 0.5).toFixed(3));
           const d36 = T.L[36][1];
-          sa($('#kl-yazi48'), 'opacity', pen(t, KA('36a', Ls(36) + d36 * 0.15), DK + 0.3, 0.4, 0.4).toFixed(3));
+          sa($('#kl-yazi48'), 'opacity', pen(t, KELA('36a', Ls(36) + d36 * 0.15), DK + 0.3, 0.4, 0.4).toFixed(3));
           sa($('#kl-ok'), 'opacity', 0);
           // the container opens: the top lifts and tilts, the stones pour out and spread on the ground
           // the two halves lie apart, as at the end of the clip
@@ -1934,16 +1934,16 @@ window.ogrPoz = function (kok, p) {
           sa($('#kl-dikis'), 'opacity', 0);
           const kelime = seg(t, Ls(39) - 0.2, Ls(39) + 0.6, 0, 1);
           op($('#kl-taslar'), sonra * (1 - 0.75 * kelime));
-          sa($('#kl-48'), 'opacity', pen(t, Math.max(DK + 0.6, KA('36b', DK + 0.6) - 0.15), Ls(39) + 0.3, 0.4, 0.6).toFixed(3));
+          sa($('#kl-48'), 'opacity', pen(t, Math.max(DK + 0.6, KELA('36b', DK + 0.6) - 0.15), Ls(39) + 0.3, 0.4, 0.6).toFixed(3));
           // calculus -> calculate, calculator; then the phone calculator next to the pouch
           const d39 = T.L[39][1];
-          sa($('#kl-kelime'), 'opacity', pen(t, KA('39a', Ls(39) + d39 * 0.15), MK.I + 0.3, 0.4, 0.6).toFixed(3));
-          sa($('#kl-calc1'), 'opacity', seg(t, KA('39b', Ls(39) + d39 * 0.62), KA('39b', Ls(39) + d39 * 0.62) + 0.4, 0, 1).toFixed(3));
-          sa($('#kl-calc2'), 'opacity', (seg(t, Ls(40) + 0.1, Ls(40) + 0.5, 0, 1) * (1 - seg(t, KA('41a', Ls(41) + T.L[41][1] * 0.15 + 0.3) - 0.3, KA('41a', Ls(41) + T.L[41][1] * 0.15 + 0.3) + 0.2, 0, 1))).toFixed(3));
+          sa($('#kl-kelime'), 'opacity', pen(t, KELA('39a', Ls(39) + d39 * 0.15), MK.I + 0.3, 0.4, 0.6).toFixed(3));
+          sa($('#kl-calc1'), 'opacity', seg(t, KELA('39b', Ls(39) + d39 * 0.62), KELA('39b', Ls(39) + d39 * 0.62) + 0.4, 0, 1).toFixed(3));
+          sa($('#kl-calc2'), 'opacity', (seg(t, Ls(40) + 0.1, Ls(40) + 0.5, 0, 1) * (1 - seg(t, KELA('41a', Ls(41) + T.L[41][1] * 0.15 + 0.3) - 0.3, KELA('41a', Ls(41) + T.L[41][1] * 0.15 + 0.3) + 0.2, 0, 1))).toFixed(3));
           const d41 = T.L[41][1];
-          sa($('#kl-tel'), 'opacity', pen(t, KA('41a', Ls(41) + d41 * 0.2), MK.I + 0.3, 0.4, 0.6).toFixed(3));
-          sa($('#kl-torba'), 'opacity', pen(t, KA('41b', Ls(41) + d41 * 0.55), MK.I + 0.3, 0.4, 0.6).toFixed(3));
-          cizP($('#kl-ok2'), seg(t, KA('41b', Ls(41) + d41 * 0.55) + d41 * 0.15, Le(41) + 0.3, 0, 1, 'power2.inOut'));
+          sa($('#kl-tel'), 'opacity', pen(t, KELA('41a', Ls(41) + d41 * 0.2), MK.I + 0.3, 0.4, 0.6).toFixed(3));
+          sa($('#kl-torba'), 'opacity', pen(t, KELA('41b', Ls(41) + d41 * 0.55), MK.I + 0.3, 0.4, 0.6).toFixed(3));
+          cizP($('#kl-ok2'), seg(t, KELA('41b', Ls(41) + d41 * 0.55) + d41 * 0.15, Le(41) + 0.3, 0, 1, 'power2.inOut'));
           if (t > MK.I + 0.2) op($('#kl-ok2'), 1 - seg(t, MK.I + 0.2, MK.I + 0.8, 0, 1));
         });
         etiket(MK.kil + 0.5, Le(38), '[2]');
@@ -1974,9 +1974,9 @@ window.ogrPoz = function (kok, p) {
           const I = MK.I;
           op(S.el, seg(t, I, I + 1.0, 0, 1, 'sine.inOut') * (1 - seg(t, MK.J, MK.J + 1.2, 0, 1, 'sine.inOut')));
           const d43 = T.L[43][1], d44 = T.L[44][1];
-          sa($('#dl-balon'), 'opacity', seg(t, KA('43a', Ls(43) + d43 * 0.5), KA('43a', Ls(43) + d43 * 0.5) + 0.4, 0, 1).toFixed(3));
-          const git = KA('44a', Ls(44)) + 0.3;
-          sa($('#dl-20'), 'opacity', pen(t, KA('44a', Ls(44)) - 0.1, git + 1.6, 0.3, 0.4).toFixed(3));
+          sa($('#dl-balon'), 'opacity', seg(t, KELA('43a', Ls(43) + d43 * 0.5), KELA('43a', Ls(43) + d43 * 0.5) + 0.4, 0, 1).toFixed(3));
+          const git = KELA('44a', Ls(44)) + 0.3;
+          sa($('#dl-20'), 'opacity', pen(t, KELA('44a', Ls(44)) - 0.1, git + 1.6, 0.3, 0.4).toFixed(3));
           $$('.dl-tas', S.k).forEach((e) => {
             const i = +e.dataset.i, [ux, uy] = TORBA_YUVA[i];
             const x0 = 760 + ux * 1.5, y0 = 560 + uy * 1.5, x1 = 1210 + (i % 10 - 4.5) * 34, y1 = 400 + 60 + Math.floor(i / 10) * 26;
