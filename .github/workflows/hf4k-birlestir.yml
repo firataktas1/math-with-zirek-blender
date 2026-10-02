@@ -1,0 +1,174 @@
+# Math with Zirek · render-parca parçalarını yeniden birleştirir (render yok).
+# Her parça HyperFrames'te 1 fazla kare (dilimin bitiş anı = sonraki dilimin ilk karesi) üretiyor;
+# burada her parça beklenen kare sayısına kesilir, sonra tek son kodlama + kayıpsız ses + ölçüm + kontak.
+# gh workflow run birlestir.yml -f kosu=<render-parca run id>
+
+name: HF 4K birlestir
+
+on:
+  workflow_dispatch:
+    inputs:
+      kosu:
+        description: "render-parca koşusunun numarası (run id)"
+        required: true
+      kapak_sn:
+        description: "Yazısız kapak karesinin saniyesi"
+        required: false
+        default: "182.679"
+      kosu2:
+        description: "İsteğe bağlı: yalnız bazı parçaları yeniden üreten koşu; onun parçaları eskilerin üstüne yazılır"
+        required: false
+        default: ""
+      proje:
+        description: "Proje klasörü"
+        required: true
+        default: "video1-son/hf4k"
+      cikti:
+        description: "Çıktı dosya adı"
+        required: true
+        default: "video1-son-4k.mp4"
+      son_crf:
+        description: "Son kodlama CRF"
+        required: true
+        default: "18"
+      ses:
+        description: "Kayıpsız ses (proje içi yol)"
+        required: true
+        default: "miks.flac"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  birlestir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      PARCA_SAYISI: "20"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: ${{ inputs.proje }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: parca-*
+          path: parcalar
+          merge-multiple: true
+          run-id: ${{ inputs.kosu }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        if: ${{ inputs.kosu2 != '' }}
+        with:
+          pattern: parca-*
+          path: yeni
+          merge-multiple: true
+          run-id: ${{ inputs.kosu2 }}
+          github-token: ${{ github.token }}
+      - name: Yeni parçalar
+        if: ${{ inputs.kosu2 != '' }}
+        run: ls -la yeni && cp -f yeni/*.mp4 parcalar/
+      - name: ffmpeg (önce)
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg > /dev/null
+      - name: Alt parçaları birleştir
+        run: |
+          python3 - <<'PY'
+          import glob, re, math, os, subprocess
+          FPS = 30
+          h = open(os.path.join("${{ inputs.proje }}", "index.html"), encoding="utf-8").read()
+          END = float(re.search(r'id="root"[^>]*data-duration="([0-9.]+)"', h).group(1))
+          N = math.ceil(round(END * FPS, 3)); P = int(os.environ["PARCA_SAYISI"]); adim = math.ceil(N / P)
+          gruplar = {}
+          for f in glob.glob("parcalar/p*_*.mp4"):
+              b, j = re.match(r".*/p(\d+)_(\d+)\.mp4", f).groups(); gruplar.setdefault(int(b), []).append((int(j), f))
+          for b, ps in gruplar.items():
+              ps.sort(); m = len(ps)
+              b0 = b * adim; b1 = min(N, b0 + adim); alt_adim = math.ceil((b1 - b0) / m)
+              liste = []
+              for j, f in ps:
+                  f0 = b0 + j * alt_adim; f1 = min(b1, f0 + alt_adim); dst = f"alt{b:02d}_{j}.mp4"
+                  subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", f, "-map", "0:v:0", "-frames:v", str(f1 - f0), "-c", "copy", dst], check=True)
+                  liste.append(dst)
+              open("alt.txt", "w").write("".join(f"file '{os.path.abspath(x)}'" + chr(10) for x in liste))
+              subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", "alt.txt", "-c", "copy", f"parcalar/p{b:02d}.mp4"], check=True)
+              for _, f in ps: os.remove(f)
+              print("alt parçalar birleşti:", b, m)
+          PY
+          ls -la parcalar
+      - name: ffmpeg
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg > /dev/null
+      - name: Kes, birleştir, kodla, ses
+        run: |
+          python3 - <<'PY'
+          import re, math, os, subprocess, glob, json
+          FPS = 30
+          h = open(os.path.join("${{ inputs.proje }}", "index.html"), encoding="utf-8").read()
+          END = float(re.search(r'id="root"[^>]*data-duration="([0-9.]+)"', h).group(1))
+          N = math.ceil(round(END * FPS, 3)); P = int(os.environ["PARCA_SAYISI"]); adim = math.ceil(N / P)
+          liste = []
+          for k in range(P):
+              f0 = k * adim; f1 = min(N, f0 + adim)
+              if f0 >= f1: continue
+              src = f"parcalar/p{k:02d}.mp4"; dst = f"kesik{k:02d}.mp4"
+              n = int(subprocess.run(["ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", src], capture_output=True, text=True).stdout.strip())
+              beklenen = f1 - f0
+              print(f"parça {k}: {n} kare, beklenen {beklenen}")
+              assert n >= beklenen, "eksik kare"
+              subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", src, "-map", "0:v:0", "-frames:v", str(beklenen), "-c", "copy", dst], check=True)
+              m = int(subprocess.run(["ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", dst], capture_output=True, text=True).stdout.strip())
+              assert m == beklenen, f"kesim {m} != {beklenen}"
+              liste.append(dst)
+          open("liste.txt", "w").write("".join(f"file '{os.path.abspath(x)}'\n" for x in liste))
+          print("toplam kare", N)
+          open("N.txt", "w").write(str(N))
+          PY
+          ffmpeg -hide_banner -loglevel error -f concat -safe 0 -i liste.txt -map 0:v:0 -c copy ara.mp4
+          ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of csv=p=0 ara.mp4
+          start=$(date +%s)
+          ffmpeg -hide_banner -loglevel error -y -i ara.mp4 -map 0:v:0 -c:v libx264 -preset slow -crf "${{ inputs.son_crf }}" -level 5.1 -profile:v high -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -g 60 -bf 2 -movflags +faststart video.mp4
+          echo "son kodlama: $(( $(date +%s) - start )) sn"; rm ara.mp4
+          python3 - <<'PY'
+          import json, re, subprocess, os
+          ses = os.path.join("${{ inputs.proje }}", "${{ inputs.ses }}"); out = "${{ inputs.cikti }}"
+          o = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", ses, "-af", "loudnorm=I=-14:TP=-1:print_format=json", "-f", "null", "-"], capture_output=True, text=True)
+          j = json.loads(re.findall(r'[{][^{}]*"input_i"[^{}]*[}]', o.stderr, re.S)[-1]); i, tp = float(j["input_i"]), float(j["input_tp"])
+          kaz = -14.0 - i
+          if tp + kaz > -1.2: kaz = -1.2 - tp
+          print(f"kaynak {i:.2f} LUFS, TP {tp:.2f} -> kazanç {kaz:+.2f} dB")
+          subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", "video.mp4", "-i", ses, "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+                          "-af", f"volume={kaz:.2f}dB", "-c:a", "aac", "-b:a", "320k", "-ar", "48000", "-ac", "2", "-shortest", "-movflags", "+faststart", out], check=True)
+          r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", out, "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True).stderr
+          ozet = r[r.rfind("Summary:"):]
+          print(ozet)
+          open(os.environ["GITHUB_STEP_SUMMARY"], "a").write("\n" + ozet + "\n")
+          PY
+          ffprobe -v error -count_frames -show_entries stream=codec_name,profile,width,height,r_frame_rate,nb_read_frames,sample_rate,channels,bit_rate,pix_fmt,color_space -show_entries format=duration,size -of default=nw=1 "${{ inputs.cikti }}" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Kontrol kareleri ve kontak (son dosyadan)
+        run: |
+          mkdir -p kareler
+          python3 - <<'PY'
+          import json, os, subprocess
+          z = json.load(open(os.path.join("${{ inputs.proje }}", "zamanlar.json"), encoding="utf-8"))
+          for i, (ad, t) in enumerate(z):
+              subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{t:.3f}", "-i", "${{ inputs.cikti }}", "-frames:v", "1", f"kareler/k{i:02d}-at-{t:.2f}s.png"], check=False)
+          PY
+          pip install -q pillow
+          cd "${{ inputs.proje }}" && python3 -B kontak.py birlestir "$GITHUB_WORKSPACE/kareler" && mv kontak.png "$GITHUB_WORKSPACE/kontak.png"
+      - name: Yazısız kapak (keşif karesi)
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -ss "${{ inputs.kapak_sn }}" -i "${{ inputs.cikti }}" -frames:v 1 -vf "scale=1280:720:flags=lanczos" -q:v 2 kapak-yazisiz.jpg
+          ls -la kapak-yazisiz.jpg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kontak-${{ github.run_number }}
+          path: |
+            kontak.png
+            kapak-yazisiz.jpg
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video-${{ github.run_number }}
+          path: ${{ inputs.cikti }}
+          retention-days: 3
+          compression-level: 0

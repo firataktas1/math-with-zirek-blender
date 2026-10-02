@@ -37,6 +37,14 @@ on:
         description: "Yazısız kapak karesi (sn)"
         required: true
         default: "182.679"
+      alt_parca:
+        description: "Boş değilse yalnız bu parça, alt_sayi alt parçaya bölünerek üretilir (yavaş parça için); birleştirme hf4k-birlestir.yml ile"
+        required: false
+        default: ""
+      alt_sayi:
+        description: "Alt parça sayısı"
+        required: false
+        default: "6"
       sadece:
         description: "Boş = bütün parçalar + birleştirme; ör. 0,1,9 = yalnız bu parçalar (birleştirme birlestir.yml ile)"
         required: false
@@ -92,8 +100,18 @@ jobs:
           N = math.ceil(round(END * FPS, 3)); P = int(os.environ["PARCA_SAYISI"]); k = int(os.environ["PARCA"])
           adim = math.ceil(N / P); f0 = k * adim; f1 = min(N, f0 + adim)
           out = open(os.environ["GITHUB_OUTPUT"], "a")
+          alt = "${{ inputs.alt_parca }}".strip()
+          if alt:
+              m = int("${{ inputs.alt_sayi }}")
+              if k >= m:
+                  out.write("bos=1" + chr(10)); print("alt parça yok"); raise SystemExit
+              b0 = int(alt) * adim; b1 = min(N, b0 + adim); alt_adim = math.ceil((b1 - b0) / m)
+              f0 = b0 + k * alt_adim; f1 = min(b1, f0 + alt_adim)
+              out.write(f"ad=p{int(alt):02d}_{k}" + chr(10))
+          else:
+              out.write(f"ad=p{k:02d}" + chr(10))
           sadece = "${{ inputs.sadece }}".strip()
-          if sadece and str(k) not in [x.strip() for x in sadece.split(",")]:
+          if sadece and not alt and str(k) not in [x.strip() for x in sadece.split(",")]:
               out.write("bos=1\n"); print("bu koşuda atlanan parça"); raise SystemExit
           if f0 >= f1:
               out.write("bos=1\n"); print("boş parça"); raise SystemExit
@@ -142,18 +160,18 @@ jobs:
           echo "parça ${{ matrix.parca }}: $(( $(date +%s) - start )) sn" | tee -a "$GITHUB_STEP_SUMMARY"
           ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames,codec_name,profile,pix_fmt,width,height,r_frame_rate -of default=nw=1 parca.mp4
           echo "beklenen kare: ${{ steps.dilim.outputs.kare }}"
-          mkdir -p cikis && mv parca.mp4 "cikis/p$(printf %02d ${{ matrix.parca }}).mp4"
+          mkdir -p cikis && mv parca.mp4 "cikis/${{ steps.dilim.outputs.ad }}.mp4"
       - uses: actions/upload-artifact@v4
         if: ${{ steps.dilim.outputs.bos != '1' }}
         with:
-          name: parca-${{ matrix.parca }}
+          name: parca-${{ matrix.parca }}${{ inputs.alt_parca != '' && '-alt' || '' }}
           path: ${{ inputs.proje }}/cikis/*.mp4
           retention-days: 2
           compression-level: 0
 
   birlestir:
     needs: parca
-    if: ${{ inputs.sadece == '' }}
+    if: ${{ inputs.sadece == '' && inputs.alt_parca == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:
