@@ -98,14 +98,18 @@ jobs:
           END = float(re.search(r'id="root"[^>]*data-duration="([0-9.]+)"', h).group(1))
           if float(os.environ["TEST"]) > 0: END = min(END, float(os.environ["TEST"]))
           N = math.ceil(round(END * FPS, 3)); P = int(os.environ["PARCA_SAYISI"]); k = int(os.environ["PARCA"])
-          adim = math.ceil(N / P); f0 = k * adim; f1 = min(N, f0 + adim)
+          adim = math.ceil(N / P)
+          import json as _j
+          D = _j.load(open("dilimler.json")) if os.path.exists("dilimler.json") and float(os.environ["TEST"]) <= 0 else [[i * adim, min(N, (i + 1) * adim)] for i in range(P)]
+          assert D[-1][1] == N or float(os.environ["TEST"]) > 0, f"dilimler.json does not end at N={N}"
+          f0, f1 = D[k] if k < len(D) else (N, N)
           out = open(os.environ["GITHUB_OUTPUT"], "a")
           alt = "${{ inputs.alt_parca }}".strip()
           if alt:
               m = int("${{ inputs.alt_sayi }}")
               if k >= m:
                   out.write("bos=1" + chr(10)); print("alt parça yok"); raise SystemExit
-              b0 = int(alt) * adim; b1 = min(N, b0 + adim); alt_adim = math.ceil((b1 - b0) / m)
+              b0, b1 = D[int(alt)]; alt_adim = math.ceil((b1 - b0) / m)
               f0 = b0 + k * alt_adim; f1 = min(b1, f0 + alt_adim)
               out.write(f"ad=p{int(alt):02d}_{k}" + chr(10))
           else:
@@ -196,9 +200,11 @@ jobs:
           h = open(os.path.join("${{ inputs.proje }}", "index.html"), encoding="utf-8").read()
           END = float(re.search(r'id="root"[^>]*data-duration="([0-9.]+)"', h).group(1))
           N = math.ceil(round(END * FPS, 3)); P = int(os.environ["PARCA_SAYISI"]); adim = math.ceil(N / P)
+          dl = os.path.join("${{ inputs.proje }}", "dilimler.json")
+          D = json.load(open(dl)) if os.path.exists(dl) else [[i * adim, min(N, (i + 1) * adim)] for i in range(P)]
           liste = []
           for k in range(P):
-              f0 = k * adim; f1 = min(N, f0 + adim)
+              f0, f1 = D[k] if k < len(D) else (N, N)
               if f0 >= f1: continue
               src = f"parcalar/p{k:02d}.mp4"; dst = f"kesik{k:02d}.mp4"
               n = int(subprocess.run(["ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", src], capture_output=True, text=True).stdout.strip())

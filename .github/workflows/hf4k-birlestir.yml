@@ -35,9 +35,17 @@ on:
         description: "Kayıpsız ses (proje içi yol)"
         required: true
         default: "miks.flac"
+      hd:
+        description: "1 = ayrıca 1080p kopya (lanczos, CRF 18 slow, ses kopyalanır)"
+        required: false
+        default: "0"
+      surum:
+        description: "Boş değilse bu etiketle GitHub release oluşturulur ve dosyalar eklenir (her dosya < 2 GB)"
+        required: false
+        default: ""
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -79,12 +87,15 @@ jobs:
           h = open(os.path.join("${{ inputs.proje }}", "index.html"), encoding="utf-8").read()
           END = float(re.search(r'id="root"[^>]*data-duration="([0-9.]+)"', h).group(1))
           N = math.ceil(round(END * FPS, 3)); P = int(os.environ["PARCA_SAYISI"]); adim = math.ceil(N / P)
+          import json
+          dl = os.path.join("${{ inputs.proje }}", "dilimler.json")
+          D = json.load(open(dl)) if os.path.exists(dl) else [[i * adim, min(N, (i + 1) * adim)] for i in range(P)]
           gruplar = {}
           for f in glob.glob("parcalar/p*_*.mp4"):
               b, j = re.match(r".*/p(\d+)_(\d+)\.mp4", f).groups(); gruplar.setdefault(int(b), []).append((int(j), f))
           for b, ps in gruplar.items():
               ps.sort(); m = len(ps)
-              b0 = b * adim; b1 = min(N, b0 + adim); alt_adim = math.ceil((b1 - b0) / m)
+              b0, b1 = D[b]; alt_adim = math.ceil((b1 - b0) / m)
               liste = []
               for j, f in ps:
                   f0 = b0 + j * alt_adim; f1 = min(b1, f0 + alt_adim); dst = f"alt{b:02d}_{j}.mp4"
@@ -106,9 +117,11 @@ jobs:
           h = open(os.path.join("${{ inputs.proje }}", "index.html"), encoding="utf-8").read()
           END = float(re.search(r'id="root"[^>]*data-duration="([0-9.]+)"', h).group(1))
           N = math.ceil(round(END * FPS, 3)); P = int(os.environ["PARCA_SAYISI"]); adim = math.ceil(N / P)
+          dl = os.path.join("${{ inputs.proje }}", "dilimler.json")
+          D = json.load(open(dl)) if os.path.exists(dl) else [[i * adim, min(N, (i + 1) * adim)] for i in range(P)]
           liste = []
           for k in range(P):
-              f0 = k * adim; f1 = min(N, f0 + adim)
+              f0, f1 = D[k] if k < len(D) else (N, N)
               if f0 >= f1: continue
               src = f"parcalar/p{k:02d}.mp4"; dst = f"kesik{k:02d}.mp4"
               n = int(subprocess.run(["ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", src], capture_output=True, text=True).stdout.strip())
@@ -155,6 +168,14 @@ jobs:
           PY
           pip install -q pillow
           cd "${{ inputs.proje }}" && python3 -B kontak.py birlestir "$GITHUB_WORKSPACE/kareler" && mv kontak.png "$GITHUB_WORKSPACE/kontak.png"
+      - name: 1080p kopya
+        if: ${{ inputs.hd == '1' }}
+        run: |
+          start=$(date +%s)
+          hd="${{ inputs.cikti }}"; hd="${hd%.mp4}-1080p.mp4"; hd="${hd/-4k-1080p/-1080p}"
+          ffmpeg -hide_banner -loglevel error -y -i "${{ inputs.cikti }}" -map 0:v:0 -map 0:a:0 -vf "scale=1920:1080:flags=lanczos" -c:v libx264 -preset slow -crf 18 -profile:v high -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -g 60 -bf 2 -c:a copy -movflags +faststart "$hd"
+          echo "1080p: $(( $(date +%s) - start )) sn"; ls -la "$hd"; echo "HD=$hd" >> "$GITHUB_ENV"
+          ffprobe -v error -show_entries stream=codec_name,width,height,nb_frames -show_entries format=duration,size -of default=nw=1 "$hd" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Yazısız kapak (keşif karesi)
         run: |
           ffmpeg -hide_banner -loglevel error -y -ss "${{ inputs.kapak_sn }}" -i "${{ inputs.cikti }}" -frames:v 1 -vf "scale=1280:720:flags=lanczos" -q:v 2 kapak-yazisiz.jpg
@@ -172,3 +193,23 @@ jobs:
           path: ${{ inputs.cikti }}
           retention-days: 3
           compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.hd == '1' }}
+        with:
+          name: video-1080p-${{ github.run_number }}
+          path: ${{ env.HD }}
+          retention-days: 3
+          compression-level: 0
+      - name: Release
+        if: ${{ inputs.surum != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dosyalar=""
+          for f in "${{ inputs.cikti }}" "${HD:-}" kontak.png; do
+            [ -n "$f" ] && [ -f "$f" ] || continue
+            if [ $(stat -c %s "$f") -lt 2000000000 ]; then dosyalar="$dosyalar $f"; else echo "2 GB'tan büyük, release'e konmadı: $f" | tee -a "$GITHUB_STEP_SUMMARY"; fi
+          done
+          gh release create "${{ inputs.surum }}" $dosyalar --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "${{ inputs.surum }}" \
+            --notes "Math with Zirek · Video 1 · English timing · 3840x2160 30 fps · built by ${{ github.workflow }} run ${{ github.run_id }} from render run ${{ inputs.kosu }}"
+          gh release view "${{ inputs.surum }}" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '.url, (.assets[] | "\(.name) \(.size)")' | tee -a "$GITHUB_STEP_SUMMARY"
