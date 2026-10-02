@@ -1706,7 +1706,7 @@ window.ogrPoz = function (kok, p) {
           sabah: { cx: 1000, cy: 645, sx: 1.25, sy: 0.42, ic: [1170, 652], kapi: [1300, 705], dis: [1430, 775], ot: [1420, 560, 460, 180], ks: 0.82 },
           aksam: { cx: 880, cy: 618, sx: 1.9, sy: 0.38, ic: [1150, 622], kapi: [1290, 690], dis: [1410, 770], ot: [1440, 600, 440, 170], ks: 0.92 },
         };
-        const KAPI_SAHNE = { torba: [610, 470], yigin: [452, 925] };   // kapi-sabah / kapi-aksam: peg on the left post, flat stone
+        const KAPI_SAHNE = { torba: [610, 470], yigin: [1170, 968] };   // pile on the open ground right of the gate (the flat stone at left sits behind Zirek)   // kapi-sabah / kapi-aksam: peg on the left post, flat stone
         const YIGIN = { x: KAPI_SAHNE.yigin[0], y: KAPI_SAHNE.yigin[1] }, CIKAN = { x: 1250, y: 980 }, TORBA = { x: KAPI_SAHNE.torba[0], y: KAPI_SAHNE.torba[1] };
         const YIGIN_YER = [...Array(20)].map((_, i) => [YIGIN.x + (hash(i + 300) - 0.5) * 230, YIGIN.y + (hash(i + 301) - 0.5) * 30]);
         const CIKAN_YER = [...Array(20)].map((_, i) => [CIKAN.x + (hash(i + 310) - 0.5) * 120, CIKAN.y + (hash(i + 311) - 0.5) * 30]);
@@ -1936,7 +1936,7 @@ window.ogrPoz = function (kok, p) {
           const d39 = T.L[39][1];
           sa($('#kl-kelime'), 'opacity', pen(t, Ls(39) + d39 * 0.15, MK.I + 0.3, 0.4, 0.6).toFixed(3));
           sa($('#kl-calc1'), 'opacity', seg(t, Ls(39) + d39 * 0.62, Ls(39) + d39 * 0.62 + 0.4, 0, 1).toFixed(3));
-          sa($('#kl-calc2'), 'opacity', seg(t, Ls(40) + 0.1, Ls(40) + 0.5, 0, 1).toFixed(3));
+          sa($('#kl-calc2'), 'opacity', (seg(t, Ls(40) + 0.1, Ls(40) + 0.5, 0, 1) * (1 - seg(t, Ls(41) + T.L[41][1] * 0.15, Ls(41) + T.L[41][1] * 0.15 + 0.5, 0, 1))).toFixed(3));
           const d41 = T.L[41][1];
           sa($('#kl-tel'), 'opacity', pen(t, Ls(41) + d41 * 0.2, MK.I + 0.3, 0.4, 0.6).toFixed(3));
           sa($('#kl-torba'), 'opacity', pen(t, Ls(41) + d41 * 0.55, MK.I + 0.3, 0.4, 0.6).toFixed(3));
