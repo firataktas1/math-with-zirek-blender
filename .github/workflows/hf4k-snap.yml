@@ -1,0 +1,63 @@
+# Math with Zirek · HyperFrames check + headless snapshots in the cloud (laptop RAM is low)
+# gh workflow run snap.yml -f proje=videolar/video1-son -f at="1.0,12.5"
+# Output: PNG frames + check log as an artifact (3 days). No API keys (--describe false).
+
+name: HF 4K snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      proje:
+        description: "Proje klasörü"
+        required: true
+        default: "video1-son/hf4k"
+      at:
+        description: "Virgüllü saniye listesi"
+        required: true
+        default: "1.0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf4k-snap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  snap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      HYPERFRAMES_VERSION: "0.8.75"
+      HYPERFRAMES_NO_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: ${{ inputs.proje }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ffmpeg ve fontlar
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg fonts-noto-core > /dev/null
+      - name: Tarayıcı
+        working-directory: ${{ inputs.proje }}
+        run: npx --yes hyperframes@${HYPERFRAMES_VERSION} browser ensure
+      - name: Check
+        working-directory: ${{ inputs.proje }}
+        run: |
+          mkdir -p snap
+          npx --yes hyperframes@${HYPERFRAMES_VERSION} check . > snap/check.log 2>&1 || echo "check çıkış kodu $?" >> snap/check.log
+          tail -n 60 snap/check.log
+      - name: Snapshot
+        working-directory: ${{ inputs.proje }}
+        run: |
+          start=$(date +%s)
+          npx --yes hyperframes@${HYPERFRAMES_VERSION} snapshot . --at "${{ inputs.at }}" --no-end --describe false --timeout 30000 -o snap 2>&1 | tail -n 20
+          echo "süre $(( $(date +%s) - start )) sn"; ls snap | head -n 200
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap-${{ github.run_number }}
+          path: ${{ inputs.proje }}/snap
+          retention-days: 3
