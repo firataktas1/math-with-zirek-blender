@@ -1,0 +1,332 @@
+[
+ {
+  "ad": "001",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "This one'll be quicker."
+ },
+ {
+  "ad": "002",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "In first grade, the teacher held up three pencils and said, \"Count them.\" But I'd already seen it without counting."
+ },
+ {
+  "ad": "003",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "That day I kept wondering: if my eyes can see it, why do we count? Who came up with numbers, and what for?"
+ },
+ {
+  "ad": "004",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "Then my notebook filled up with digits, but nobody ever answered that question."
+ },
+ {
+  "ad": "005",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "That was the question left unanswered that day: why do we count? Today I won't give you the answer. You'll find it yourself."
+ },
+ {
+  "ad": "006",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "Where do we start? There aren't even any numbers here yet."
+ },
+ {
+  "ad": "007",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "We start with your eyes, because numbers begin exactly where your eyes stop being enough."
+ },
+ {
+  "ad": "008",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Don't count. Just look. Which one had more?"
+ },
+ {
+  "ad": "009",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "The right one. I didn't even think."
+ },
+ {
+  "ad": "010",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "This time… I don't know. They seemed the same."
+ },
+ {
+  "ad": "011",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "The left one had 100, the right one 110. The first time the difference was 10. This time it's 10 too."
+ },
+ {
+  "ad": "012",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "The difference is the same. But the first time it was half the pile; this time it got lost in the crowd."
+ },
+ {
+  "ad": "013",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "Three pencils, or the baskets at the store, there was no crowd to get lost in. That's why my eyes knew without counting."
+ },
+ {
+  "ad": "014",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "But now my question is even bigger: if the eye is that good, why did we ever need counting?"
+ },
+ {
+  "ad": "015",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Because of a job the eye can't do. Come on, you do that job."
+ },
+ {
+  "ad": "016",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Imagine this: numbers don't exist yet, and you're a shepherd."
+ },
+ {
+  "ad": "017",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "In the morning your sheep leave the pen one by one and spread out over the pasture."
+ },
+ {
+  "ad": "018",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "Easy. They graze until evening, then they come back."
+ },
+ {
+  "ad": "019",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Evening's here, the sheep are back. Did all of them come home?"
+ },
+ {
+  "ad": "020",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "It looks about the same… but I couldn't even tell 100 from 110. If one were missing, would I notice?"
+ },
+ {
+  "ad": "021",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "And this time that one sheep matters: a missing sheep spends the night outside, all alone."
+ },
+ {
+  "ad": "022",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "Then \"about the same\" isn't good enough. I need to know exactly."
+ },
+ {
+  "ad": "023",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "Wait, I've got an idea. I'll give every sheep a name and call the names one by one in the evening."
+ },
+ {
+  "ad": "024",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Nice. But in the evening, will you remember all twenty names?"
+ },
+ {
+  "ad": "025",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "…I'd mix them up by the third one. Then I'll line the evening flock up next to the morning flock, find a partner for every sheep, and the one without a partner shows what's missing."
+ },
+ {
+  "ad": "026",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Good idea. So where's the morning flock now?"
+ },
+ {
+  "ad": "027",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "The morning flock… is this flock. The ones who left this morning are the very same ones coming back. There's no second flock to line them up with."
+ },
+ {
+  "ad": "028",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "So I have to keep this morning's amount somewhere until evening."
+ },
+ {
+  "ad": "029",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Where would you keep it? No paper, no pen, no number words. All you have is what's lying around you."
+ },
+ {
+  "ad": "030",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "A stone! Every morning, for each sheep that goes out, I drop a stone in the pouch."
+ },
+ {
+  "ad": "031",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "In the evening, for each sheep that comes back, I take one out. If a stone is left in the pouch, a sheep is still out there."
+ },
+ {
+  "ad": "032",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "One stone left. I've left one outside!"
+ },
+ {
+  "ad": "033",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "You found it without knowing a single number."
+ },
+ {
+  "ad": "034",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "I just made that up. Did people really do this?"
+ },
+ {
+  "ad": "035",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "In Iraq, near Kirkuk, in the ancient city of Nuzi, archaeologists found a hollow clay container about 3,500 years old."
+ },
+ {
+  "ad": "036",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "The writing on it lists 48 sheep and goats handed over to a shepherd. And inside, there were 48 small stones."
+ },
+ {
+  "ad": "037",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "That's exactly my pouch, just made of clay!"
+ },
+ {
+  "ad": "038",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "This pot isn't the first stone; people may have counted with stones much earlier. But it shows your idea was really used."
+ },
+ {
+  "ad": "039",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Counting with stones became so common that the stone's name became the word for counting: the Romans called a small stone \"calculus\", and that's where the word \"calculate\" comes from."
+ },
+ {
+  "ad": "040",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "Calculator… my calculator is named after a pebble?"
+ },
+ {
+  "ad": "041",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Yes. The calculator on your phone is a great-grandchild of that shepherd's pouch."
+ },
+ {
+  "ad": "042",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "But I can't carry a bag of stones everywhere."
+ },
+ {
+  "ad": "043",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "You can't. That's why people found other tools that do the stone's job. You use one every day: number words."
+ },
+ {
+  "ad": "044",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "When you say \"twenty\", you're carrying twenty stones, not in your pocket, but on your tongue."
+ },
+ {
+  "ad": "052",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "So the digits they gave us at school were a tool like that too. But I always struggled with that tool. I was always slow at math. Am I stupid?"
+ },
+ {
+  "ad": "053",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "No."
+ },
+ {
+  "ad": "054",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "You were handed the tool itself, but nobody ever showed you what problem it solves. A tool you've never seen at work feels strange in anyone's hands."
+ },
+ {
+  "ad": "055",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "It might be hard, but it's not meaningless. Today we saw the problem numbers solve, together. We'll look at the next tools the same way."
+ },
+ {
+  "ad": "056",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "I saw the three pencils without counting, because three is small and my eyes were enough."
+ },
+ {
+  "ad": "057",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "Numbers are for where my eyes aren't enough: for what isn't in front of me, for what I have to carry exactly from morning to evening."
+ },
+ {
+  "ad": "058",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "If I'd had sheep, I'd have found a way too. In fact, I just did: the stone. The digits in my notebook are that stone, carried forward."
+ },
+ {
+  "ad": "059",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "You won't always have a bag of stones with you. But there are ten things you carry everywhere."
+ },
+ {
+  "ad": "060",
+  "ses": "ogrenci",
+  "dil": "en",
+  "metin": "My fingers… I've always counted with these. I never thought of them as stones."
+ },
+ {
+  "ad": "061",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "Next stop: Fingers and Body."
+ },
+ {
+  "ad": "062",
+  "ses": "zirek",
+  "dil": "en",
+  "metin": "What was the question you could never ask at school? Write it in the comments. We read every one when planning the next stops."
+ }
+]

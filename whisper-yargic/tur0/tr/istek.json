@@ -1,0 +1,332 @@
+[
+ {
+  "ad": "001",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Şuna gireyim."
+ },
+ {
+  "ad": "002",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "İlkokulda öğretmen üç kalem kaldırıp \"Say bakalım\" demişti; ben saymadan görmüştüm zaten."
+ },
+ {
+  "ad": "003",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "O gün hep şunu merak ettim: gözüm görüyorsa neden sayıyoruz, bu sayılar kimin aklına gelmiş, ne için?"
+ },
+ {
+  "ad": "004",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Sonra defterim rakamlarla doldu, ama o sorunun cevabını kimse söylemedi."
+ },
+ {
+  "ad": "005",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "O gün cevapsız kalan soru buydu: neden sayıyoruz? Bugün cevabını ben söylemeyeceğim, sen kendin bulacaksın."
+ },
+ {
+  "ad": "006",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Nereden başlıyoruz? Burada daha sayı bile yok."
+ },
+ {
+  "ad": "007",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Senin gözünden başlıyoruz, çünkü sayı tam da gözünün yetmediği yerde başlar."
+ },
+ {
+  "ad": "008",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Sayma, sadece bak. Hangisi çoktu?"
+ },
+ {
+  "ad": "009",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Sağdaki. Düşünmedim bile."
+ },
+ {
+  "ad": "010",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Bu sefer… bilmiyorum, ikisi aynı gibiydi."
+ },
+ {
+  "ad": "011",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Soldaki 100, sağdaki 110. İlkinde de fark 10'du, bunda da 10."
+ },
+ {
+  "ad": "012",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Fark aynı, ama ilkinde fark yığının yarısıydı; bunda kalabalığın içinde kaybolmuş."
+ },
+ {
+  "ad": "013",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Üç kalemde, marketteki sepetlerde kaybolacak bir kalabalık yoktu; o yüzden gözüm saymadan bildi."
+ },
+ {
+  "ad": "014",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Ama o zaman sorum büyüdü: göz bu kadar iyiyse, sayma neden gerekmiş?"
+ },
+ {
+  "ad": "015",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Gözün yetmediği bir iş yüzünden. Gel, o işi sen yap."
+ },
+ {
+  "ad": "016",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Bir düşün: sayı diye bir şey henüz yok, sen de bir çobansın."
+ },
+ {
+  "ad": "017",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Sabah koyunların ağıldan tek tek çıkıyor, otlağa yayılıyor."
+ },
+ {
+  "ad": "018",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Bu iş kolay. Akşama kadar otlarlar, sonra dönerler."
+ },
+ {
+  "ad": "019",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Akşam oldu, koyunlar döndü. Hepsi geldi mi?"
+ },
+ {
+  "ad": "020",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Aşağı yukarı aynı görünüyor… ama 100'e 110'u bile ayıramadım; biri eksik olsa fark eder miydim?"
+ },
+ {
+  "ad": "021",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Üstelik bu kez o bir tanenin bedeli var: eksik koyun gece dışarıda, tek başına kalır."
+ },
+ {
+  "ad": "022",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "O zaman \"aşağı yukarı\" yetmez. Tam bilmem gerek."
+ },
+ {
+  "ad": "023",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Dur, bir fikrim var. Her koyuna bir isim veririm, akşam isimleri tek tek çağırırım."
+ },
+ {
+  "ad": "024",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Güzel, ama akşam yirmi ismin yirmisini de hatırlayabilecek misin?"
+ },
+ {
+  "ad": "025",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "…Üçüncüde karıştırırım. O zaman akşam sürüsünü sabahki sürünün yanına dizerim; her koyuna bir eş bulurum, eşi olmayan eksiği gösterir."
+ },
+ {
+  "ad": "026",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Güzel fikir. Peki sabahki sürü şimdi nerede?"
+ },
+ {
+  "ad": "027",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Sabahki sürü… bu sürü. Sabah çıkanlar akşam dönenlerin ta kendisi; yan yana koyacağım ikinci bir sürü yok."
+ },
+ {
+  "ad": "028",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "O zaman sabahki miktarı akşama kadar bir yerde saklamam lazım."
+ },
+ {
+  "ad": "029",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Sen olsan onu nerede saklardın? Kâğıt yok, kalem yok, sayı sözcüğü yok; elinde yalnız çevrende bulduğun şeyler var."
+ },
+ {
+  "ad": "030",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Taş! Sabah her çıkan koyun için torbaya bir taş atarım."
+ },
+ {
+  "ad": "031",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Akşam her dönen koyun için bir taş çıkarırım; torbada taş kalırsa, bir koyun dışarıda demektir."
+ },
+ {
+  "ad": "032",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Bir taş kaldı. Birini dışarıda unutmuşum!"
+ },
+ {
+  "ad": "033",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Sayı bilmeden buldun."
+ },
+ {
+  "ad": "034",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Bunu ben şimdi uydurdum. İnsanlar gerçekten böyle yapmış mı?"
+ },
+ {
+  "ad": "035",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Irak'ta, Kerkük yakınlarındaki eski Nuzi kentinde, yaklaşık 3.500 yıllık, içi boş, kilden bir kap bulundu."
+ },
+ {
+  "ad": "036",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Üstündeki yazı, bir çobana teslim edilen 48 koyun ve keçiyi sayıyor; içinden de 48 küçük taş çıktı."
+ },
+ {
+  "ad": "037",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Benim torbamın aynısı, sadece kilden!"
+ },
+ {
+  "ad": "038",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Bu kap ilk taş değil, insanlar çok daha önce de taşla sayıyor olabilir. Ama senin fikrinin gerçekten kullanıldığını gösteriyor."
+ },
+ {
+  "ad": "039",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Taşla hesap o kadar yaygınlaştı ki taşın adı hesabın adı oldu: Romalılar küçük taşa \"calculus\" derdi; İngilizcedeki \"calculate\", yani hesaplamak, buradan çıktı."
+ },
+ {
+  "ad": "040",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Calculator… Hesap makinesinin adı taştan mı geliyor?"
+ },
+ {
+  "ad": "041",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Evet. Cebindeki telefonun hesap makinesi, o çobanın torbasının torunu."
+ },
+ {
+  "ad": "042",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Ama her yere taş torbasıyla gidemem ki."
+ },
+ {
+  "ad": "043",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Gidemezsin; o yüzden insanlar taşın işini gören başka aletler de buldu. Birini sen her gün kullanıyorsun: sayı sözcükleri."
+ },
+ {
+  "ad": "044",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "\"Yirmi\" dediğinde, yirmi taşı cebinde değil, dilinde taşıyorsun."
+ },
+ {
+  "ad": "052",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Demek okulda bize verilen rakamlar da böyle bir aletmiş. Ama ben o aletle hep zorlandım, hesapta hep yavaştım. Ben mi aptalım?"
+ },
+ {
+  "ad": "053",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Hayır."
+ },
+ {
+  "ad": "054",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Sana aletin kendisi verildi, ama hangi sorunu çözdüğü hiç gösterilmedi. Neye yaradığını görmediğin bir alet, kimin elinde olsa yabancı durur."
+ },
+ {
+  "ad": "055",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Zor olabilir, ama anlamsız değil. Bugün sayının hangi sorunu çözdüğünü birlikte gördük; sıradaki aletlere de böyle bakacağız."
+ },
+ {
+  "ad": "056",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Üç kalemi saymadan gördüm, çünkü üç azdı ve gözüm yetti."
+ },
+ {
+  "ad": "057",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Sayı, gözümün yetmediği yer için: önümde olmayanı, sabahtan akşama tam taşımam gerekeni."
+ },
+ {
+  "ad": "058",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Koyunlarım olsaydı ben de bir yolunu arardım; nitekim aradım ve taşı buldum. Defterdeki rakamlar o taşın devamıymış."
+ },
+ {
+  "ad": "059",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Taş torbası her zaman yanında olmaz. Ama her an yanında taşıdığın on tane şey var."
+ },
+ {
+  "ad": "060",
+  "ses": "ogrenci",
+  "dil": "tr",
+  "metin": "Parmaklarım… Hep bunlarla saydım, hiç taş diye düşünmemiştim."
+ },
+ {
+  "ad": "061",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Sıradaki durak: Parmaklar ve beden."
+ },
+ {
+  "ad": "062",
+  "ses": "zirek",
+  "dil": "tr",
+  "metin": "Senin okulda soramadığın soru neydi? Yoruma yaz; sıradaki durakları kurarken hepsini okuyoruz."
+ }
+]
