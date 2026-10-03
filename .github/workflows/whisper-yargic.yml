@@ -28,7 +28,7 @@ jobs:
         with:
           path: ~/.cache/huggingface
           key: whisper-large-v3
-      - run: pip install -q faster-whisper==1.1.1
+      - run: pip install -q faster-whisper==1.1.1 requests
       - name: transcribe
         run: |
           Y=""; if [ -n "${{ inputs.yalniz }}" ]; then Y="--yalniz ${{ inputs.yalniz }}"; fi
