@@ -139,7 +139,7 @@ jobs:
           ffmpeg -hide_banner -loglevel error -f concat -safe 0 -i liste.txt -map 0:v:0 -c copy ara.mp4
           ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of csv=p=0 ara.mp4
           start=$(date +%s)
-          ffmpeg -hide_banner -loglevel error -y -i ara.mp4 -map 0:v:0 -c:v libx264 -preset slow -crf "${{ inputs.son_crf }}" -level 5.1 -profile:v high -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -g 60 -bf 2 -movflags +faststart video.mp4
+          ffmpeg -hide_banner -loglevel error -y -i ara.mp4 -map 0:v:0 -c:v libx264 -preset medium -crf "${{ inputs.son_crf }}" -level 5.1 -profile:v high -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -g 60 -bf 2 -movflags +faststart video.mp4
           echo "son kodlama: $(( $(date +%s) - start )) sn"; rm ara.mp4
           python3 - <<'PY'
           import json, re, subprocess, os
