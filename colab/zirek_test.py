@@ -184,9 +184,37 @@ def sahte_ltx():
 
 
 # ---------------------------------------------------------------- istem gömmeleri (T5 bir kez, sonra bellekten çıkar)
+def sdpa_yokla():
+    """fp32 bellek-verimli dikkat T4'te çalışıyor mu, hızı ne? (yoksa bütün LTX denemeleri bellekten düşer)"""
+    import torch
+    import torch.nn.functional as F
+    from torch.nn.attention import SDPBackend, sdpa_kernel
+    sonuc = {}
+    try:
+        q = torch.randn(1, 32, 14080, 64, device="cuda")
+        with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+            F.scaled_dot_product_attention(q, q, q)
+            torch.cuda.synchronize()
+            t0 = time.time()
+            for _ in range(3):
+                F.scaled_dot_product_attention(q, q, q)
+            torch.cuda.synchronize()
+        sure = (time.time() - t0) / 3
+        sonuc = {"verimli_dikkat_fp32": "çalışıyor", "sn_14080_belirtec": round(sure, 3),
+                 "tflops": round(4 * 32 * 14080 ** 2 * 64 / sure / 1e12, 2)}
+        del q
+        torch.cuda.empty_cache()
+    except Exception as e:
+        sonuc = {"verimli_dikkat_fp32": f"çalışmıyor: {type(e).__name__}: {str(e)[:300]}"}
+    (KOK / "sdpa.json").write_text(json.dumps(sonuc, ensure_ascii=False), encoding="utf-8")
+    log("SDPA yoklaması:", sonuc)
+
+
 def metin_gomme(model):
     import torch
     dev = cihaz()
+    if model == "ltx" and dev == "cuda":
+        sdpa_yokla()
     if SMOKE:
         te, tok = sahte_t5()
     else:
@@ -272,7 +300,7 @@ def ltx_coz(pipe, gizli, uretec):
         s = torch.tensor([LTX_KOD_GURULTU], device=g.device, dtype=g.dtype)[:, None, None, None, None]
         g = (1 - s) * g + s * gurultu
     with torch.no_grad():
-        video = vae.decode(g, t, return_dict=False)[0]
+        video = vae.decode(g, t, return_dict=False)[0].cpu()
     return pipe.video_processor.postprocess_video(video.float(), output_type="np")[0]
 
 
@@ -312,14 +340,27 @@ def ltx_uret(cfg, pipe):
         guc, sigma, kalan = ltx_v2v_gucu(pipe, adim, cfg["sigma"])
         cfg.update(denoise_strength=round(guc, 6), gercek_sigma=round(sigma, 4), calisan_adim=kalan)
         log(f"v2v: hedef sigma {cfg['sigma']} -> {sigma:.3f}, {kalan}/{adim} adım")
-        kaynak = pipe.video_processor.preprocess_video(girdi_kareleri(w, h, n), h, w)
-        kaynak = kaynak.to(dev, dtype=pipe.vae.dtype)
-        with torch.no_grad():
-            gz = retrieve_latents(pipe.vae.encode(kaynak), generator=uretec)
-        gz = pipe._normalize_latents(gz, pipe.vae.latents_mean, pipe.vae.latents_std).float()
+        onbellek = KOK / f"gizli_{cfg['tur']}_{w}x{h}_{n}.pt"   # iki v2v gücü aynı kodlamayı kullanır
+        if onbellek.exists():
+            gz = torch.load(onbellek).to(dev)
+        else:
+            kaynak = pipe.video_processor.preprocess_video(girdi_kareleri(w, h, n), h, w)
+            kaynak = kaynak.to(dev, dtype=pipe.vae.dtype)
+            with torch.no_grad():
+                gz = retrieve_latents(pipe.vae.encode(kaynak), generator=uretec)
+            del kaynak
+            gz = pipe._normalize_latents(gz, pipe.vae.latents_mean, pipe.vae.latents_std).float()
+            torch.save(gz.cpu(), onbellek)
+            if dev == "cuda":
+                torch.cuda.empty_cache()
         cikti = pipe(latents=gz, denoise_strength=guc, num_inference_steps=adim, image_cond_noise_scale=0.0,
                      generator=uretec, **ortak)
-    return ltx_coz(pipe, cikti.frames, uretec)
+    gizli = cikti.frames
+    del cikti
+    if dev == "cuda":                       # çözmeden önce dönüştürücüyü GPU'dan çıkar (~3,9 GB yer açar)
+        pipe.transformer.to("cpu")
+        torch.cuda.empty_cache()
+    return ltx_coz(pipe, gizli, uretec)
 
 
 # ---------------------------------------------------------------- Wan 2.1 1.3B (yalnız LTX hiç sonuç vermezse)
@@ -512,7 +553,10 @@ def merdiven_calistir(yol, model, merdiven, ek, t_bas, kayitlar):
             break
         for eski in (f"{cfg['ad']}.json", f"{cfg['ad']}.mp4", f"{cfg['ad']}-serit.jpg"):
             (CIKTI / eski).unlink(missing_ok=True)
-        kod, sure = alt_surec(["--tek", json.dumps(cfg)], DENEME_ZAMAN_ASIMI_DK)
+        gecen = (time.time() - t_bas) / 60
+        sinir = DENEME_ZAMAN_ASIMI_DK if len(denenen) < EN_AZ_AYAR else \
+            min(DENEME_ZAMAN_ASIMI_DK, max(10, BUTCE_DK + 15 - gecen))
+        kod, sure = alt_surec(["--tek", json.dumps(cfg)], sinir)
         kayit = deneme_kaydi(cfg, kod, sure)
         denenen.add(cfg["ad"])
         kayitlar.append(kayit)
@@ -545,6 +589,8 @@ def surucu():
     import shutil
     shutil.rmtree(CIKTI, ignore_errors=True)
     CIKTI.mkdir(parents=True, exist_ok=True)
+    for eski in list(KOK.glob("gizli_*.pt")) + [KOK / "sdpa.json"]:
+        eski.unlink(missing_ok=True)
     t_bas = time.time()
     bilgi = ortam_bilgisi()
     log("ortam:", json.dumps(bilgi, ensure_ascii=False))
@@ -554,6 +600,7 @@ def surucu():
     finally:
         rapor = {"ortam": bilgi, "toplam_dk": round((time.time() - t_bas) / 60, 1), "denemeler": kayitlar,
                  "farkli_ayar_sayisi": len(denenen), "istem": ISTEM, "olumsuz_istem": OLUMSUZ,
+                 "sdpa": json.loads((KOK / "sdpa.json").read_text(encoding="utf-8")) if (KOK / "sdpa.json").exists() else None,
                  "ltx": [LTX_DAMITIK, LTX_REPO], "wan_repolari": [WAN_T2V_REPO, WAN_VACE_REPO]}
         (CIKTI / "rapor.json").write_text(json.dumps(rapor, ensure_ascii=False, indent=1), encoding="utf-8")
         log(f"bitti: {sum(1 for k in kayitlar if k.get('durum') == 'tamam')} başarılı deneme, "
@@ -575,12 +622,14 @@ def _surucu_govde(t_bas, kayitlar, basari):
         return
     log("LTX hiçbir ayarda sonuç vermedi; Wan 2.1 1.3B deneniyor")
     if hazirla("wan", kayitlar):
-        basari["wan_vace_i2v"] = merdiven_calistir("wan_vace_i2v", "wan", WAN_MERDIVEN, {}, t_bas, kayitlar)
         basari["wan_v2v"] = merdiven_calistir("wan_v2v", "wan", WAN_MERDIVEN, {"guc": 0.5}, t_bas, kayitlar)
+        basari["wan_vace_i2v"] = merdiven_calistir("wan_vace_i2v", "wan", WAN_MERDIVEN, {"adim": 20}, t_bas,
+                                                   kayitlar)
 
 
 if __name__ == "__main__":
     os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")   # Hugging Face'e hiçbir anahtar gönderilmez
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")   # bellek parçalanmasına karşı
     nvrtc_hazirla()
     if "--tek" in sys.argv:
         tek(json.loads(sys.argv[sys.argv.index("--tek") + 1]))
