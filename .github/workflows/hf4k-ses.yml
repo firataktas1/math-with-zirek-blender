@@ -1,0 +1,68 @@
+# Math with Zirek · audio-only re-mux: takes the video files of a release, replaces their audio with the project's
+# lossless mix (FLAC -> AAC 48 kHz 320k, gain to -14 LUFS / TP <= -1.2), measures, and puts them back (same names).
+# The picture is copied (no re-encode).
+# gh workflow run hf4k-ses.yml -f surum=video1-en-4k-v1 -f proje=video1-son/hf4k-en -f ses=miks-en.flac
+
+name: HF 4K ses
+
+on:
+  workflow_dispatch:
+    inputs:
+      surum:
+        description: "Release etiketi"
+        required: true
+        default: "video1-en-4k-v1"
+      proje:
+        description: "Proje klasörü (FLAC burada)"
+        required: true
+        default: "video1-son/hf4k-en"
+      ses:
+        description: "Kayıpsız ses (proje içi yol)"
+        required: true
+        default: "miks-en.flac"
+      dosyalar:
+        description: "Boşlukla ayrılmış video dosyaları (release içinde)"
+        required: true
+        default: "video1-son-en-4k.mp4 video1-son-en-1080p.mp4"
+
+permissions:
+  contents: write
+
+jobs:
+  ses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: ${{ inputs.proje }}
+      - name: ffmpeg
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg > /dev/null
+      - name: İndir, sesi değiştir, ölç, geri koy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p eski yeni
+          for f in ${{ inputs.dosyalar }}; do gh release download "${{ inputs.surum }}" --repo "$GITHUB_REPOSITORY" -p "$f" -D eski; done
+          ls -la eski
+          python3 - <<'PY'
+          import json, re, subprocess, os
+          ses = os.path.join("${{ inputs.proje }}", "${{ inputs.ses }}")
+          o = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", ses, "-af", "loudnorm=I=-14:TP=-1:print_format=json", "-f", "null", "-"], capture_output=True, text=True)
+          j = json.loads(re.findall(r'[{][^{}]*"input_i"[^{}]*[}]', o.stderr, re.S)[-1]); i, tp = float(j["input_i"]), float(j["input_tp"])
+          kaz = -14.0 - i
+          if tp + kaz > -1.2: kaz = -1.2 - tp
+          print(f"kaynak {i:.2f} LUFS, TP {tp:.2f} -> kazanç {kaz:+.2f} dB")
+          for f in "${{ inputs.dosyalar }}".split():
+              subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", f"eski/{f}", "-i", ses, "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+                              "-af", f"volume={kaz:.2f}dB", "-c:a", "aac", "-b:a", "320k", "-ar", "48000", "-ac", "2", "-shortest", "-movflags", "+faststart", f"yeni/{f}"], check=True)
+              r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", f"yeni/{f}", "-vn", "-af", "ebur128=peak=true,silencedetect=n=-40dB:d=1.5", "-f", "null", "-"], capture_output=True, text=True).stderr
+              ozet = r[r.rfind("Summary:"):]
+              sus = len(re.findall("silence_start", r))
+              v = subprocess.run(["ffprobe", "-v", "error", "-count_packets", "-show_entries", "stream=codec_name,width,height,nb_read_packets", "-show_entries", "format=duration,size", "-of", "compact", f"yeni/{f}"], capture_output=True, text=True).stdout
+              out = f"{f}\n{v}\nsilencedetect (-40 dB, >= 1.5 s): {sus}\n{ozet}\n"
+              print(out); open(os.environ["GITHUB_STEP_SUMMARY"], "a").write("```\n" + out + "```\n")
+          PY
+          gh release upload "${{ inputs.surum }}" yeni/*.mp4 --repo "$GITHUB_REPOSITORY" --clobber
+          gh release view "${{ inputs.surum }}" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[] | "\(.name) \(.size)"' | tee -a "$GITHUB_STEP_SUMMARY"
