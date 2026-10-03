@@ -168,6 +168,29 @@ jobs:
           PY
           pip install -q pillow
           cd "${{ inputs.proje }}" && python3 -B kontak.py birlestir "$GITHUB_WORKSPACE/kareler" && mv kontak.png "$GITHUB_WORKSPACE/kontak.png"
+      - name: Titreme taraması (son dosya)
+        run: |
+          pip install -q numpy
+          python3 - <<'PY' | tee titreme.txt
+          # one-frame vanish/return per 20x20 block of a 320x180 gray copy: min(|f-prev|, |f-next|) - |prev-next|
+          import subprocess, numpy as np, os
+          W, H, B = 320, 180, 20; n = W * H
+          p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", "${{ inputs.cikti }}", "-vf", f"scale={W}:{H}:flags=area,format=gray", "-f", "rawvideo", "-"], stdout=subprocess.PIPE)
+          blk = lambda a: a.reshape(H // B, B, W // B, B).mean(axis=(1, 3))
+          a2 = a1 = None; i = 0; hits = []
+          while True:
+              buf = p.stdout.read(n)
+              if len(buf) < n: break
+              f = np.frombuffer(buf, np.uint8).astype(np.float32).reshape(H, W)
+              if a2 is not None:
+                  sc = np.minimum(blk(np.abs(a1 - a2)), blk(np.abs(f - a1))) - blk(np.abs(f - a2))
+                  k = np.unravel_index(sc.argmax(), sc.shape)
+                  if sc[k] > 6: hits.append((i - 1, float(sc[k]), int(k[1] * B * 6), int(k[0] * B * 6)))
+              a2, a1 = a1, f; i += 1
+          print(f"frames {i}, hits {len(hits)} (motion and cuts also score; check clusters by eye)")
+          for fr, s, x, y in hits: print(f"{fr / 30:8.3f} s  frame {fr:6d}  score {s:5.1f}  block@1080p x{x} y{y}")
+          PY
+          head -1 titreme.txt >> "$GITHUB_STEP_SUMMARY"
       - name: 1080p kopya
         if: ${{ inputs.hd == '1' }}
         run: |
@@ -186,6 +209,7 @@ jobs:
           path: |
             kontak.png
             kapak-yazisiz.jpg
+            titreme.txt
           retention-days: 3
       - uses: actions/upload-artifact@v4
         with:
@@ -210,6 +234,11 @@ jobs:
             [ -n "$f" ] && [ -f "$f" ] || continue
             if [ $(stat -c %s "$f") -lt 2000000000 ]; then dosyalar="$dosyalar $f"; else echo "2 GB'tan büyük, release'e konmadı: $f" | tee -a "$GITHUB_STEP_SUMMARY"; fi
           done
+          if gh release view "${{ inputs.surum }}" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "${{ inputs.surum }}" $dosyalar --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "${{ inputs.surum }}" --repo "$GITHUB_REPOSITORY" --notes "Math with Zirek · Video 1 · English timing · 3840x2160 30 fps · rebuilt by ${{ github.workflow }} run ${{ github.run_id }} from render run ${{ inputs.kosu }} (1 capture worker per job: flicker fix)"
+          else
           gh release create "${{ inputs.surum }}" $dosyalar --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "${{ inputs.surum }}" \
             --notes "Math with Zirek · Video 1 · English timing · 3840x2160 30 fps · built by ${{ github.workflow }} run ${{ github.run_id }} from render run ${{ inputs.kosu }}"
+          fi
           gh release view "${{ inputs.surum }}" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '.url, (.assets[] | "\(.name) \(.size)")' | tee -a "$GITHUB_STEP_SUMMARY"

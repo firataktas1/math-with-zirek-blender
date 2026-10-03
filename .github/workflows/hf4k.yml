@@ -157,10 +157,13 @@ jobs:
       - name: Render
         if: ${{ steps.dilim.outputs.bos != '1' }}
         working-directory: ${{ inputs.proje }}
+        # --workers 1: with 3 capture workers on a 4-core runner the 4K screenshot capture (software GL) sometimes grabbed a
+        # frame before heavy filtered layers were rasterized: Zirek's head, the student's head/arm, the flock vanished on
+        # random single frames (found in video1-son-en, 3 Oct 2026; a 1-worker test window had 0 drops vs 10-58).
         run: |
           start=$(date +%s)
           npx --yes hyperframes@${HYPERFRAMES_VERSION} render . -o "parca.mp4" --fps 30 --resolution landscape-4k \
-            --crf "${{ inputs.crf }}" --no-browser-gpu --no-low-memory-mode --workers 3 --quiet
+            --crf "${{ inputs.crf }}" --no-browser-gpu --no-low-memory-mode --workers 1 --quiet
           echo "parça ${{ matrix.parca }}: $(( $(date +%s) - start )) sn" | tee -a "$GITHUB_STEP_SUMMARY"
           ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames,codec_name,profile,pix_fmt,width,height,r_frame_rate -of default=nw=1 parca.mp4
           echo "beklenen kare: ${{ steps.dilim.outputs.kare }}"
