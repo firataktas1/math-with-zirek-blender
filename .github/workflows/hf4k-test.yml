@@ -1,0 +1,154 @@
+# Math with Zirek · 4K flicker diagnosis: renders a short window of the composition in several variants (same 4K
+# settings as hf4k.yml) and measures, frame by frame, whether Zirek's head is drawn (orange fur pixels in a box).
+# gh workflow run hf4k-test.yml -f proje=video1-son/hf4k-en -f bas=236.3 -f sure=8 -f kutu="1250,520,280,240"
+
+name: HF 4K test
+
+on:
+  workflow_dispatch:
+    inputs:
+      proje:
+        description: "Proje klasörü"
+        required: true
+        default: "video1-son/hf4k-en"
+      bas:
+        description: "Pencere başı (sn)"
+        required: true
+        default: "236.3"
+      sure:
+        description: "Pencere süresi (sn)"
+        required: true
+        default: "8"
+      kutu:
+        description: "Baş kutusu x,y,w,h (1920x1080 düzeninde)"
+        required: true
+        default: "1250,520,280,240"
+      varyantlar:
+        description: "Virgüllü varyant listesi"
+        required: true
+        default: "A,C,D,E,G"
+
+permissions:
+  contents: read
+
+env:
+  HYPERFRAMES_VERSION: "0.8.75"
+  HYPERFRAMES_NO_TELEMETRY: "1"
+  DO_NOT_TRACK: "1"
+
+jobs:
+  hazirla:
+    runs-on: ubuntu-latest
+    outputs:
+      liste: ${{ steps.l.outputs.liste }}
+    steps:
+      - id: l
+        run: python3 -c "import json;print('liste='+json.dumps('${{ inputs.varyantlar }}'.split(',')))" >> "$GITHUB_OUTPUT"
+  test:
+    needs: hazirla
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        v: ${{ fromJson(needs.hazirla.outputs.liste) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: ${{ inputs.proje }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ffmpeg ve fontlar
+        run: sudo apt-get update -q > /dev/null && sudo apt-get install -y -q ffmpeg fonts-noto-core > /dev/null && pip install -q numpy
+      - name: Tarayıcı
+        working-directory: ${{ inputs.proje }}
+        run: npx --yes hyperframes@${HYPERFRAMES_VERSION} browser ensure
+      - name: Pencere ve varyant
+        working-directory: ${{ inputs.proje }}
+        env:
+          V: ${{ matrix.v }}
+          BAS: ${{ inputs.bas }}
+          SURE: ${{ inputs.sure }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          FPS = 30; V = os.environ["V"]
+          h = open("index.html", encoding="utf-8").read()
+          END = float(re.search(r'id="root"[^>]*data-duration="([0-9.]+)"', h).group(1))
+          f0 = round(float(os.environ["BAS"]) * FPS); f1 = f0 + round(float(os.environ["SURE"]) * FPS)
+          OFF = f0 / FPS; L = (f1 - f0) / FPS
+          def rep(a, b):
+              global h
+              assert h.count(a) >= 1, (V, a[:60]); h = h.replace(a, b)
+          # variants
+          if V == "C":   # student before Zirek in paint order
+              rep('<div id="zB" class="akt z">', '<div id="zB" class="akt z" style="z-index:2">')
+              rep('<div id="oB" class="akt o">', '<div id="oB" class="akt o" style="z-index:1">')
+          if V == "D":   # tight filter region for the characters
+              rep('<filter id="kgk" x="-35%" y="-25%" width="170%" height="150%"', '<filter id="kgk" x="-8%" y="-6%" width="116%" height="114%"')
+          if V == "E":   # no Blender clip (diagnostic)
+              h = re.sub(r'(<video id="klip-nuzi"[^>]*)>', r'\1 style="display:none">', h)
+          if V == "F":   # characters apart (diagnostic: overlap)
+              rep("sagN: { zB: [1390, 520, 1.15], oB: [1748, 530, 1.15] }", "sagN: { zB: [1180, 520, 1.15], oB: [1760, 530, 1.15] }")
+          if V == "H":   # isolate each character in its own stacking context
+              rep('.akt { filter: url(#kgk); }', '.akt { filter: url(#kgk); isolation: isolate; will-change: transform; }')
+          def kaydir(m):
+              tag = m.group(0)
+              if 'id="root"' in tag:
+                  return re.sub(r'data-duration="[0-9.]+"', f'data-duration="{L:.4f}"', tag)
+              s = float(re.search(r'data-start="([-0-9.]+)"', tag).group(1))
+              dm = re.search(r'data-duration="([0-9.]+)"', tag)
+              d = float(dm.group(1)) if dm else END - s
+              a, b = max(0.0, s - OFF), min(L, s + d - OFF)
+              if b <= a + 1e-6:
+                  a, b = 0.0, 1.0 / FPS
+                  tag = tag.replace("<video", "<video data-hidden=\"\"").replace("<div", "<div data-hidden=\"\"").replace("<audio", "<audio data-hidden=\"\"")
+              tag = re.sub(r'data-start="[-0-9.]+"', f'data-start="{a:.4f}"', tag)
+              tag = re.sub(r'data-duration="[0-9.]+"', f'data-duration="{b - a:.4f}"', tag) if dm else tag.replace('data-start=', f'data-duration="{b - a:.4f}" data-start=', 1)
+              if tag.startswith("<video") and OFF > s:
+                  tag = tag.replace("<video", f'<video data-media-start="{OFF - s:.4f}"', 1)
+              return tag
+          h = re.sub(r'<(?:div|video|audio)\b[^>]*data-start="[^"]*"[^>]*>', kaydir, h)
+          h = re.sub(r'<audio\b[^>]*></audio>', '', h)
+          h = h.replace("onUpdate() { yonet(SURUCU.t); }", f"onUpdate() {{ yonet(SURUCU.t + {OFF!r}); }}")
+          h = h.replace("yonet(0);\n", f"yonet({OFF!r});\n", 1)
+          open("index.html", "w", encoding="utf-8").write(h)
+          print(V, "window", OFF, L)
+          PY
+      - name: Klipler 4K
+        working-directory: ${{ inputs.proje }}
+        run: |
+          for f in klipler/*.mp4; do
+            ffmpeg -hide_banner -loglevel error -y -i "$f" -vf "scale=3840:2160:flags=lanczos" -c:v libx264 -preset fast -crf 14 -pix_fmt yuv420p -an "${f%.mp4}-4k.mp4" && mv "${f%.mp4}-4k.mp4" "$f"
+          done
+      - name: Render
+        working-directory: ${{ inputs.proje }}
+        run: |
+          W=3; [ "${{ matrix.v }}" = "G" ] && W=1
+          start=$(date +%s)
+          npx --yes hyperframes@${HYPERFRAMES_VERSION} render . -o "test.mp4" --fps 30 --resolution landscape-4k --crf 12 --no-browser-gpu --no-low-memory-mode --workers $W 2>&1 | tail -n 5
+          echo "render ${{ matrix.v }}: $(( $(date +%s) - start )) sn"
+      - name: Ölç
+        working-directory: ${{ inputs.proje }}
+        run: |
+          python3 - <<'PY'
+          import subprocess, numpy as np, os
+          x, y, w, h = [int(v) * 2 for v in "${{ inputs.kutu }}".split(",")]
+          o = subprocess.run(["ffmpeg", "-v", "error", "-i", "test.mp4", "-vf", f"crop={w}:{h}:{x}:{y},scale={w//4}:{h//4}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True).stdout
+          a = np.frombuffer(o, np.uint8).reshape(-1, h // 4, w // 4, 3).astype(int)
+          r, g, b = a[..., 0], a[..., 1], a[..., 2]
+          fur = ((r > 150) & (g > 60) & (g < 120) & (b < 80)).sum(axis=(1, 2))
+          ref = np.percentile(fur, 90)
+          s = "".join("#" if v > 0.6 * ref else ("+" if v > 0.2 * ref else ".") for v in fur)
+          # drops: frames whose fur falls below 60 % of both neighbours' minimum
+          drops = sum(1 for i in range(1, len(fur) - 1) if fur[i] < 0.6 * min(fur[i - 1], fur[i + 1]))
+          out = f"variant ${{ matrix.v }}: frames {len(fur)}, ref {ref:.0f}, one-frame drops {drops}\n{s}\n"
+          print(out); open(os.environ["GITHUB_STEP_SUMMARY"], "a").write("```\n" + out + "```\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-${{ matrix.v }}
+          path: ${{ inputs.proje }}/test.mp4
+          retention-days: 2
