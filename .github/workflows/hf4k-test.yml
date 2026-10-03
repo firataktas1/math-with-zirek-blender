@@ -92,7 +92,7 @@ jobs:
               h = re.sub(r'(<video id="klip-nuzi"[^>]*)>', r'\1 style="display:none">', h)
           if V == "F":   # characters apart (diagnostic: overlap)
               rep("sagN: { zB: [1390, 520, 1.15], oB: [1748, 530, 1.15] }", "sagN: { zB: [1180, 520, 1.15], oB: [1760, 530, 1.15] }")
-          if V.startswith("Z"):   # native 3840x2160 page (CSS zoom 2 on the 1920x1080 layout): no DSF -> BeginFrame capture
+          if V.startswith("Z") and 'data-width="1920"' in h:   # native 3840x2160 page (CSS zoom 2 on the 1920x1080 layout): no DSF -> BeginFrame capture
               rep('html, body { margin: 0; width: 1920px; height: 1080px;', 'html, body { margin: 0; width: 3840px; height: 2160px;')
               rep('#root { width: 1920px; height: 1080px; position: relative;', '#root { width: 1920px; height: 1080px; zoom: 2; position: relative;')
               rep('data-width="1920" data-height="1080"', 'data-width="3840" data-height="2160"')
