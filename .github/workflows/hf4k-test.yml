@@ -117,6 +117,19 @@ jobs:
           open("index.html", "w", encoding="utf-8").write(h)
           print(V, "window", OFF, L)
           PY
+      - name: HyperFrames yaması (P varyantları)
+        if: ${{ startsWith(matrix.v, 'P') }}
+        working-directory: ${{ inputs.proje }}
+        run: |
+          f=$(find ~/.npm/_npx -path '*node_modules/hyperframes/dist/cli.js' | head -1); echo "$f"
+          python3 - "$f" <<'PY'
+          import sys
+          p = sys.argv[1]; s = open(p, encoding="utf-8").read()
+          a = '  if (options.captureMode !== "screenshot") {'
+          assert s.count(a) == 1
+          s = s.replace(a, '  if (options.captureMode === "screenshot") chromeArgs.push("--run-all-compositor-stages-before-draw", "--disable-checker-imaging");' + chr(10) + a)
+          open(p, "w", encoding="utf-8").write(s); print("patched")
+          PY
       - name: Klipler 4K
         working-directory: ${{ inputs.proje }}
         run: |
@@ -126,7 +139,7 @@ jobs:
       - name: Render
         working-directory: ${{ inputs.proje }}
         run: |
-          W=3; [ "${{ matrix.v }}" = "G" ] && W=1
+          W=3; case "${{ matrix.v }}" in G|P1) W=1;; esac
           start=$(date +%s)
           npx --yes hyperframes@${HYPERFRAMES_VERSION} render . -o "test.mp4" --fps 30 --resolution landscape-4k --crf 12 --no-browser-gpu --no-low-memory-mode --workers $W 2>&1 | tail -n 5
           echo "render ${{ matrix.v }}: $(( $(date +%s) - start )) sn"
