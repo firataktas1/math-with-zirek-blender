@@ -1,0 +1,332 @@
+[
+ {
+  "ad": "001",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Celle-là ira plus vite."
+ },
+ {
+  "ad": "002",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "En CP, la maîtresse a levé trois crayons : « Comptez-les. » Mais je l'avais déjà vu sans compter."
+ },
+ {
+  "ad": "003",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Ce jour-là, je me demandais : si mes yeux le voient, pourquoi compter ? Qui a inventé les nombres, et pour quoi faire ?"
+ },
+ {
+  "ad": "004",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Puis mon cahier s'est rempli de chiffres, mais personne n'a jamais répondu à cette question."
+ },
+ {
+  "ad": "005",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Voilà la question restée sans réponse ce jour-là : pourquoi compte-t-on ? Aujourd'hui, je ne te donne pas la réponse. Tu vas la trouver toi-même."
+ },
+ {
+  "ad": "006",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "On commence par où ? Il n'y a même pas encore de nombres ici."
+ },
+ {
+  "ad": "007",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "On commence par tes yeux, parce que les nombres commencent exactement là où tes yeux ne suffisent plus."
+ },
+ {
+  "ad": "008",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Ne compte pas. Regarde. Lequel en avait le plus ?"
+ },
+ {
+  "ad": "009",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Celui de droite. Sans même réfléchir."
+ },
+ {
+  "ad": "010",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Cette fois… je ne sais pas. Ils avaient l'air pareils."
+ },
+ {
+  "ad": "011",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "À gauche, cent ; à droite, cent dix. La première fois, l'écart était de dix. Cette fois aussi."
+ },
+ {
+  "ad": "012",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Même écart. Mais la première fois, c'était la moitié du tas ; là, il s'est perdu dans la foule."
+ },
+ {
+  "ad": "013",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Trois crayons, les paniers au magasin : pas de foule où se perdre. Voilà pourquoi mes yeux savaient sans compter."
+ },
+ {
+  "ad": "014",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Mais ma question grandit : si l'œil est si bon, pourquoi a-t-on eu besoin de compter ?"
+ },
+ {
+  "ad": "015",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "À cause d'un travail que l'œil ne sait pas faire. Allez, fais-le, ce travail."
+ },
+ {
+  "ad": "016",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Imagine : les nombres n'existent pas encore, et tu es berger."
+ },
+ {
+  "ad": "017",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Le matin, tes moutons sortent de l'enclos un par un et se dispersent dans le pâturage."
+ },
+ {
+  "ad": "018",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Facile. Ils broutent jusqu'au soir, puis ils rentrent."
+ },
+ {
+  "ad": "019",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Le soir est là, les moutons sont rentrés. Sont-ils tous revenus ?"
+ },
+ {
+  "ad": "020",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Ça a l'air pareil… mais je n'ai même pas su distinguer cent de cent dix. S'il en manquait un, je le verrais ?"
+ },
+ {
+  "ad": "021",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Et cette fois, ce mouton compte : un mouton qui manque passe la nuit dehors, tout seul."
+ },
+ {
+  "ad": "022",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Alors « à peu près pareil », ça ne suffit pas. Je dois savoir exactement."
+ },
+ {
+  "ad": "023",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Attends, j'ai une idée. Je donne un nom à chaque mouton, et le soir, je les appelle un par un."
+ },
+ {
+  "ad": "024",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Bien vu. Mais le soir, tu te souviendras des vingt noms ?"
+ },
+ {
+  "ad": "025",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "…Je m'embrouillerais dès le troisième. Alors j'aligne le troupeau du soir à côté de celui du matin, chaque mouton avec un partenaire, et celui qui reste seul montre ce qui manque."
+ },
+ {
+  "ad": "026",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Bonne idée. Et le troupeau du matin, il est où, maintenant ?"
+ },
+ {
+  "ad": "027",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Le troupeau du matin… c'est celui-ci. Ceux qui sont partis ce matin sont ceux qui reviennent. Pas de second troupeau à aligner."
+ },
+ {
+  "ad": "028",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Donc je dois garder la quantité de ce matin quelque part jusqu'au soir."
+ },
+ {
+  "ad": "029",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Où la garderais-tu ? Ni papier, ni stylo, ni mots pour les nombres. Juste ce qui traîne autour de toi."
+ },
+ {
+  "ad": "030",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Un caillou ! Chaque matin, pour chaque mouton qui sort, je mets un caillou dans ma besace."
+ },
+ {
+  "ad": "031",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Le soir, pour chaque mouton qui rentre, j'en retire un. S'il reste un caillou, un mouton est encore dehors."
+ },
+ {
+  "ad": "032",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Il reste un caillou. J'en ai laissé un dehors !"
+ },
+ {
+  "ad": "033",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Tu l'as trouvé sans connaître un seul nombre."
+ },
+ {
+  "ad": "034",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Je viens de l'inventer. Les gens faisaient vraiment ça ?"
+ },
+ {
+  "ad": "035",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "En Irak, près de Kirkouk, dans l'ancienne cité de Nuzi, des archéologues ont trouvé un récipient creux en argile, vieux d'environ trois mille cinq cents ans."
+ },
+ {
+  "ad": "036",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "L'inscription énumère quarante-huit moutons et chèvres confiés à un berger. Et dedans, il y avait quarante-huit petites pierres."
+ },
+ {
+  "ad": "037",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "C'est exactement ma besace, mais en argile !"
+ },
+ {
+  "ad": "038",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Ce pot n'est pas le premier caillou ; on a peut-être compté avec des pierres bien avant. Mais il montre que ton idée a vraiment servi."
+ },
+ {
+  "ad": "039",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Compter avec des cailloux est devenu si courant que le caillou a donné son nom au comptage : les Romains appelaient un petit caillou « calculus », et c'est de là que vient le mot « calcul »."
+ },
+ {
+  "ad": "040",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Calculatrice… ma calculatrice tient son nom d'un caillou ?"
+ },
+ {
+  "ad": "041",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Oui. La calculatrice de ton téléphone est une arrière-petite-fille de la besace de ce berger."
+ },
+ {
+  "ad": "042",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Mais je ne peux pas trimballer un sac de cailloux partout."
+ },
+ {
+  "ad": "043",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Non. Alors on a trouvé d'autres outils qui font le travail du caillou. Tu en utilises un chaque jour : les mots-nombres."
+ },
+ {
+  "ad": "044",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Quand tu dis « vingt », tu portes vingt cailloux, pas dans ta poche, mais sur ta langue."
+ },
+ {
+  "ad": "052",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Alors les chiffres de l'école étaient aussi un outil comme ça. Mais j'ai toujours eu du mal avec cet outil. J'étais toujours lent en maths. Je suis bête ?"
+ },
+ {
+  "ad": "053",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Non."
+ },
+ {
+  "ad": "054",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "On t'a donné l'outil, mais personne ne t'a montré quel problème il résout. Un outil qu'on n'a jamais vu servir semble bizarre à n'importe qui."
+ },
+ {
+  "ad": "055",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "C'est peut-être difficile, mais pas absurde. Aujourd'hui, on a vu ensemble le problème que résolvent les nombres. On verra les outils suivants de la même façon."
+ },
+ {
+  "ad": "056",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "J'ai vu les trois crayons sans compter, parce que trois, c'est peu, et mes yeux suffisaient."
+ },
+ {
+  "ad": "057",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Les nombres servent là où mes yeux ne suffisent plus : pour ce qui n'est pas devant moi, pour ce que je dois porter exactement du matin au soir."
+ },
+ {
+  "ad": "058",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Si j'avais eu des moutons, j'aurais trouvé un moyen moi aussi. D'ailleurs, je viens de le trouver : le caillou. Les chiffres de mon cahier, c'est ce caillou, qui a continué son chemin."
+ },
+ {
+  "ad": "059",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Tu n'auras pas toujours un sac de cailloux sur toi. Mais il y a dix choses que tu emportes partout."
+ },
+ {
+  "ad": "060",
+  "ses": "ogrenci",
+  "dil": "fr",
+  "metin": "Mes doigts… J'ai toujours compté avec. Je ne les ai jamais vus comme des cailloux."
+ },
+ {
+  "ad": "061",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Prochain arrêt : Les doigts et le corps."
+ },
+ {
+  "ad": "062",
+  "ses": "zirek",
+  "dil": "fr",
+  "metin": "Quelle question n'as-tu jamais pu poser à l'école ? Écris-la en commentaire. On les lit toutes en préparant les prochains arrêts."
+ }
+]

@@ -1,0 +1,332 @@
+[
+ {
+  "ad": "001",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Questa sarà più veloce."
+ },
+ {
+  "ad": "002",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "In prima elementare la maestra ha alzato tre matite: \"Contatele.\" Ma io l'avevo già visto, senza contare."
+ },
+ {
+  "ad": "003",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Quel giorno continuavo a chiedermi: se gli occhi lo vedono, perché contiamo? Chi ha inventato i numeri, e perché?"
+ },
+ {
+  "ad": "004",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Poi il quaderno si è riempito di cifre, ma a quella domanda nessuno ha mai risposto."
+ },
+ {
+  "ad": "005",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Era la domanda rimasta senza risposta quel giorno: perché contiamo? Oggi non ti darò la risposta. La troverai da solo."
+ },
+ {
+  "ad": "006",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Da dove cominciamo? Qui non ci sono ancora nemmeno i numeri."
+ },
+ {
+  "ad": "007",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Partiamo dai tuoi occhi, perché i numeri cominciano proprio dove gli occhi smettono di bastare."
+ },
+ {
+  "ad": "008",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Non contare. Guarda. Quale ne aveva di più?"
+ },
+ {
+  "ad": "009",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Quello a destra. Non ci ho neanche pensato."
+ },
+ {
+  "ad": "010",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Stavolta… non lo so. Sembravano uguali."
+ },
+ {
+  "ad": "011",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "A sinistra ce n'erano cento, a destra centodieci. La prima volta la differenza era dieci. Anche stavolta è dieci."
+ },
+ {
+  "ad": "012",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Stessa differenza. Ma la prima volta era metà del mucchio; stavolta si è persa nella folla."
+ },
+ {
+  "ad": "013",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Tre matite, o i cestini alla cassa: non c'era folla in cui perdersi. Per questo gli occhi lo sapevano senza contare."
+ },
+ {
+  "ad": "014",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Ma ora la mia domanda è ancora più grande: se l'occhio è così bravo, perché ci è servito contare?"
+ },
+ {
+  "ad": "015",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Per un lavoro che l'occhio non sa fare. Dai, quel lavoro fallo tu."
+ },
+ {
+  "ad": "016",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Immagina: i numeri non esistono ancora, e tu sei un pastore."
+ },
+ {
+  "ad": "017",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "La mattina le tue pecore escono dal recinto una a una e si spargono per il pascolo."
+ },
+ {
+  "ad": "018",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Facile. Pascolano fino a sera, poi tornano."
+ },
+ {
+  "ad": "019",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "È sera, le pecore sono tornate. Sono rientrate tutte?"
+ },
+ {
+  "ad": "020",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Sembrano più o meno le stesse… ma non distinguevo nemmeno cento da centodieci. Se ne mancasse una, me ne accorgerei?"
+ },
+ {
+  "ad": "021",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "E stavolta quella pecora conta: una pecora che manca passa la notte fuori, tutta sola."
+ },
+ {
+  "ad": "022",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Allora \"più o meno\" non basta. Devo saperlo con esattezza."
+ },
+ {
+  "ad": "023",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Aspetta, ho un'idea. Do un nome a ogni pecora e la sera li chiamo uno per uno."
+ },
+ {
+  "ad": "024",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Bello. Ma la sera ti ricorderai tutti e venti i nomi?"
+ },
+ {
+  "ad": "025",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "…Alla terza li confonderei. Allora affianco il gregge della sera a quello del mattino, trovo una compagna per ogni pecora, e quella senza compagna mi dice chi manca."
+ },
+ {
+  "ad": "026",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Buona idea. E il gregge del mattino, adesso, dov'è?"
+ },
+ {
+  "ad": "027",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Il gregge del mattino… è questo. Quelle uscite stamattina sono proprio quelle che tornano. Non c'è un secondo gregge da metterci accanto."
+ },
+ {
+  "ad": "028",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Quindi devo conservare fino a sera la quantità di stamattina, da qualche parte."
+ },
+ {
+  "ad": "029",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "E dove la tieni? Niente carta, niente penna, niente parole per i numeri. Solo quello che hai intorno."
+ },
+ {
+  "ad": "030",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Un sasso! Ogni mattina, per ogni pecora che esce, metto un sasso nella sacca."
+ },
+ {
+  "ad": "031",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "La sera, per ogni pecora che torna, ne tolgo uno. Se nella sacca resta un sasso, una pecora è ancora là fuori."
+ },
+ {
+  "ad": "032",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Resta un sasso. Ne ho lasciata una fuori!"
+ },
+ {
+  "ad": "033",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "L'hai scoperto senza conoscere un solo numero."
+ },
+ {
+  "ad": "034",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "L'ho appena inventato io. Si faceva davvero?"
+ },
+ {
+  "ad": "035",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "In Iraq, vicino a Kirkuk, nell'antica città di Nuzi, gli archeologi hanno trovato un contenitore cavo d'argilla di circa tremilacinquecento anni fa."
+ },
+ {
+  "ad": "036",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "La scritta sopra elenca quarantotto pecore e capre affidate a un pastore. E dentro c'erano quarantotto sassolini."
+ },
+ {
+  "ad": "037",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "È proprio la mia sacca, solo che è d'argilla!"
+ },
+ {
+  "ad": "038",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Questo vaso non è il primo sasso: forse si contava con i sassi molto prima. Ma dimostra che la tua idea è stata usata davvero."
+ },
+ {
+  "ad": "039",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Contare con i sassi era così comune che il nome del sasso è diventato la parola per contare: per i Romani un sassolino era \"calculus\", e da lì viene \"calcolare\"."
+ },
+ {
+  "ad": "040",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Calcolatrice… la mia calcolatrice prende il nome da un sassolino?"
+ },
+ {
+  "ad": "041",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Sì. La calcolatrice del tuo telefono è una pronipote della sacca di quel pastore."
+ },
+ {
+  "ad": "042",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Ma non posso portarmi dietro una sacca di sassi ovunque."
+ },
+ {
+  "ad": "043",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "No. Per questo sono nati altri strumenti che fanno il lavoro del sasso. Ne usi uno ogni giorno: i nomi dei numeri."
+ },
+ {
+  "ad": "044",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Quando dici \"venti\", porti con te venti sassi: non in tasca, ma sulla lingua."
+ },
+ {
+  "ad": "052",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Quindi anche le cifre di scuola erano uno strumento così. Ma con quello strumento ho sempre fatto fatica: in matematica ero lento. Sono stupido?"
+ },
+ {
+  "ad": "053",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "No."
+ },
+ {
+  "ad": "054",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Ti hanno dato lo strumento, ma nessuno ti ha mai mostrato quale problema risolve. Uno strumento mai visto all'opera sembra strano in mano a chiunque."
+ },
+ {
+  "ad": "055",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Può essere difficile, ma ha un senso. Oggi abbiamo visto insieme che problema risolvono i numeri. Faremo così anche con i prossimi strumenti."
+ },
+ {
+  "ad": "056",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Ho visto le tre matite senza contare, perché tre è poco e i miei occhi bastavano."
+ },
+ {
+  "ad": "057",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "I numeri servono dove gli occhi non bastano: per ciò che non ho davanti, per ciò che devo portare esatto dal mattino alla sera."
+ },
+ {
+  "ad": "058",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Se avessi avuto delle pecore, avrei trovato un modo anch'io. Anzi, l'ho appena trovato: il sasso. Le cifre sul mio quaderno sono quel sasso, portato avanti."
+ },
+ {
+  "ad": "059",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Non avrai sempre con te una sacca di sassi. Ma ci sono dieci cose che porti ovunque."
+ },
+ {
+  "ad": "060",
+  "ses": "ogrenci",
+  "dil": "it",
+  "metin": "Le mie dita… ho sempre contato con queste. Non le avevo mai viste come sassi."
+ },
+ {
+  "ad": "061",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Prossima fermata: Dita e corpo."
+ },
+ {
+  "ad": "062",
+  "ses": "zirek",
+  "dil": "it",
+  "metin": "Qual era la domanda che a scuola non hai mai potuto fare? Scrivila nei commenti. Li leggiamo tutti quando progettiamo le prossime fermate."
+ }
+]

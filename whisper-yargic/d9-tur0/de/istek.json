@@ -1,0 +1,332 @@
+[
+ {
+  "ad": "001",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Die hier geht schneller."
+ },
+ {
+  "ad": "002",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "In der ersten Klasse hielt die Lehrerin drei Stifte hoch: „Zählt mal.“ Aber ich sah es schon ohne Zählen."
+ },
+ {
+  "ad": "003",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Den ganzen Tag fragte ich mich: Wenn meine Augen es sehen, warum zählen wir? Wer erfand die Zahlen, und wozu?"
+ },
+ {
+  "ad": "004",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Dann füllte sich mein Heft mit Ziffern, aber diese Frage hat mir nie jemand beantwortet."
+ },
+ {
+  "ad": "005",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Das war die Frage, die an dem Tag offenblieb: Warum zählen wir? Heute gebe ich dir die Antwort nicht. Du findest sie selbst."
+ },
+ {
+  "ad": "006",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Wo fangen wir an? Hier gibt es ja noch nicht mal Zahlen."
+ },
+ {
+  "ad": "007",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Wir fangen bei deinen Augen an, denn Zahlen beginnen genau da, wo deine Augen nicht mehr reichen."
+ },
+ {
+  "ad": "008",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Nicht zählen. Nur schauen. Wo waren mehr?"
+ },
+ {
+  "ad": "009",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Rechts. Ich hab nicht mal nachgedacht."
+ },
+ {
+  "ad": "010",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Diesmal… keine Ahnung. Sie sahen gleich aus."
+ },
+ {
+  "ad": "011",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Links waren hundert, rechts hundertzehn. Beim ersten Mal war der Unterschied zehn. Diesmal auch zehn."
+ },
+ {
+  "ad": "012",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Gleicher Unterschied. Erst war er der halbe Haufen; jetzt ging er in der Menge unter."
+ },
+ {
+  "ad": "013",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Drei Stifte, die Körbe an der Kasse: Da ging nichts unter. Deshalb wussten meine Augen es ohne Zählen."
+ },
+ {
+  "ad": "014",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Aber jetzt ist meine Frage noch größer: Wenn das Auge so gut ist, wozu dann das Zählen?"
+ },
+ {
+  "ad": "015",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Wegen einer Aufgabe, die das Auge nicht schafft. Komm, mach du sie."
+ },
+ {
+  "ad": "016",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Stell dir vor: Es gibt noch keine Zahlen, und du bist Hirte."
+ },
+ {
+  "ad": "017",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Morgens verlassen deine Schafe einzeln den Pferch und verteilen sich auf der Weide."
+ },
+ {
+  "ad": "018",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Einfach. Die grasen bis abends, dann kommen sie zurück."
+ },
+ {
+  "ad": "019",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Abend. Die Schafe sind zurück. Sind alle heimgekommen?"
+ },
+ {
+  "ad": "020",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Sieht ungefähr gleich aus… aber ich konnte nicht mal hundert von hundertzehn unterscheiden. Merk ich's, wenn eins fehlt?"
+ },
+ {
+  "ad": "021",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Und diesmal zählt dieses eine Schaf: Ein fehlendes Schaf verbringt die Nacht draußen, ganz allein."
+ },
+ {
+  "ad": "022",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Dann reicht „ungefähr gleich“ nicht. Ich muss es genau wissen."
+ },
+ {
+  "ad": "023",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Moment, ich hab eine Idee. Ich gebe jedem Schaf einen Namen und rufe abends die Namen einzeln auf."
+ },
+ {
+  "ad": "024",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Schön. Aber wirst du dir abends alle zwanzig Namen merken?"
+ },
+ {
+  "ad": "025",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "…Beim dritten bring ich sie durcheinander. Dann stelle ich die Abendherde neben die Morgenherde, finde für jedes Schaf einen Partner, und das ohne Partner zeigt, was fehlt."
+ },
+ {
+  "ad": "026",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Gut. Und wo ist die Morgenherde jetzt?"
+ },
+ {
+  "ad": "027",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Die Morgenherde… ist diese Herde. Wer heute Morgen loszog, kommt jetzt zurück. Es gibt keine zweite Herde zum Danebenstellen."
+ },
+ {
+  "ad": "028",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Also muss ich die Menge vom Morgen bis zum Abend aufbewahren."
+ },
+ {
+  "ad": "029",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Wo bewahrst du sie auf? Kein Papier, kein Stift, keine Zahlwörter. Nur, was um dich herumliegt."
+ },
+ {
+  "ad": "030",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Ein Stein! Jeden Morgen werfe ich für jedes Schaf, das rausgeht, einen Stein in den Beutel."
+ },
+ {
+  "ad": "031",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Abends nehme ich für jedes Schaf, das zurückkommt, einen heraus. Bleibt ein Stein im Beutel, ist noch ein Schaf draußen."
+ },
+ {
+  "ad": "032",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Ein Stein übrig. Eins ist noch draußen!"
+ },
+ {
+  "ad": "033",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Du hast es gefunden, ohne eine Zahl zu kennen."
+ },
+ {
+  "ad": "034",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Das hab ich nur erfunden. Gab's das wirklich?"
+ },
+ {
+  "ad": "035",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Im Irak, bei Kirkuk, in der antiken Stadt Nuzi, fanden Archäologen ein hohles Tongefäß, etwa dreieinhalbtausend Jahre alt."
+ },
+ {
+  "ad": "036",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Die Inschrift nennt achtundvierzig Schafe und Ziegen, einem Hirten übergeben. Darin lagen achtundvierzig kleine Steine."
+ },
+ {
+  "ad": "037",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Das ist genau mein Beutel, nur aus Ton!"
+ },
+ {
+  "ad": "038",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Das Gefäß ist nicht der erste Stein; vielleicht zählte man schon viel früher so. Aber es zeigt: Deine Idee gab es wirklich."
+ },
+ {
+  "ad": "039",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Mit Steinen zu rechnen wurde so üblich, dass ihr Name zum Wort fürs Rechnen wurde: Die Römer nannten einen kleinen Stein „calculus“, daher kommt „kalkulieren“."
+ },
+ {
+  "ad": "040",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Kalkulieren… das Wort kommt von einem Kieselstein?"
+ },
+ {
+  "ad": "041",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Ja. Und der Taschenrechner in deinem Handy ist ein Urenkel dieses Hirtenbeutels."
+ },
+ {
+  "ad": "042",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Aber ich kann nicht überall Steine mitschleppen."
+ },
+ {
+  "ad": "043",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Stimmt. Darum fanden Menschen andere Werkzeuge, die wie der Stein arbeiten. Eins nutzt du täglich: Zahlwörter."
+ },
+ {
+  "ad": "044",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Wenn du „zwanzig“ sagst, trägst du zwanzig Steine, nicht in der Tasche, sondern auf der Zunge."
+ },
+ {
+  "ad": "052",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Dann waren die Ziffern aus der Schule auch so ein Werkzeug. Aber mit diesem Werkzeug hatte ich immer Mühe. Ich war in Mathe immer langsam. Bin ich dumm?"
+ },
+ {
+  "ad": "053",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Nein."
+ },
+ {
+  "ad": "054",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Du hast nur das Werkzeug bekommen; niemand hat dir gezeigt, welches Problem es löst. Ein Werkzeug, das man nie arbeiten sah, fühlt sich in jeder Hand fremd an."
+ },
+ {
+  "ad": "055",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Es mag schwer sein, aber nicht sinnlos. Heute haben wir zusammen gesehen, welches Problem Zahlen lösen. So schauen wir uns auch die nächsten Werkzeuge an."
+ },
+ {
+  "ad": "056",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Die drei Stifte sah ich ohne Zählen, weil drei wenig ist und meine Augen reichten."
+ },
+ {
+  "ad": "057",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Zahlen braucht man da, wo meine Augen nicht reichen: für das, was nicht vor mir liegt, für das, was ich genau vom Morgen bis zum Abend tragen muss."
+ },
+ {
+  "ad": "058",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Hätt ich Schafe gehabt, hätt ich auch einen Weg gefunden. Hab ich sogar gerade: den Stein. Die Ziffern im Heft sind dieser Stein, weitergetragen."
+ },
+ {
+  "ad": "059",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Du wirst nicht immer einen Sack Steine dabeihaben. Aber es gibt zehn Dinge, die du überallhin mitnimmst."
+ },
+ {
+  "ad": "060",
+  "ses": "ogrenci",
+  "dil": "de",
+  "metin": "Meine Finger… damit zähl ich schon immer. Ich hielt sie nie für Steine."
+ },
+ {
+  "ad": "061",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Nächste Station: Finger und Körper."
+ },
+ {
+  "ad": "062",
+  "ses": "zirek",
+  "dil": "de",
+  "metin": "Was konntest du in der Schule nie fragen? Schreib's in die Kommentare. Wir lesen jeden, wenn wir die nächsten Stationen planen."
+ }
+]

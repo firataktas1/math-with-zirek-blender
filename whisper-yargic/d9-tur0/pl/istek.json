@@ -1,0 +1,332 @@
+[
+ {
+  "ad": "001",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Ta pójdzie szybciej."
+ },
+ {
+  "ad": "002",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "W pierwszej klasie pani pokazała trzy ołówki: „Policz je”. A ja już to widziałem bez liczenia."
+ },
+ {
+  "ad": "003",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Cały dzień się zastanawiałem: skoro oczy to widzą, po co liczymy? Kto wymyślił liczby i w jakim celu?"
+ },
+ {
+  "ad": "004",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Potem zeszyt zapełnił się cyframi, ale nikt nigdy nie odpowiedział na to pytanie."
+ },
+ {
+  "ad": "005",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "To pytanie zostało wtedy bez odpowiedzi: po co liczymy? Dziś nie dam ci odpowiedzi. Znajdziesz ją sam."
+ },
+ {
+  "ad": "006",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Od czego zaczynamy? Tu nie ma jeszcze nawet liczb."
+ },
+ {
+  "ad": "007",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Zaczynamy od twoich oczu, bo liczby zaczynają się dokładnie tam, gdzie oczy przestają wystarczać."
+ },
+ {
+  "ad": "008",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Nie licz. Po prostu patrz. Gdzie było więcej?"
+ },
+ {
+  "ad": "009",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Po prawej. Nawet się nie zastanawiałem."
+ },
+ {
+  "ad": "010",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Tym razem… nie wiem. Wyglądały tak samo."
+ },
+ {
+  "ad": "011",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Po lewej było sto, po prawej sto dziesięć. Za pierwszym razem różnica wynosiła dziesięć. Teraz też dziesięć."
+ },
+ {
+  "ad": "012",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Ta sama różnica. Ale wtedy to była połowa kupki, a teraz zginęła w tłumie."
+ },
+ {
+  "ad": "013",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Trzy ołówki albo koszyki w sklepie: tam nie było tłumu, w którym można się zgubić. Dlatego oczy wiedziały bez liczenia."
+ },
+ {
+  "ad": "014",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Ale teraz moje pytanie jest jeszcze większe: skoro oko jest takie dobre, po co nam w ogóle liczenie?"
+ },
+ {
+  "ad": "015",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Bo jest zadanie, którego oko nie wykona. Chodź, zrób je sam."
+ },
+ {
+  "ad": "016",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Wyobraź sobie: liczb jeszcze nie ma, a ty jesteś pasterzem."
+ },
+ {
+  "ad": "017",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Rano twoje owce wychodzą z zagrody jedna po drugiej i rozchodzą się po pastwisku."
+ },
+ {
+  "ad": "018",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Proste. Pasą się do wieczora, potem wracają."
+ },
+ {
+  "ad": "019",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Jest wieczór, owce wróciły. Czy wróciły wszystkie?"
+ },
+ {
+  "ad": "020",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Wygląda mniej więcej tak samo… ale nawet stu od stu dziesięciu nie odróżniłem. Gdyby brakowało jednej, zauważyłbym?"
+ },
+ {
+  "ad": "021",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "A tym razem ta jedna się liczy: zgubiona owca spędzi noc sama na dworze."
+ },
+ {
+  "ad": "022",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "To „mniej więcej tak samo” nie wystarczy. Muszę wiedzieć dokładnie."
+ },
+ {
+  "ad": "023",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Czekaj, mam pomysł. Każdej owcy dam imię, a wieczorem wywołam imiona po kolei."
+ },
+ {
+  "ad": "024",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Ładnie. Ale czy wieczorem zapamiętasz wszystkie dwadzieścia imion?"
+ },
+ {
+  "ad": "025",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "…Pomyliłbym się przy trzecim. To ustawię wieczorne stado obok porannego, każdej owcy znajdę parę, a owca bez pary pokaże, czego brakuje."
+ },
+ {
+  "ad": "026",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Dobry pomysł. To gdzie jest teraz poranne stado?"
+ },
+ {
+  "ad": "027",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Poranne stado… to jest to stado. Te, które rano wyszły, to te same, które wracają. Nie ma drugiego stada do porównania."
+ },
+ {
+  "ad": "028",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Czyli muszę gdzieś przechować poranną ilość do wieczora."
+ },
+ {
+  "ad": "029",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Gdzie ją przechowasz? Nie ma papieru, długopisu ani słów na liczby. Masz tylko to, co leży wokół ciebie."
+ },
+ {
+  "ad": "030",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Kamień! Co rano za każdą owcę, która wychodzi, wrzucam kamień do woreczka."
+ },
+ {
+  "ad": "031",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Wieczorem za każdą owcę, która wraca, jeden wyjmuję. Jeśli w woreczku zostanie kamień, jakaś owca jest jeszcze na zewnątrz."
+ },
+ {
+  "ad": "032",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Został jeden kamień. Jedna jest na dworze!"
+ },
+ {
+  "ad": "033",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Znalazłeś to, nie znając ani jednej liczby."
+ },
+ {
+  "ad": "034",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Sam to wymyśliłem. Ludzie naprawdę tak robili?"
+ },
+ {
+  "ad": "035",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "W Iraku, koło Kirkuku, w starożytnym mieście Nuzi, archeolodzy znaleźli wydrążone gliniane naczynie sprzed około trzech i pół tysiąca lat."
+ },
+ {
+  "ad": "036",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Napis na nim wymienia czterdzieści osiem owiec i kóz przekazanych pasterzowi. A w środku było czterdzieści osiem małych kamyków."
+ },
+ {
+  "ad": "037",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "To dokładnie mój woreczek, tylko z gliny!"
+ },
+ {
+  "ad": "038",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "To naczynie to nie pierwszy kamień; kamykami mogli liczyć dużo wcześniej. Ale dowodzi, że twój pomysł był w użyciu."
+ },
+ {
+  "ad": "039",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Liczenie kamykami tak się upowszechniło, że nazwa kamyka stała się słowem na liczenie: Rzymianie mówili na mały kamyk „calculus” i stąd mamy słowo „kalkulować”."
+ },
+ {
+  "ad": "040",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Kalkulator… mój kalkulator nazywa się tak od kamyka?"
+ },
+ {
+  "ad": "041",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Tak. Kalkulator w twoim telefonie to prawnuk tamtego pasterskiego woreczka."
+ },
+ {
+  "ad": "042",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Ale nie mogę wszędzie nosić worka kamieni."
+ },
+ {
+  "ad": "043",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Nie możesz. Dlatego ludzie znaleźli inne narzędzia, które robią to, co kamień. Jednego z nich używasz codziennie: to nazwy liczb."
+ },
+ {
+  "ad": "044",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Kiedy mówisz „dwadzieścia”, niesiesz dwadzieścia kamieni, nie w kieszeni, tylko na języku."
+ },
+ {
+  "ad": "052",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Czyli cyfry ze szkoły też były takim narzędziem. Ale ja zawsze się z nim męczyłem. Zawsze wolno mi szła matematyka. Jestem głupi?"
+ },
+ {
+  "ad": "053",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Nie."
+ },
+ {
+  "ad": "054",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Dano ci samo narzędzie, ale nikt nie pokazał, jaki problem rozwiązuje. Narzędzie, którego nie widziało się w działaniu, w każdych rękach wydaje się dziwne."
+ },
+ {
+  "ad": "055",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Może być trudne, ale ma sens. Dziś razem zobaczyliśmy, jaki problem rozwiązują liczby. Kolejne narzędzia obejrzymy tak samo."
+ },
+ {
+  "ad": "056",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Trzy ołówki zobaczyłem bez liczenia, bo trzy to mało i oczy wystarczyły."
+ },
+ {
+  "ad": "057",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Liczby są tam, gdzie oczy nie wystarczają: przy tym, czego nie mam przed sobą, i przy tym, co muszę dokładnie przenieść od rana do wieczora."
+ },
+ {
+  "ad": "058",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Gdybym miał owce, też znalazłbym sposób. Właściwie właśnie znalazłem: kamień. Cyfry w moim zeszycie to ten sam kamień, niesiony dalej."
+ },
+ {
+  "ad": "059",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Nie zawsze będziesz mieć przy sobie worek kamieni. Ale jest dziesięć rzeczy, które nosisz wszędzie."
+ },
+ {
+  "ad": "060",
+  "ses": "ogrenci",
+  "dil": "pl",
+  "metin": "Moje palce… Zawsze nimi liczyłem. Nigdy nie myślałem o nich jak o kamieniach."
+ },
+ {
+  "ad": "061",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Następna stacja: Palce i ciało."
+ },
+ {
+  "ad": "062",
+  "ses": "zirek",
+  "dil": "pl",
+  "metin": "Jakiego pytania nigdy nie mogłeś zadać w szkole? Napisz je w komentarzu. Czytamy każde, planując kolejne stacje."
+ }
+]

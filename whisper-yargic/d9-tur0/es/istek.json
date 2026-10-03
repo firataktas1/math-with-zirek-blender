@@ -1,0 +1,332 @@
+[
+ {
+  "ad": "001",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Esta irá más rápido."
+ },
+ {
+  "ad": "002",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "En primer grado, la maestra levantó tres lápices y dijo: \"Cuéntalos\". Pero yo ya lo había visto sin contar."
+ },
+ {
+  "ad": "003",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Ese día me quedé pensando: si mis ojos lo ven, ¿por qué contamos? ¿A quién se le ocurrieron los números, y para qué?"
+ },
+ {
+  "ad": "004",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Luego mi cuaderno se llenó de cifras, pero nadie respondió nunca esa pregunta."
+ },
+ {
+  "ad": "005",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Esa fue la pregunta que quedó sin respuesta ese día: ¿por qué contamos? Hoy no te voy a dar la respuesta. La vas a encontrar tú."
+ },
+ {
+  "ad": "006",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "¿Por dónde empezamos? Aquí todavía no hay ni números."
+ },
+ {
+  "ad": "007",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Empezamos por tus ojos, porque los números empiezan justo donde tus ojos ya no bastan."
+ },
+ {
+  "ad": "008",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "No cuentes. Solo mira. ¿Cuál tenía más?"
+ },
+ {
+  "ad": "009",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "El de la derecha. Ni lo pensé."
+ },
+ {
+  "ad": "010",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Esta vez… no sé. Parecían iguales."
+ },
+ {
+  "ad": "011",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "El de la izquierda tenía cien; el de la derecha, ciento diez. La primera vez la diferencia era diez. Esta vez también."
+ },
+ {
+  "ad": "012",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "La misma diferencia. Pero antes era la mitad del montón; esta vez se perdió entre la multitud."
+ },
+ {
+  "ad": "013",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Tres lápices, o las canastas del súper: no había multitud donde perderse. Por eso mis ojos lo supieron sin contar."
+ },
+ {
+  "ad": "014",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Pero ahora mi pregunta es más grande: si el ojo es tan bueno, ¿para qué necesitamos contar?"
+ },
+ {
+  "ad": "015",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Por un trabajo que el ojo no puede hacer. Vamos, hazlo tú."
+ },
+ {
+  "ad": "016",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Imagina esto: los números aún no existen, y tú eres pastor."
+ },
+ {
+  "ad": "017",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Por la mañana tus ovejas salen del corral una a una y se reparten por el prado."
+ },
+ {
+  "ad": "018",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Fácil. Pastan hasta la tarde y luego vuelven."
+ },
+ {
+  "ad": "019",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Llegó la tarde, las ovejas volvieron. ¿Llegaron todas?"
+ },
+ {
+  "ad": "020",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Se ve más o menos igual… pero ni siquiera distinguí cien de ciento diez. Si faltara una, ¿lo notaría?"
+ },
+ {
+  "ad": "021",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Y esta vez esa oveja importa: una oveja perdida pasa la noche afuera, sola."
+ },
+ {
+  "ad": "022",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Entonces \"más o menos\" no basta. Tengo que saberlo exacto."
+ },
+ {
+  "ad": "023",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Espera, tengo una idea. Le pongo nombre a cada oveja y por la tarde las llamo una por una."
+ },
+ {
+  "ad": "024",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Bien. Pero por la tarde, ¿vas a recordar los veinte nombres?"
+ },
+ {
+  "ad": "025",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "…Me confundiría a la tercera. Entonces pongo el rebaño de la tarde junto al de la mañana, le busco pareja a cada oveja, y la que quede sin pareja me dice cuál falta."
+ },
+ {
+  "ad": "026",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Buena idea. ¿Y dónde está ahora el rebaño de la mañana?"
+ },
+ {
+  "ad": "027",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "El de la mañana… es este. Las que salieron por la mañana son las mismas que vuelven. No hay otro rebaño para ponerlas al lado."
+ },
+ {
+  "ad": "028",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Entonces tengo que guardar la cantidad de la mañana en algún lado hasta la tarde."
+ },
+ {
+  "ad": "029",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "¿Dónde la guardarías? Sin papel, sin lápiz, sin palabras para los números. Solo tienes lo que hay a tu alrededor."
+ },
+ {
+  "ad": "030",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "¡Una piedra! Cada mañana, por cada oveja que sale, echo una piedra en la bolsa."
+ },
+ {
+  "ad": "031",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Por la tarde, por cada oveja que vuelve, saco una. Si queda una piedra en la bolsa, falta una oveja."
+ },
+ {
+  "ad": "032",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Queda una piedra. ¡Dejé una afuera!"
+ },
+ {
+  "ad": "033",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Lo descubriste sin saber ni un solo número."
+ },
+ {
+  "ad": "034",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Me lo acabo de inventar. ¿De verdad la gente hacía esto?"
+ },
+ {
+  "ad": "035",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "En Irak, cerca de Kirkuk, en la antigua ciudad de Nuzi, los arqueólogos hallaron un recipiente hueco de arcilla de unos tres mil quinientos años."
+ },
+ {
+  "ad": "036",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Su inscripción enumera cuarenta y ocho ovejas y cabras entregadas a un pastor. Y dentro había cuarenta y ocho piedritas."
+ },
+ {
+  "ad": "037",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "¡Es justo mi bolsa, pero de arcilla!"
+ },
+ {
+  "ad": "038",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Esta vasija no es la primera piedra; quizá se contaba con piedras mucho antes. Pero muestra que tu idea se usó de verdad."
+ },
+ {
+  "ad": "039",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Contar con piedras se volvió tan común que el nombre de la piedra pasó a significar contar: los romanos llamaban \"calculus\" a una piedrita, y de ahí viene la palabra \"calcular\"."
+ },
+ {
+  "ad": "040",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Calculadora… ¿mi calculadora se llama así por una piedrita?"
+ },
+ {
+  "ad": "041",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Sí. La calculadora de tu teléfono es bisnieta de la bolsa de aquel pastor."
+ },
+ {
+  "ad": "042",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Pero no puedo cargar una bolsa de piedras a todas partes."
+ },
+ {
+  "ad": "043",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "No puedes. Por eso la gente encontró otras herramientas que hacen el trabajo de la piedra. Usas una a diario: los nombres de los números."
+ },
+ {
+  "ad": "044",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Cuando dices \"veinte\", llevas veinte piedras, no en el bolsillo, sino en la lengua."
+ },
+ {
+  "ad": "052",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Entonces las cifras que nos dieron en la escuela también eran una herramienta así. Pero siempre me costó esa herramienta. Siempre fui lento en matemáticas. ¿Soy tonto?"
+ },
+ {
+  "ad": "053",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "No."
+ },
+ {
+  "ad": "054",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Te dieron la herramienta, pero nadie te mostró qué problema resuelve. Una herramienta que nunca viste funcionar se siente rara en cualquier mano."
+ },
+ {
+  "ad": "055",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Puede ser difícil, pero no es algo sin sentido. Hoy vimos juntos qué problema resuelven los números. Las próximas herramientas las veremos igual."
+ },
+ {
+  "ad": "056",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Vi los tres lápices sin contar, porque tres es poco y mis ojos bastaban."
+ },
+ {
+  "ad": "057",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Los números son para donde mis ojos no bastan: para lo que no tengo delante, para lo que debo llevar exacto de la mañana a la tarde."
+ },
+ {
+  "ad": "058",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Si hubiera tenido ovejas, yo también habría encontrado una forma. De hecho, acabo de encontrarla: la piedra. Las cifras de mi cuaderno son esa piedra, que siguió su camino."
+ },
+ {
+  "ad": "059",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "No siempre tendrás una bolsa de piedras contigo. Pero hay diez cosas que llevas a todas partes."
+ },
+ {
+  "ad": "060",
+  "ses": "ogrenci",
+  "dil": "es",
+  "metin": "Mis dedos… Siempre he contado con los dedos. Nunca los vi como piedras."
+ },
+ {
+  "ad": "061",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "Próxima parada: Los dedos y el cuerpo."
+ },
+ {
+  "ad": "062",
+  "ses": "zirek",
+  "dil": "es",
+  "metin": "¿Cuál era la pregunta que nunca pudiste hacer en la escuela? Escríbela en los comentarios. Las leemos todas al planear las próximas paradas."
+ }
+]
